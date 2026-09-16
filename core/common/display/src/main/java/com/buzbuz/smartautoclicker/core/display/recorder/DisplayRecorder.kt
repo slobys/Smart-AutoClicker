@@ -149,12 +149,13 @@ class DisplayRecorder @Inject internal constructor(
             }
         }
 
-        return true
+        Log.e(TAG, "Screen capture validation timed out without receiving a frame")
+        return false
     }
 
     /** @return the last image of the screen, or null if they have been processed. */
     suspend fun acquireLatestBitmap(): Bitmap? = mutex.withLock {
-        imageReaderProxy.getLastFrame()
+        imageReaderProxy.acquireLatestFrame()
     }
 
     suspend fun takeScreenshot(): Bitmap? {
@@ -162,7 +163,7 @@ class DisplayRecorder @Inject internal constructor(
         val startTimeMs: Long = System.currentTimeMillis()
 
         do {
-            result = imageReaderProxy.getLastFrame()
+            result = mutex.withLock { imageReaderProxy.getLastFrame() }
             if (result == null) delay(40.milliseconds)
 
         } while (result == null && System.currentTimeMillis() < (startTimeMs + SCREEN_CAPTURE_SCREENSHOT_TIMEOUT_MS))

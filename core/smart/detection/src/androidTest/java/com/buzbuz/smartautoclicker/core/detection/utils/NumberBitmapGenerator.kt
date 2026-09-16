@@ -22,6 +22,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Ignore
 import org.junit.Test
 import java.io.File
 
@@ -36,6 +37,7 @@ import java.io.File
  */
 class NumberBitmapGenerator {
 
+    @Ignore("One-shot fixture generator; not part of the automated test suite")
     @Test
     fun generateNumberImages() {
         val outputDir = File("/data/local/tmp/number_test_images").also { it.mkdirs() }

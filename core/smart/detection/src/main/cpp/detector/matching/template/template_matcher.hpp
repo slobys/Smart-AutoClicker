@@ -50,7 +50,8 @@ namespace smartautoclicker {
         static bool isShapeConfidenceValid(double confidence, int threshold);
         static double getMaxColorDifference(int threshold);
         static double getPixelColorDiff(const cv::Mat& image, const cv::Mat& condition);
-        static double getEdgeSimilarity(const cv::Mat& image, const cv::Mat& condition);
+        static cv::Mat getNormalizedEdgeMagnitude(const cv::Mat& image);
+        static double getEdgeSimilarity(const cv::Mat& image, const cv::Mat& normalizedConditionEdges);
         static bool isTemplateInformative(const cv::Mat& condition);
 
     public:

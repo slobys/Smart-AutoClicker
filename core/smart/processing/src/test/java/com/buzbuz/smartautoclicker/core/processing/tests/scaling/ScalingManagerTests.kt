@@ -30,6 +30,9 @@ import com.buzbuz.smartautoclicker.core.domain.model.EXACT
 import com.buzbuz.smartautoclicker.core.domain.model.IN_AREA
 import com.buzbuz.smartautoclicker.core.domain.model.WHOLE_SCREEN
 import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
+import com.buzbuz.smartautoclicker.core.domain.model.condition.NumberFormatType
+import com.buzbuz.smartautoclicker.core.domain.model.counter.ComparisonOperation
+import com.buzbuz.smartautoclicker.core.domain.model.counter.CounterOperationValue
 import com.buzbuz.smartautoclicker.core.domain.model.event.ScreenEvent
 import com.buzbuz.smartautoclicker.core.processing.data.scaling.ScalingManager
 import com.buzbuz.smartautoclicker.core.processing.data.scaling.ScreenConditionScalingInfo
@@ -138,6 +141,35 @@ class ScalingManagerTests {
             as ScreenConditionScalingInfo.Image
         Assert.assertEquals(Point(800, 1600), scaledScreenSize)
         Assert.assertEquals(Rect(80, 80, 112, 112), scalingInfo.imageArea)
+    }
+
+    @Test
+    fun `small number area should retain source pixels before OCR upscaling`() {
+        val eventId = 1L
+        val screenSize = Point(1000, 2000)
+        val condition = ScreenCondition.Number(
+            id = Identifier(databaseId = 1L),
+            eventId = Identifier(databaseId = eventId),
+            name = "",
+            threshold = 0,
+            priority = 0,
+            detectionArea = Rect(100, 100, 240, 240),
+            comparisonOperation = ComparisonOperation.EQUALS,
+            counterValue = CounterOperationValue.Number(5.0),
+            numberFormatType = NumberFormatType.AUTO,
+        )
+
+        mockDisplayConfigManager.mockDisplayConfig(screenSize)
+        val scaledScreenSize = scalingManager.startScaling(
+            quality = 400.0,
+            screenEvents = listOf(createTestEvent(eventId, listOf(condition))),
+        )
+
+        val scalingInfo = scalingManager.getScreenConditionScalingInfo(condition)
+            as ScreenConditionScalingInfo.Number
+        Assert.assertEquals(Point(686, 1371), scaledScreenSize)
+        Assert.assertEquals(96, scalingInfo.detectionArea.width())
+        Assert.assertEquals(96, scalingInfo.detectionArea.height())
     }
 
     @Test
@@ -549,7 +581,7 @@ class ScalingManagerTests {
             )
     }
 
-    private fun createTestEvent(id: Long, conditions: List<ScreenCondition.Image>) : ScreenEvent =
+    private fun createTestEvent(id: Long, conditions: List<ScreenCondition>) : ScreenEvent =
         ScreenEvent(
             id = Identifier(databaseId = id),
             conditions = conditions,

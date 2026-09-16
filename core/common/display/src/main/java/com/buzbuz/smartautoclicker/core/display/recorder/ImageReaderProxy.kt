@@ -60,7 +60,21 @@ internal class ImageReaderProxy @Inject constructor(
         copyImageRow = null
     }
 
-    fun getLastFrame(): Bitmap? {
+    /**
+     * Acquire a frame only when [ImageReader] has produced a new image.
+     *
+     * Detection must use this method so that multi-frame confirmation never counts the same
+     * cached bitmap more than once.
+     */
+    fun acquireLatestFrame(): Bitmap? = acquireFrame(useCachedFrame = false)
+
+    /**
+     * Return the newest available frame, falling back to the cached one when no new image exists.
+     * This is intended for one-shot screenshots where returning the last rendered frame is useful.
+     */
+    fun getLastFrame(): Bitmap? = acquireFrame(useCachedFrame = true)
+
+    private fun acquireFrame(useCachedFrame: Boolean): Bitmap? {
         val reader = imageReader ?: run {
             Log.e(TAG, "Can't get last frame, ImageReader is null")
             return null
@@ -69,7 +83,7 @@ internal class ImageReaderProxy @Inject constructor(
         try {
             return reader.acquireLatestImage()
                 ?.use { image -> image.toBitmap().also { lastFrame = it } }
-                ?: lastFrame
+                ?: lastFrame.takeIf { useCachedFrame }
         } catch (uoEx: UnsupportedOperationException) {
             Log.e(TAG, "Unsupported screen format", uoEx)
             return null

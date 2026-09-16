@@ -107,7 +107,8 @@ TextMatchingResult* TextMatcher::matchNumber(
     auto recognizerResults = recognizeNumber(
             screenImage,
             detectionArea,
-            defaultRecognitionModelId);
+            defaultRecognitionModelId,
+            threshold);
 
     float bestRankingScore = 0.0f;
 
@@ -213,7 +214,8 @@ std::vector<TextRecognizerResult> TextMatcher::recognizeText(
 std::vector<TextRecognizerResult> TextMatcher::recognizeNumber(
         const ScreenImage& screenImage,
         const cv::Rect& detectionArea,
-        const std::string& recognitionModelId
+        const std::string& recognitionModelId,
+        int threshold
 ) {
     cv::Mat screenCrop = screenImage.cropColor(detectionArea);
     cv::Mat rgbScreenCrop;
@@ -223,9 +225,28 @@ std::vector<TextRecognizerResult> TextMatcher::recognizeNumber(
         return {};
     }
 
-    auto hasNumericCandidate = [](const std::vector<TextRecognizerResult>& results) {
-        return std::any_of(results.begin(), results.end(), [](const TextRecognizerResult& result) {
-            return isNumber(normalizeNumberText(result.text));
+    auto hasUsableNumericCandidate = [&](const std::vector<TextRecognizerResult>& results) {
+        return std::any_of(results.begin(), results.end(), [&](const TextRecognizerResult& result) {
+            const std::string normalizedText = normalizeNumberText(result.text);
+            if (!isNumber(normalizedText)) return false;
+
+            const bool isMappedFromLetters = normalizedText != result.text;
+            if (isMappedFromLetters && result.confidence < MIN_MAPPED_NUMBER_CONFIDENCE) return false;
+
+            const int shortestDetectionSide = std::min(detectionArea.width, detectionArea.height);
+            const int smallTileSize = std::max(
+                    24,
+                    static_cast<int>(std::round(shortestDetectionSide * 0.42)));
+            const int largeTileSize = std::max(
+                    24,
+                    static_cast<int>(std::round(shortestDetectionSide * 0.55)));
+            const bool isCornerFallback =
+                    result.boundingBox.width == result.boundingBox.height &&
+                    (result.boundingBox.width == smallTileSize ||
+                     result.boundingBox.width == largeTileSize);
+            if (isCornerFallback && result.confidence < MIN_CORNER_FALLBACK_CONFIDENCE) return false;
+
+            return result.confidence * 100.0f >= static_cast<float>(threshold);
         });
     };
 
@@ -233,7 +254,7 @@ std::vector<TextRecognizerResult> TextMatcher::recognizeNumber(
             rgbScreenCrop,
             recognitionModelId,
             MIN_NUMBER_DETECTION_SIDE);
-    if (hasNumericCandidate(results)) return results;
+    if (hasUsableNumericCandidate(results)) return results;
 
     // Game counters are often tiny outlined glyphs rendered over colorful icons. A contrast-
     // enhanced grayscale pass suppresses most hue changes while preserving those glyph edges.
@@ -249,7 +270,7 @@ std::vector<TextRecognizerResult> TextMatcher::recognizeNumber(
             enhancedRgb,
             recognitionModelId,
             MIN_NUMBER_DETECTION_SIDE);
-    if (hasNumericCandidate(results)) return results;
+    if (hasUsableNumericCandidate(results)) return results;
 
     // Last resort for low-contrast digits: local thresholding separates the outline from a
     // non-uniform background better than a single global threshold.
@@ -271,7 +292,7 @@ std::vector<TextRecognizerResult> TextMatcher::recognizeNumber(
                 binaryRgb,
                 recognitionModelId,
                 MIN_NUMBER_DETECTION_SIDE);
-        if (hasNumericCandidate(results)) return results;
+        if (hasUsableNumericCandidate(results)) return results;
     }
 
     // The text detector can still reject a single outlined glyph when it is surrounded by a
@@ -302,7 +323,7 @@ std::vector<TextRecognizerResult> TextMatcher::recognizeNumber(
     };
 
     results = recognizeCorner(rgbScreenCrop);
-    if (hasNumericCandidate(results)) return results;
+    if (hasUsableNumericCandidate(results)) return results;
 
     return recognizeCorner(enhancedRgb);
 }

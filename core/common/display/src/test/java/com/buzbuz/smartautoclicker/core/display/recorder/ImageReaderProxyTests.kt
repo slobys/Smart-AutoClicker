@@ -183,6 +183,21 @@ class ImageReaderProxyTests {
     }
 
     @Test
+    fun acquireLatestFrame_noNewFrame_returnsNullInsteadOfCachedFrame() {
+        setupImageMock(mockImage, WIDTH, HEIGHT)
+        mockWhen(mockBitmapRepository.getDisplayRecorderBitmap(WIDTH, HEIGHT)).thenReturn(mockBitmap)
+        mockWhen(mockBitmap.width).thenReturn(WIDTH)
+        mockWhen(mockBitmap.height).thenReturn(HEIGHT)
+        mockWhen(mockImageReader.acquireLatestImage())
+            .thenReturn(mockImage)
+            .thenReturn(null)
+        imageReaderProxy.resize(SIZE)
+
+        assertEquals(mockBitmap, imageReaderProxy.acquireLatestFrame())
+        assertNull(imageReaderProxy.acquireLatestFrame())
+    }
+
+    @Test
     fun getLastFrame_afterResize_doesNotReturnStaleFrame() {
         setupImageMock(mockImage, WIDTH, HEIGHT)
         mockWhen(mockBitmapRepository.getDisplayRecorderBitmap(WIDTH, HEIGHT)).thenReturn(mockBitmap)

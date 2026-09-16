@@ -37,6 +37,7 @@ namespace {
     constexpr double EDGE_SCORE_WEIGHT = 0.30;
     constexpr double COLOR_SCORE_WEIGHT = 0.15;
     constexpr int MIN_MOTION_TEMPLATE_SIDE = 12;
+    constexpr double MOTION_FALLBACK_SCORE_MARGIN = 0.30;
 
     struct ScoredCandidate {
         bool valid = false;
@@ -112,6 +113,15 @@ void TemplateMatcher::matchTemplate(
     // blurred condition variants only as a fallback. This preserves static-image precision and
     // avoids globally loosening the user's tolerated-difference threshold.
     if (std::min(condition.getGrayMat().cols, condition.getGrayMat().rows) < MIN_MOTION_TEMPLATE_SIDE) {
+        return;
+    }
+
+    // A completely unrelated area normally produces a low normalized correlation. Avoid two
+    // additional full-screen searches unless the sharp pass was at least reasonably close to the
+    // requested score, which is the typical signature of directional motion blur.
+    const double minimumRequiredConfidence = (100.0 - threshold) / 100.0;
+    if (currentMatchingResult.getResultConfidence() <
+        std::max(0.0, minimumRequiredConfidence - MOTION_FALLBACK_SCORE_MARGIN)) {
         return;
     }
 
@@ -199,6 +209,7 @@ void TemplateMatcher::parseMatchingResult(
 
     ScoredCandidate bestCandidate;
     const double maxColorDifference = getMaxColorDifference(threshold);
+    const cv::Mat normalizedConditionEdges = getNormalizedEdgeMagnitude(conditionGray);
 
     for (int candidateIndex = 0; candidateIndex < MAX_CANDIDATE_COUNT; ++candidateIndex) {
 
@@ -229,7 +240,7 @@ void TemplateMatcher::parseMatchingResult(
         if (colorDifference > maxColorDifference) continue;
 
         const cv::Mat grayCrop = screenImage.cropGray(currentMatchingResult.getResultArea());
-        const double edgeSimilarity = getEdgeSimilarity(grayCrop, conditionGray);
+        const double edgeSimilarity = getEdgeSimilarity(grayCrop, normalizedConditionEdges);
         const double colorSimilarity = std::max(0.0, 1.0 - colorDifference / 100.0);
         const double compositeScore =
                 shapeConfidence * SHAPE_SCORE_WEIGHT +
@@ -281,30 +292,34 @@ double TemplateMatcher::getPixelColorDiff(const cv::Mat& image, const cv::Mat& c
     return totalDifference * (100.0 / (255.0 * comparedChannels));
 }
 
-double TemplateMatcher::getEdgeSimilarity(const cv::Mat& image, const cv::Mat& condition) {
-    if (image.empty() || condition.empty() || image.size() != condition.size()) return 0.0;
+cv::Mat TemplateMatcher::getNormalizedEdgeMagnitude(const cv::Mat& image) {
+    if (image.empty()) return {};
 
     cv::Mat imageGradientX;
     cv::Mat imageGradientY;
-    cv::Mat conditionGradientX;
-    cv::Mat conditionGradientY;
     cv::Sobel(image, imageGradientX, CV_32F, 1, 0);
     cv::Sobel(image, imageGradientY, CV_32F, 0, 1);
-    cv::Sobel(condition, conditionGradientX, CV_32F, 1, 0);
-    cv::Sobel(condition, conditionGradientY, CV_32F, 0, 1);
 
     cv::Mat imageMagnitude;
-    cv::Mat conditionMagnitude;
     cv::magnitude(imageGradientX, imageGradientY, imageMagnitude);
-    cv::magnitude(conditionGradientX, conditionGradientY, conditionMagnitude);
 
-    cv::Mat normalizedImage;
-    cv::Mat normalizedCondition;
-    cv::normalize(imageMagnitude, normalizedImage, 0.0, 1.0, cv::NORM_MINMAX);
-    cv::normalize(conditionMagnitude, normalizedCondition, 0.0, 1.0, cv::NORM_MINMAX);
+    cv::Mat normalizedMagnitude;
+    cv::normalize(imageMagnitude, normalizedMagnitude, 0.0, 1.0, cv::NORM_MINMAX);
+    return normalizedMagnitude;
+}
+
+double TemplateMatcher::getEdgeSimilarity(
+        const cv::Mat& image,
+        const cv::Mat& normalizedConditionEdges
+) {
+    if (image.empty() || normalizedConditionEdges.empty() || image.size() != normalizedConditionEdges.size()) {
+        return 0.0;
+    }
+
+    const cv::Mat normalizedImageEdges = getNormalizedEdgeMagnitude(image);
 
     cv::Mat difference;
-    cv::absdiff(normalizedImage, normalizedCondition, difference);
+    cv::absdiff(normalizedImageEdges, normalizedConditionEdges, difference);
     return std::max(0.0, 1.0 - cv::mean(difference).val[0]);
 }
 

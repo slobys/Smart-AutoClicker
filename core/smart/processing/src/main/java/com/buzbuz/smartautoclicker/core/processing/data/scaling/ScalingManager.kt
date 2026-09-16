@@ -84,16 +84,32 @@ class ScalingManager @Inject constructor(
             .map { minOf(it.area.width(), it.area.height()) }
             .filter { it > 0 }
             .minOrNull()
-        val minimumImageRatio = smallestImageSide?.let { imageSide ->
-            (MIN_SCALED_IMAGE_SIDE / imageSide.toDouble()).coerceAtMost(1.0)
-        } ?: 0.0
+        val smallestNumberAreaSide = screenConditions
+            .asSequence()
+            .filterIsInstance<ScreenCondition.Number>()
+            .map { minOf(it.detectionArea.width(), it.detectionArea.height()) }
+            .filter { it > 0 }
+            .minOrNull()
+        val smallestTextAreaSide = screenConditions
+            .asSequence()
+            .filterIsInstance<ScreenCondition.Text>()
+            .map { minOf(it.detectionArea.width(), it.detectionArea.height()) }
+            .filter { it > 0 }
+            .minOrNull()
 
-        scalingRatio = max(qualityRatio, minimumImageRatio)
+        scalingRatio = maxOf(
+            qualityRatio,
+            smallestImageSide.minimumRatioFor(MIN_SCALED_IMAGE_SIDE),
+            smallestNumberAreaSide.minimumRatioFor(MIN_SCALED_NUMBER_AREA_SIDE),
+            smallestTextAreaSide.minimumRatioFor(MIN_SCALED_TEXT_AREA_SIDE),
+        )
 
         val scaledScreenSize = displaySize.scaleDown()
 
         Log.i(TAG, "Scaling metrics refreshed: ratio=$scalingRatio, qualityRatio=$qualityRatio, " +
-                "smallestImageSide=$smallestImageSide, screenSize=$displaySize, scaledScreenSize=$scaledScreenSize")
+                "smallestImageSide=$smallestImageSide, smallestNumberAreaSide=$smallestNumberAreaSide, " +
+                "smallestTextAreaSide=$smallestTextAreaSide, screenSize=$displaySize, " +
+                "scaledScreenSize=$scaledScreenSize")
 
         return scaledScreenSize
     }
@@ -164,9 +180,17 @@ class ScalingManager @Inject constructor(
     private fun Point.scaleUp(): Point = scale(scalingRatio.inverseScalingRatio())
     private fun Rect.scaleDown(): Rect = scale(scalingRatio)
     private fun Double.inverseScalingRatio(): Double = 1.0 / this
+
+    private fun Int?.minimumRatioFor(minimumScaledSide: Double): Double =
+        this?.let { originalSide ->
+            (minimumScaledSide / originalSide.toDouble()).coerceAtMost(1.0)
+        } ?: 0.0
 }
 
 private const val QUALITY_MAX = 10000.0
 /** Keep small image templates detailed enough for reliable matching after screen downscaling. */
 private const val MIN_SCALED_IMAGE_SIDE = 32.0
+/** Preserve enough source pixels before OCR upscaling; interpolation cannot recover discarded strokes. */
+private const val MIN_SCALED_NUMBER_AREA_SIDE = 96.0
+private const val MIN_SCALED_TEXT_AREA_SIDE = 64.0
 private const val TAG = "ScalingManager"

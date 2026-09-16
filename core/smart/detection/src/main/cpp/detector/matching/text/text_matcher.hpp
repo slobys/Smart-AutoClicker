@@ -99,7 +99,8 @@ namespace smartautoclicker {
         std::vector<TextRecognizerResult> recognizeNumber(
                 const ScreenImage& screenImage,
                 const cv::Rect& detectionArea,
-                const std::string& recognitionModelId);
+                const std::string& recognitionModelId,
+                int threshold);
 
         /** Runs text localization and recognition on an already prepared RGB crop. */
         std::vector<TextRecognizerResult> recognizeTextInImage(

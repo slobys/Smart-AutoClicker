@@ -20,7 +20,8 @@ import android.graphics.Bitmap
 import android.util.Log
 import androidx.core.graphics.createBitmap
 import com.buzbuz.smartautoclicker.core.base.addDumpTabulationLvl
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.PrintWriter
 import javax.inject.Inject
 
@@ -29,16 +30,25 @@ internal class BitmapRepositoryImpl @Inject constructor(
     private val conditionBitmapsDataSource: ConditionBitmapsDataSource,
 ) : BitmapRepository {
 
+    private val conditionBitmapLoadMutex = Mutex()
+
     override suspend fun saveImageConditionBitmap(bitmap: Bitmap, prefix: String): String {
         val path = conditionBitmapsDataSource.saveBitmap(bitmap, prefix)
         bitmapLRUCache.putImageConditionBitmap(path, bitmap.width, bitmap.height, bitmap)
         return path
     }
 
-    override suspend fun getImageConditionBitmap(path: String, width: Int, height: Int): Bitmap? =
-        bitmapLRUCache.getImageConditionBitmapOrDefault(path, width, height) {
-            runBlocking { conditionBitmapsDataSource.loadBitmap(path, width, height) }
+    override suspend fun getImageConditionBitmap(path: String, width: Int, height: Int): Bitmap? {
+        bitmapLRUCache.getImageConditionBitmap(path, width, height)?.let { return it }
+
+        return conditionBitmapLoadMutex.withLock {
+            bitmapLRUCache.getImageConditionBitmap(path, width, height)
+                ?: conditionBitmapsDataSource.loadBitmap(path, width, height)
+                    ?.also { bitmap ->
+                        bitmapLRUCache.putImageConditionBitmap(path, width, height, bitmap)
+                    }
         }
+    }
 
     override fun getDisplayRecorderBitmap(width: Int, height: Int): Bitmap =
         bitmapLRUCache.getDisplayRecorderBitmapOrDefault(width, height) {
