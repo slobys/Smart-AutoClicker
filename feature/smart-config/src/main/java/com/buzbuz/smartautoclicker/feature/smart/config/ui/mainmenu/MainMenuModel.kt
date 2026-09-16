@@ -31,17 +31,22 @@ import com.buzbuz.smartautoclicker.core.smart.debugging.domain.DebuggingReposito
 import com.buzbuz.smartautoclicker.core.common.tutorial.domain.MonitoredViewsManager
 import com.buzbuz.smartautoclicker.core.common.tutorial.impl.monitoring.ViewPositioningType
 import com.buzbuz.smartautoclicker.core.common.tutorial.domain.model.monitoring.MonitoredViewType
+import com.buzbuz.smartautoclicker.core.domain.model.scenario.Scenario
 import com.buzbuz.smartautoclicker.feature.revenue.IRevenueRepository
 import com.buzbuz.smartautoclicker.feature.revenue.UserBillingState
 import com.buzbuz.smartautoclicker.feature.smart.config.domain.EditionRepository
 import com.buzbuz.smartautoclicker.feature.smart.config.domain.usecase.alphabet.AreRequiredAlphabetModelsInstalledUseCase
+import com.buzbuz.smartautoclicker.feature.smart.config.domain.usecase.scenario.SwitchScenarioUseCase
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
@@ -62,6 +67,7 @@ class MainMenuModel @Inject constructor(
     private val revenueRepository: IRevenueRepository,
     private val monitoredViewsManager: MonitoredViewsManager,
     private val debuggingRepository: DebuggingRepository,
+    private val switchScenarioUseCase: SwitchScenarioUseCase,
     areRequiredAlphabetModelsInstalledUseCase: AreRequiredAlphabetModelsInstalledUseCase,
 ) : ViewModel() {
 
@@ -74,6 +80,25 @@ class MainMenuModel @Inject constructor(
         )
 
     private var paywallResultJob: Job? = null
+
+    private val _isScenarioSwitching = MutableStateFlow(false)
+    val isScenarioSwitching: StateFlow<Boolean> = _isScenarioSwitching.asStateFlow()
+
+    val scenarioMenuItems: StateFlow<List<ScenarioMenuItem>> = combine(
+        switchScenarioUseCase.availableScenarios,
+        scenarioDbId,
+    ) { scenarios, currentScenarioId ->
+        scenarios.map { scenario ->
+            ScenarioMenuItem(
+                scenario = scenario,
+                isCurrent = scenario.id.databaseId == currentScenarioId,
+            )
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    val canSwitchScenario: Flow<Boolean> = combine(scenarioMenuItems, isScenarioSwitching) { items, switching ->
+        items.size > 1 && !switching
+    }
 
     /** Tells if the paywall is currently displayed. */
     val paywallIsVisible: Flow<Boolean> =
@@ -109,9 +134,10 @@ class MainMenuModel @Inject constructor(
     val isStartButtonEnabled: Flow<Boolean> = combine(
         smartProcessingRepository.canStartDetection,
         editionRepository.isEditionSynchronized,
-        isMediaProjectionStarted
-    ) { canStartDetection, isSynchronized, isProjectionStarted ->
-        (canStartDetection || !isProjectionStarted) && isSynchronized
+        isMediaProjectionStarted,
+        isScenarioSwitching,
+    ) { canStartDetection, isSynchronized, isProjectionStarted, isSwitching ->
+        (canStartDetection || !isProjectionStarted) && isSynchronized && !isSwitching
     }
 
     /** Tells if the detector can't work due to a native library load error. */
@@ -137,6 +163,34 @@ class MainMenuModel @Inject constructor(
                 if (shouldStartPaywall()) startPaywall(context)
                 else startDetection(context)
             }
+        }
+    }
+
+    /** Switch the loaded scenario while preserving the current running/paused state. */
+    fun switchScenario(context: Context, scenario: Scenario, onCompleted: (Boolean) -> Unit) {
+        if (_isScenarioSwitching.value) return
+
+        viewModelScope.launch {
+            _isScenarioSwitching.value = true
+
+            val success = try {
+                when (val result = switchScenarioUseCase.switchTo(scenario)) {
+                    is SwitchScenarioUseCase.Result.Switched -> {
+                        if (result.restartDetection) restartDetectionAfterScenarioSwitch(context)
+                        true
+                    }
+                    SwitchScenarioUseCase.Result.AlreadySelected -> true
+                    SwitchScenarioUseCase.Result.Failed -> false
+                }
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (exception: Exception) {
+                Log.e(TAG, "Failed to switch scenario to ${scenario.id}", exception)
+                false
+            }
+
+            _isScenarioSwitching.value = false
+            onCompleted(success)
         }
     }
 
@@ -175,6 +229,15 @@ class MainMenuModel @Inject constructor(
                 generateReport = debuggingRepository.isDebugReportEnabled(),
             )
         }
+    }
+
+    private suspend fun restartDetectionAfterScenarioSwitch(context: Context) {
+        smartProcessingRepository.startDetection(
+            context = context,
+            autoStopDuration = null,
+            liveDebugging = debuggingRepository.isDebugViewEnabled(),
+            generateReport = debuggingRepository.isDebugReportEnabled(),
+        )
     }
 
     fun startScenarioEdition(onEditionStarted: () -> Unit) {
@@ -236,5 +299,10 @@ sealed class UiState {
     data object Detecting: UiState()
     data object Idle: UiState()
 }
+
+data class ScenarioMenuItem(
+    val scenario: Scenario,
+    val isCurrent: Boolean,
+)
 
 private const val TAG = "MainMenuViewModel"

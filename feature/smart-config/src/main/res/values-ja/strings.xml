@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="content_desc_switch_scenario">実行中のシナリオを切り替え</string>
+    <string name="dialog_title_switch_scenario">スクリプトを切り替え</string>
+    <string name="dialog_message_no_switch_scenario">スクリプト切り替えを使用するには、イベントを1つ以上含む別のシナリオを作成してください。</string>
+    <string name="item_scenario_switch_current">%1$s（現在）</string>
+    <string name="error_dialog_message_scenario_switch">現在のシナリオを安全に停止できませんでした。一時停止してから、もう一度切り替えてください。</string>
 
     <string name="generic_name">名前</string>
     <string name="generic_select_the_position">ポジションを選択してください</string>

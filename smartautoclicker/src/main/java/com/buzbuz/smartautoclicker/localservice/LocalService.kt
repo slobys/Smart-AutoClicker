@@ -62,6 +62,7 @@ class LocalService(
     private val revenueRepository: IRevenueRepository,
     private val debuggingRepository: DebuggingRepository,
     private val onStart: (scenarioId: Long, isSmart: Boolean, foregroundNotification: Notification?) -> Unit,
+    private val onScenarioChanged: (scenarioId: Long) -> Unit,
     private val onStop: () -> Unit,
 ) : LocalAccessibilityService {
 
@@ -159,7 +160,10 @@ class LocalService(
         )
 
         startJob = serviceScope.launch {
-            val mainMenu = MainMenu { stopScenario() }
+            val mainMenu = MainMenu(
+                onStopClicked = { stopScenario() },
+                onScenarioSwitched = ::onSmartScenarioSwitched,
+            )
 
             smartProcessingRepository.apply {
                 setScenarioId(scenario.id, markAsUsed = true)
@@ -249,6 +253,11 @@ class LocalService(
                 generateReport = debuggingRepository.isDebugReportEnabled(),
             )
         }
+    }
+
+    private fun onSmartScenarioSwitched(scenario: Scenario) {
+        notificationController.updateScenarioName(context, scenario.name)
+        onScenarioChanged(scenario.id.databaseId)
     }
 
     private fun hideMenu() {

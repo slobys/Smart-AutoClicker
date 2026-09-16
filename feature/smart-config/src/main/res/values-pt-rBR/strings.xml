@@ -15,6 +15,11 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+    <string name="content_desc_switch_scenario">Alternar cenário em execução</string>
+    <string name="dialog_title_switch_scenario">Alternar script</string>
+    <string name="dialog_message_no_switch_scenario">Crie outro cenário com pelo menos um evento para usar o seletor de scripts.</string>
+    <string name="item_scenario_switch_current">%1$s (atual)</string>
+    <string name="error_dialog_message_scenario_switch">Não foi possível parar o cenário atual com segurança. Pause-o e tente alternar novamente.</string>
 
     <!-- Generic =================================================================================================== -->
     <!-- Those values are shared between several dialogs due to their generic meaning, such as name -->

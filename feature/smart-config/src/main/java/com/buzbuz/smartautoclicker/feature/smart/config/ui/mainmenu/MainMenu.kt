@@ -37,6 +37,7 @@ import com.buzbuz.smartautoclicker.core.common.overlays.manager.OverlayManager.C
 import com.buzbuz.smartautoclicker.core.common.overlays.menu.OverlayMenu
 import com.buzbuz.smartautoclicker.core.common.tutorial.domain.model.Tip
 import com.buzbuz.smartautoclicker.core.common.tutorial.domain.model.monitoring.MonitoredOverlayType
+import com.buzbuz.smartautoclicker.core.domain.model.scenario.Scenario
 import com.buzbuz.smartautoclicker.core.ui.utils.AnimatedStatesImageButtonController
 import com.buzbuz.smartautoclicker.core.ui.utils.getDynamicColorsContext
 import com.buzbuz.smartautoclicker.feature.smart.config.R
@@ -65,7 +66,10 @@ import kotlinx.coroutines.launch
  * There is no overlay views attached to this overlay menu, meaning that the user will always be able to clicks on the
  * Activities displayed below it.
  */
-class MainMenu(private val onStopClicked: () -> Unit) : OverlayMenu() {
+class MainMenu(
+    private val onStopClicked: () -> Unit,
+    private val onScenarioSwitched: (Scenario) -> Unit,
+) : OverlayMenu() {
 
     override fun tutorialMonitoringTag(): String = MonitoredOverlayType.MAIN_MENU.name
 
@@ -140,6 +144,8 @@ class MainMenu(private val onStopClicked: () -> Unit) : OverlayMenu() {
                 launch { viewModel.detectionState.collect(::updateDetectionState) }
                 launch { viewModel.nativeLibError.collect(::showNativeLibErrorDialogIfNeeded) }
                 launch { viewModel.screenCaptureError.collect(::showScreenCaptureErrorDialogIfNeeded) }
+                launch { viewModel.canSwitchScenario.collect(::updateScenarioSwitchButtonEnabledState) }
+                launch { viewModel.isScenarioSwitching.collect(::updateScenarioSwitchingState) }
                 launch { debuggingViewModel.isDebugging.collect(::updateDebugOverlayViewVisibility) }
             }
         }
@@ -193,6 +199,7 @@ class MainMenu(private val onStopClicked: () -> Unit) : OverlayMenu() {
     override fun onMenuItemClicked(viewId: Int) {
         when (viewId) {
             R.id.btn_play -> onPlayPauseClicked()
+            R.id.btn_switch_scenario -> showScenarioSwitchDialog()
             R.id.btn_click_list -> onConfigureClicked()
             R.id.btn_stop -> onStopClicked()
         }
@@ -243,9 +250,52 @@ class MainMenu(private val onStopClicked: () -> Unit) : OverlayMenu() {
         viewModel.toggleDetection(context)
     }
 
+    private fun showScenarioSwitchDialog() {
+        val items = viewModel.scenarioMenuItems.value
+        if (items.size <= 1) {
+            MaterialAlertDialogBuilder(context.getDynamicColorsContext(R.style.AppTheme))
+                .setTitle(R.string.dialog_title_switch_scenario)
+                .setMessage(R.string.dialog_message_no_switch_scenario)
+                .setPositiveButton(android.R.string.ok, null)
+                .create()
+                .showAsOverlay()
+            return
+        }
+
+        val labels = items.map { item ->
+            if (item.isCurrent) context.getString(R.string.item_scenario_switch_current, item.scenario.name)
+            else item.scenario.name
+        }.toTypedArray()
+        val currentIndex = items.indexOfFirst { item -> item.isCurrent }
+
+        MaterialAlertDialogBuilder(context.getDynamicColorsContext(R.style.AppTheme))
+            .setTitle(R.string.dialog_title_switch_scenario)
+            .setSingleChoiceItems(labels, currentIndex) { dialog, selectedIndex ->
+                val selectedItem = items[selectedIndex]
+                dialog.dismiss()
+                if (selectedItem.isCurrent) return@setSingleChoiceItems
+
+                viewModel.switchScenario(context, selectedItem.scenario) { success ->
+                    if (success) onScenarioSwitched(selectedItem.scenario)
+                    else showScenarioSwitchErrorDialog()
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .create()
+            .showAsOverlay()
+    }
+
     /** Refresh the play menu item according to the scenario state. */
     private fun updatePlayPauseButtonEnabledState(canStartDetection: Boolean) =
         setMenuItemViewEnabled(viewBinding.btnPlay, canStartDetection)
+
+    private fun updateScenarioSwitchButtonEnabledState(canSwitchScenario: Boolean) =
+        setMenuItemViewEnabled(viewBinding.btnSwitchScenario, canSwitchScenario)
+
+    private fun updateScenarioSwitchingState(isSwitching: Boolean) {
+        setMenuItemViewEnabled(viewBinding.btnStop, !isSwitching)
+        setMenuItemViewEnabled(viewBinding.btnClickList, !isSwitching)
+    }
 
     /** Refresh the menu layout according to the detection state. */
     private fun updateDetectionState(newState: UiState) {
@@ -369,6 +419,15 @@ class MainMenu(private val onStopClicked: () -> Unit) : OverlayMenu() {
             .setNegativeButton(android.R.string.cancel) { _: DialogInterface, _: Int ->
                 viewModel.cancelScenarioChanges()
             }
+            .create()
+            .showAsOverlay()
+    }
+
+    private fun showScenarioSwitchErrorDialog() {
+        MaterialAlertDialogBuilder(context.getDynamicColorsContext(R.style.AppTheme))
+            .setTitle(R.string.dialog_overlay_title_warning)
+            .setMessage(R.string.error_dialog_message_scenario_switch)
+            .setPositiveButton(android.R.string.ok, null)
             .create()
             .showAsOverlay()
     }

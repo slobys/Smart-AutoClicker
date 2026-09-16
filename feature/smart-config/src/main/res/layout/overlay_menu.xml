@@ -70,6 +70,12 @@
                     android:contentDescription="@string/content_desc_stop_clicker" />
 
                 <ImageButton
+                    android:id="@+id/btn_switch_scenario"
+                    style="@style/AppTheme.Overlay.FloatingMenu.Buttons"
+                    android:src="@drawable/ic_scenario_switcher"
+                    android:contentDescription="@string/content_desc_switch_scenario" />
+
+                <ImageButton
                     android:id="@+id/btn_click_list"
                     style="@style/AppTheme.Overlay.FloatingMenu.Buttons"
                     android:src="@drawable/ic_settings_filled"

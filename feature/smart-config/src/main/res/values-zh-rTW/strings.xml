@@ -15,6 +15,11 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+    <string name="content_desc_switch_scenario">切換正在執行的腳本</string>
+    <string name="dialog_title_switch_scenario">切換腳本</string>
+    <string name="dialog_message_no_switch_scenario">請至少再建立一個包含事件的情境，即可在這裡快速切換。</string>
+    <string name="item_scenario_switch_current">%1$s（目前）</string>
+    <string name="error_dialog_message_scenario_switch">無法安全地停止目前情境。請先暫停，然後再次切換。</string>
 
     <string name="generic_modify">修改</string>
 

@@ -121,6 +121,7 @@ class SmartAutoClickerService : AccessibilityService() {
                 debuggingRepository = debuggingRepository,
                 tutorialRepository = tutorialRepository,
                 onStart = ::onLocalServiceStarted,
+                onScenarioChanged = ::onLocalServiceScenarioChanged,
                 onStop = ::onLocalServiceStopped,
             )
         )
@@ -170,6 +171,10 @@ class SmartAutoClickerService : AccessibilityService() {
 
         displayConfigManager.stopMonitoring()
         bitmapManager.clearCache()
+    }
+
+    private fun onLocalServiceScenarioChanged(scenarioId: Long) {
+        tileRepository.setTileScenario(scenarioId = scenarioId, isSmart = true)
     }
 
     override fun onKeyEvent(event: KeyEvent?): Boolean =

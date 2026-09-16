@@ -16,6 +16,11 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+    <string name="content_desc_switch_scenario">Перемкнути поточний сценарій</string>
+    <string name="dialog_title_switch_scenario">Перемкнути скрипт</string>
+    <string name="dialog_message_no_switch_scenario">Створіть ще один сценарій щонайменше з однією подією, щоб користуватися перемикачем скриптів.</string>
+    <string name="item_scenario_switch_current">%1$s (поточний)</string>
+    <string name="error_dialog_message_scenario_switch">Не вдалося безпечно зупинити поточний сценарій. Призупиніть його та спробуйте перемкнути ще раз.</string>
 
     <!-- Generic =================================================================================================== -->
     <!-- Those values are shared between several dialogs due to their generic meaning, such as name -->

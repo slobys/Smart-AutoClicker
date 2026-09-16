@@ -15,6 +15,11 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+    <string name="content_desc_switch_scenario">تبديل السيناريو قيد التشغيل</string>
+    <string name="dialog_title_switch_scenario">تبديل البرنامج النصي</string>
+    <string name="dialog_message_no_switch_scenario">أنشئ سيناريو آخر يحتوي على حدث واحد على الأقل لاستخدام مبدّل البرامج النصية.</string>
+    <string name="item_scenario_switch_current">%1$s (الحالي)</string>
+    <string name="error_dialog_message_scenario_switch">تعذّر إيقاف السيناريو الحالي بأمان. حاول إيقافه مؤقتًا، ثم أعد التبديل.</string>
 
     <!-- Generic =================================================================================================== -->
     <!-- Those values are shared between several dialogs due to their generic meaning, such as name -->
