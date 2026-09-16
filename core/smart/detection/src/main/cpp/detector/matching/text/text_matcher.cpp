@@ -27,6 +27,13 @@
 
 using namespace smartautoclicker;
 
+namespace {
+    constexpr int MIN_NUMBER_DETECTION_SIDE = 384;
+    constexpr float MIN_MAPPED_NUMBER_CONFIDENCE = 0.25f;
+    constexpr float MIN_CORNER_FALLBACK_CONFIDENCE = 0.25f;
+    constexpr float SMALL_ROI_CORNER_RANKING_BONUS = 20.0f;
+}
+
 bool TextMatcher::init(const std::string& detectionModelPath, const std::map<std::string, std::string>& recognitionModels) {
     if (!recognitionModels.empty()) {
         defaultRecognitionModelId = recognitionModels.begin()->first;
@@ -97,18 +104,68 @@ TextMatchingResult* TextMatcher::matchNumber(
     }
 
     // Recognize the text in the detectionArea
-    auto recognizerResults = recognizeText(screenImage, detectionArea, defaultRecognitionModelId);
+    auto recognizerResults = recognizeNumber(
+            screenImage,
+            detectionArea,
+            defaultRecognitionModelId);
+
+    float bestRankingScore = 0.0f;
 
     // Parse results and find matching candidate, if any
     for (const auto& recognizerResult: recognizerResults) {
-        if (!isNumber(recognizerResult.text)) continue;
+        const std::string normalizedText = normalizeNumberText(recognizerResult.text);
+        if (!isNumber(normalizedText)) continue;
+
+        const bool isMappedFromLetters = normalizedText != recognizerResult.text;
+        if (isMappedFromLetters && recognizerResult.confidence < MIN_MAPPED_NUMBER_CONFIDENCE) {
+            continue;
+        }
+
+        const int shortestDetectionSide = std::min(detectionArea.width, detectionArea.height);
+        const int smallTileSize = std::max(
+                24,
+                static_cast<int>(std::round(shortestDetectionSide * 0.42)));
+        const int largeTileSize = std::max(
+                24,
+                static_cast<int>(std::round(shortestDetectionSide * 0.55)));
+        const bool isCornerFallback =
+                recognizerResult.boundingBox.width == recognizerResult.boundingBox.height &&
+                (recognizerResult.boundingBox.width == smallTileSize ||
+                 recognizerResult.boundingBox.width == largeTileSize);
+        if (isCornerFallback && recognizerResult.confidence < MIN_CORNER_FALLBACK_CONFIDENCE) {
+            continue;
+        }
 
         float score = recognizerResult.confidence * 100;
-        auto recognizedNumber = stringToDouble(recognizerResult.text, numberFormat);
-        LOGD("TextMatcher", "Score=%f; recognized=%f", score, recognizedNumber);
+        auto recognizedNumber = stringToDouble(normalizedText, numberFormat);
+        LOGD(
+                "TextMatcher",
+                "Score=%f; raw=%s; normalized=%s; recognized=%f; box=(%d,%d,%d,%d)",
+                score,
+                recognizerResult.text.c_str(),
+                normalizedText.c_str(),
+                recognizedNumber,
+                recognizerResult.boundingBox.x,
+                recognizerResult.boundingBox.y,
+                recognizerResult.boundingBox.width,
+                recognizerResult.boundingBox.height);
 
-        // Score is below the best confidence, skip
-        if (score < currentMatchingResult.getResultConfidence()) continue;
+        float rankingScore = score;
+        if (std::max(detectionArea.width, detectionArea.height) <= MIN_NUMBER_DETECTION_SIDE) {
+            const float centerX = static_cast<float>(
+                    recognizerResult.boundingBox.x + recognizerResult.boundingBox.width / 2);
+            const float centerY = static_cast<float>(
+                    recognizerResult.boundingBox.y + recognizerResult.boundingBox.height / 2);
+            const bool isBottomRightBadge =
+                    centerX >= static_cast<float>(detectionArea.width) * 0.65f &&
+                    centerY >= static_cast<float>(detectionArea.height) * 0.65f;
+            if (isBottomRightBadge) rankingScore += SMALL_ROI_CORNER_RANKING_BONUS;
+        }
+
+        // Rank tiny game-counter candidates with a conservative corner prior while keeping the
+        // recognizer confidence itself unchanged for the user's threshold check.
+        if (rankingScore < bestRankingScore) continue;
+        bestRankingScore = rankingScore;
 
         currentMatchingResult.updateResults(
                 detectionArea,
@@ -138,7 +195,8 @@ bool TextMatcher::isRoiValidForMatching(const cv::Rect& screenRoi, const cv::Rec
 std::vector<TextRecognizerResult> TextMatcher::recognizeText(
         const ScreenImage& screenImage,
         const cv::Rect& detectionArea,
-        const std::string& recognitionModelId
+        const std::string& recognitionModelId,
+        int minimumDetectionSide
 ) {
     // Get the region of interest within the screen image and convert to RGB
     cv::Mat screenCrop = screenImage.cropColor(detectionArea);
@@ -149,8 +207,113 @@ std::vector<TextRecognizerResult> TextMatcher::recognizeText(
         return {};
     }
 
-    // Find all regions containing text within the screen crop
-    auto detectorResults = textLocator->detectText(rgbScreenCrop);
+    return recognizeTextInImage(rgbScreenCrop, recognitionModelId, minimumDetectionSide);
+}
+
+std::vector<TextRecognizerResult> TextMatcher::recognizeNumber(
+        const ScreenImage& screenImage,
+        const cv::Rect& detectionArea,
+        const std::string& recognitionModelId
+) {
+    cv::Mat screenCrop = screenImage.cropColor(detectionArea);
+    cv::Mat rgbScreenCrop;
+    cv::cvtColor(screenCrop, rgbScreenCrop, cv::COLOR_RGBA2RGB);
+    if (rgbScreenCrop.empty()) {
+        LOGE("TextMatcher", "Can't get rgb screen crop for number recognition");
+        return {};
+    }
+
+    auto hasNumericCandidate = [](const std::vector<TextRecognizerResult>& results) {
+        return std::any_of(results.begin(), results.end(), [](const TextRecognizerResult& result) {
+            return isNumber(normalizeNumberText(result.text));
+        });
+    };
+
+    auto results = recognizeTextInImage(
+            rgbScreenCrop,
+            recognitionModelId,
+            MIN_NUMBER_DETECTION_SIDE);
+    if (hasNumericCandidate(results)) return results;
+
+    // Game counters are often tiny outlined glyphs rendered over colorful icons. A contrast-
+    // enhanced grayscale pass suppresses most hue changes while preserving those glyph edges.
+    cv::Mat gray;
+    cv::cvtColor(rgbScreenCrop, gray, cv::COLOR_RGB2GRAY);
+    cv::Mat enhancedGray;
+    cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
+    clahe->apply(gray, enhancedGray);
+
+    cv::Mat enhancedRgb;
+    cv::cvtColor(enhancedGray, enhancedRgb, cv::COLOR_GRAY2RGB);
+    results = recognizeTextInImage(
+            enhancedRgb,
+            recognitionModelId,
+            MIN_NUMBER_DETECTION_SIDE);
+    if (hasNumericCandidate(results)) return results;
+
+    // Last resort for low-contrast digits: local thresholding separates the outline from a
+    // non-uniform background better than a single global threshold.
+    const int minDimension = std::min(gray.cols, gray.rows);
+    int blockSize = std::min(31, minDimension % 2 == 0 ? minDimension - 1 : minDimension);
+    if (blockSize >= 3) {
+        cv::Mat binary;
+        cv::adaptiveThreshold(
+                enhancedGray,
+                binary,
+                255,
+                cv::ADAPTIVE_THRESH_GAUSSIAN_C,
+                cv::THRESH_BINARY,
+                blockSize,
+                5.0);
+        cv::Mat binaryRgb;
+        cv::cvtColor(binary, binaryRgb, cv::COLOR_GRAY2RGB);
+        results = recognizeTextInImage(
+                binaryRgb,
+                recognitionModelId,
+                MIN_NUMBER_DETECTION_SIDE);
+        if (hasNumericCandidate(results)) return results;
+    }
+
+    // The text detector can still reject a single outlined glyph when it is surrounded by a
+    // detailed icon. For small regions only, recognize two bottom-right crops where game quantity
+    // badges are conventionally rendered. Restricting this fallback to the corner avoids treating
+    // decorative icon edges as digits. This remains a last-resort path so normal numbers keep the
+    // fast detector-based flow.
+    const int shortestSide = std::min(rgbScreenCrop.cols, rgbScreenCrop.rows);
+    const int longestSide = std::max(rgbScreenCrop.cols, rgbScreenCrop.rows);
+    if (shortestSide < 28 || longestSide > MIN_NUMBER_DETECTION_SIDE) return results;
+
+    auto recognizeCorner = [&](const cv::Mat& image) {
+        std::vector<TextDetectorResult> tiles;
+        tiles.reserve(2);
+        const int edgeInset = std::max(4, static_cast<int>(std::round(shortestSide * 0.04)));
+        for (double ratio : {0.42, 0.55}) {
+            const int tileSize = std::min(
+                    shortestSide - edgeInset,
+                    std::max(24, static_cast<int>(std::round(shortestSide * ratio))));
+            const cv::Rect tileArea(
+                    image.cols - edgeInset - tileSize,
+                    image.rows - edgeInset - tileSize,
+                    tileSize,
+                    tileSize);
+            tiles.emplace_back(tileArea, image(tileArea));
+        }
+        return textRecognizer->recognizeText(recognitionModelId, tiles);
+    };
+
+    results = recognizeCorner(rgbScreenCrop);
+    if (hasNumericCandidate(results)) return results;
+
+    return recognizeCorner(enhancedRgb);
+}
+
+std::vector<TextRecognizerResult> TextMatcher::recognizeTextInImage(
+        const cv::Mat& rgbScreenCrop,
+        const std::string& recognitionModelId,
+        int minimumDetectionSide
+) {
+    // Find all regions containing text within the screen crop.
+    auto detectorResults = textLocator->detectText(rgbScreenCrop, minimumDetectionSide);
 
     // Recognize the text in the regions detected
     return textRecognizer->recognizeText(recognitionModelId, detectorResults);
@@ -266,6 +429,44 @@ bool TextMatcher::isNumber(const std::string& text) {
     }
 
     return hasDigit;
+}
+
+std::string TextMatcher::normalizeNumberText(const std::string& text) {
+    std::string normalized;
+    normalized.reserve(text.size());
+
+    for (char c : text) {
+        if (std::isdigit(static_cast<unsigned char>(c)) ||
+            c == '.' || c == ',' || c == ' ' || c == '-' || c == '+') {
+            normalized += c;
+            continue;
+        }
+
+        switch (c) {
+            case 'O': case 'o': case 'Q':
+                normalized += '0';
+                break;
+            case 'I': case 'i': case 'l': case 'L': case '|': case '!':
+                normalized += '1';
+                break;
+            case 'Z': case 'z':
+                normalized += '2';
+                break;
+            case 'S': case 's':
+                normalized += '5';
+                break;
+            case 'G': case 'g':
+                normalized += '6';
+                break;
+            case 'B': case 'b':
+                normalized += '8';
+                break;
+            default:
+                return {};
+        }
+    }
+
+    return normalized;
 }
 
 double TextMatcher::stringToDouble(const std::string& text, NumberFormat format) {

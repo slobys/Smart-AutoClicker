@@ -69,6 +69,9 @@ namespace smartautoclicker {
          */
         static bool isNumber(const std::string& text);
 
+        /** Converts common OCR letter confusions into digits for number-only conditions. */
+        static std::string normalizeNumberText(const std::string& text);
+
         /**
          * Parses a string into a double according to the given number format.
          * AUTO infers the format from the structure of the string.
@@ -89,7 +92,20 @@ namespace smartautoclicker {
         std::vector<TextRecognizerResult> recognizeText(
                 const ScreenImage& screenImage,
                 const cv::Rect& detectionArea,
+                const std::string& recognitionModelId,
+                int minimumDetectionSide = 0);
+
+        /** Runs number-specific OCR passes, including contrast enhancement for tiny game counters. */
+        std::vector<TextRecognizerResult> recognizeNumber(
+                const ScreenImage& screenImage,
+                const cv::Rect& detectionArea,
                 const std::string& recognitionModelId);
+
+        /** Runs text localization and recognition on an already prepared RGB crop. */
+        std::vector<TextRecognizerResult> recognizeTextInImage(
+                const cv::Mat& rgbScreenCrop,
+                const std::string& recognitionModelId,
+                int minimumDetectionSide);
 
         /**
          * Calculates the similarity between two strings.

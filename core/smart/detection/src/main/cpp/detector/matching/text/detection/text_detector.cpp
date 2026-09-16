@@ -16,6 +16,7 @@
  */
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/imgproc/imgproc_c.h>
+#include <cmath>
 
 #include "text_detector.hpp"
 #include "../text_matcher_debugger.hpp"
@@ -41,11 +42,22 @@ bool TextDetector::init(const std::string& modelPath) {
     return true;
 }
 
-std::vector<TextDetectorResult> TextDetector::detectText(const cv::Mat& rgbScreenCrop) {
+std::vector<TextDetectorResult> TextDetector::detectText(
+        const cv::Mat& rgbScreenCrop,
+        int minimumLongestSide
+) {
     // Resize screen image for optimal detection
-    cv::Size resizedSize = getDetectionSize(rgbScreenCrop);
+    cv::Size resizedSize = getDetectionSize(rgbScreenCrop, minimumLongestSide);
     cv::Mat resized;
-    cv::resize(rgbScreenCrop, resized,cv::Size(resizedSize.width, resizedSize.height));
+    const int interpolation =
+            resizedSize.width > rgbScreenCrop.cols ? cv::INTER_CUBIC : cv::INTER_AREA;
+    cv::resize(
+            rgbScreenCrop,
+            resized,
+            cv::Size(resizedSize.width, resizedSize.height),
+            0.0,
+            0.0,
+            interpolation);
 
     // Pad the resized image, multiple of 32 required by PaddleOCR detector
     cv::Size paddedSize = getDetectionPaddedSize(resizedSize);
@@ -83,16 +95,25 @@ std::vector<TextDetectorResult> TextDetector::detectText(const cv::Mat& rgbScree
     return results;
 }
 
-cv::Size TextDetector::getDetectionSize(const cv::Mat& rgbCondition) {
+cv::Size TextDetector::getDetectionSize(
+        const cv::Mat& rgbCondition,
+        int minimumLongestSide
+) {
     int width = rgbCondition.cols;
     int height = rgbCondition.rows;
     int maxSide = std::max(width, height);
 
-    // Scale down if needed
+    // Scale down large regions to keep inference bounded.
     if (maxSide > maxSize) {
         float scale = static_cast<float>(maxSize) / static_cast<float>(maxSide);
         width = static_cast<int>(static_cast<float>(width) * scale);
         height = static_cast<int>(static_cast<float>(height) * scale);
+    } else if (minimumLongestSide > 0 && maxSide < minimumLongestSide) {
+        // Tiny game counters can be less than 20px high. Upscale their containing region before
+        // text localization so the detector score map keeps enough pixels for a valid contour.
+        float scale = static_cast<float>(minimumLongestSide) / static_cast<float>(maxSide);
+        width = static_cast<int>(std::round(static_cast<float>(width) * scale));
+        height = static_cast<int>(std::round(static_cast<float>(height) * scale));
     }
 
     return { width, height };

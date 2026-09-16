@@ -51,7 +51,9 @@ namespace smartautoclicker {
          *
          * @return a list of of detected text boxes with their relevant crops
          */
-        std::vector<TextDetectorResult> detectText(const cv::Mat& screenCrop);
+        std::vector<TextDetectorResult> detectText(
+                const cv::Mat& screenCrop,
+                int minimumLongestSide = 0);
 
     private:
         /**
@@ -86,7 +88,9 @@ namespace smartautoclicker {
          * @param rgbCondition The input image.
          * @return The resized dimensions (bounded by maxSize).
          */
-        static cv::Size getDetectionSize(const cv::Mat& rgbCondition) ;
+        static cv::Size getDetectionSize(
+                const cv::Mat& rgbCondition,
+                int minimumLongestSide) ;
 
         /**
          * Calculates the padded size required by the NCNN model (multiples of 32).
