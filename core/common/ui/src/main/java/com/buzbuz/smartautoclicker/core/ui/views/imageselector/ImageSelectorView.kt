@@ -31,6 +31,7 @@ import androidx.core.content.res.use
 import com.buzbuz.smartautoclicker.core.display.config.DisplayConfigManager
 import com.buzbuz.smartautoclicker.core.ui.R
 import com.buzbuz.smartautoclicker.core.ui.views.viewcomponents.CaptureComponent
+import com.buzbuz.smartautoclicker.core.ui.views.viewcomponents.SELECTOR_MINIMUM_CONTENT_SIZE
 import com.buzbuz.smartautoclicker.core.ui.views.viewcomponents.SelectorComponent
 import com.buzbuz.smartautoclicker.core.ui.views.viewcomponents.base.ComponentsView
 import com.buzbuz.smartautoclicker.core.ui.views.viewcomponents.base.ViewComponent
@@ -134,8 +135,8 @@ class ImageSelectorView(
         selectorValidityTempValue.set(RectF(selector.selectedArea))
 
         val isSelectorOverCapture = selectorValidityTempValue.intersect(capture.captureArea)
-        val isBiggerThanMinimumSize = selectorValidityTempValue.width() >= CAPTURE_MINIMUM_SIZE
-                && selectorValidityTempValue.height() >= CAPTURE_MINIMUM_SIZE
+        val isBiggerThanMinimumSize = selectorValidityTempValue.width() >= SELECTOR_MINIMUM_CONTENT_SIZE
+                && selectorValidityTempValue.height() >= SELECTOR_MINIMUM_CONTENT_SIZE
 
         if ((isSelectorOverCapture && isBiggerThanMinimumSize) != isSelectorValid) {
             isSelectorValid = !isSelectorValid
@@ -217,10 +218,3 @@ class ImageSelectorView(
         return captureArea to Bitmap.createBitmap(bitmap, captureArea.left, captureArea.top, captureArea.width(), captureArea.height())
     }
 }
-
-/**
- * The minimum size of the capture.
- * Final results will not always be the size, as it is relative to the capture viewport, but we just don't want a
- * null result.
- */
-private const val CAPTURE_MINIMUM_SIZE = 50f

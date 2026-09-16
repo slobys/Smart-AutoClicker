@@ -207,8 +207,12 @@ internal class SelectorComponent(
                 x = minimumArea.width()
                 y = minimumArea.height()
             } else {
-                x = maxArea.width() * SELECTOR_MINIMUM_WIDTH_RATIO
-                y = maxArea.height() * SELECTOR_MINIMUM_HEIGHT_RATIO
+                val minimumSide = max(
+                    min(maxArea.width(), maxArea.height()) * SELECTOR_MINIMUM_SIZE_RATIO,
+                    SELECTOR_MINIMUM_CONTENT_SIZE + selectorAreaOffset * 2,
+                )
+                x = minimumSide
+                y = minimumSide
             }
         }
 
@@ -357,9 +361,9 @@ internal class SelectorComponentStyle(
     @field:ColorInt val selectorBackgroundColor: Int,
 ) : ViewStyle(displayConfigManager)
 
-/** The ratio of the maximum width to be considered as the minimum width. */
-private const val SELECTOR_MINIMUM_WIDTH_RATIO = 0.10f
-/** The ratio of the maximum height to be considered as the minimum height. */
-private const val SELECTOR_MINIMUM_HEIGHT_RATIO = 0.05f
+/** Minimum size of the selector content in pixels, before applying capture zoom. */
+internal const val SELECTOR_MINIMUM_CONTENT_SIZE = 50f
+/** Ratio of the shortest display side to be considered as the minimum selector size. */
+private const val SELECTOR_MINIMUM_SIZE_RATIO = 0.05f
 /** Ratio between the handle and the inner handle */
 private const val INNER_HANDLE_RATIO = 3f
