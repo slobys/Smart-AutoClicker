@@ -115,6 +115,32 @@ class ScalingManagerTests {
     }
 
     @Test
+    fun `small image condition should retain enough pixels for accurate matching`() {
+        // Given: quality alone would scale the 40px template down to only 8px.
+        val eventId = 1L
+        val screenSize = Point(1000, 2000)
+        val condition = createTestCondition(
+            id = 1L,
+            evtId = eventId,
+            area = Rect(100, 100, 140, 140),
+            type = WHOLE_SCREEN,
+        )
+
+        // When
+        mockDisplayConfigManager.mockDisplayConfig(screenSize)
+        val scaledScreenSize = scalingManager.startScaling(
+            quality = 400.0,
+            screenEvents = listOf(createTestEvent(eventId, listOf(condition))),
+        )
+
+        // Then: adaptive scaling keeps the shortest template side at 32px.
+        val scalingInfo = scalingManager.getScreenConditionScalingInfo(condition)
+            as ScreenConditionScalingInfo.Image
+        Assert.assertEquals(Point(800, 1600), scaledScreenSize)
+        Assert.assertEquals(Rect(80, 80, 112, 112), scalingInfo.imageArea)
+    }
+
+    @Test
     fun `scaledScreenSize should be refreshed upon refreshScaling call`() {
         // Given
         val event1Id = 1L

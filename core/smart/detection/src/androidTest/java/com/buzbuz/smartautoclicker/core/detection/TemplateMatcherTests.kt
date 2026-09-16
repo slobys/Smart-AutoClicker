@@ -17,6 +17,8 @@
 package com.buzbuz.smartautoclicker.core.detection
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.Point
 import android.graphics.Rect
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -219,6 +221,36 @@ class TemplateMatcherTests {
         assertFalse("Grayscale condition should not match color screen", result.isDetected)
     }
 
+    @Test
+    fun detection_SameGrayscaleAndAverageColor_UsesPixelColorLayout() {
+        // Given: both icons have exactly the same grayscale structure and average colors, but the
+        // first one has its red/green pixels swapped. Mean-color validation can't distinguish them.
+        val conditionBitmap = createPatternBitmap(swappedColors = false)
+        val decoyBitmap = createPatternBitmap(swappedColors = true)
+        val screenBitmap = Bitmap.createBitmap(80, 32, Bitmap.Config.ARGB_8888).apply {
+            eraseColor(Color.rgb(24, 24, 24))
+            copyBitmap(decoyBitmap, left = 4, top = 4)
+            copyBitmap(conditionBitmap, left = 48, top = 4)
+        }
+
+        // When
+        testedDetector.setScreenBitmap(screenBitmap, "")
+        val result = testedDetector.detectImage(
+            conditionBitmap = conditionBitmap,
+            conditionWidth = conditionBitmap.width,
+            conditionHeight = conditionBitmap.height,
+            detectionArea = Rect(0, 0, screenBitmap.width, screenBitmap.height),
+            threshold = TEST_DETECTION_THRESHOLD_STANDARD,
+        )
+
+        // Then: the spatial color check rejects the decoy and returns the real icon.
+        assertTrue("Image detection should find the real color layout", result.isDetected)
+        assertTrue(
+            "Image detection selected the grayscale-identical decoy at ${result.position}",
+            result.position == Point(60, 16),
+        )
+    }
+
     private fun ImageDetector.executeImageDetectionTest(
         context: Context,
         screenImage: TestImage.Screen,
@@ -245,6 +277,34 @@ class TemplateMatcherTests {
                 actualConfidence = results.confidenceRate,
             )
         }
+
+    private fun createPatternBitmap(swappedColors: Boolean): Bitmap {
+        val size = 24
+        val pixels = IntArray(size * size)
+        val red = Color.rgb(255, 0, 0)
+        // OpenCV RGBA-to-gray maps this green and pure red to the same 8-bit gray value.
+        val equalGrayGreen = Color.rgb(0, 130, 0)
+
+        for (y in 0 until size) {
+            for (x in 0 until size) {
+                val isBorder = x < 2 || y < 2 || x >= size - 2 || y >= size - 2
+                pixels[y * size + x] = if (isBorder) {
+                    if ((x + y) % 2 == 0) Color.WHITE else Color.BLACK
+                } else {
+                    val useRed = ((x / 4 + y / 4) % 2 == 0) xor swappedColors
+                    if (useRed) red else equalGrayGreen
+                }
+            }
+        }
+
+        return Bitmap.createBitmap(pixels, size, size, Bitmap.Config.ARGB_8888)
+    }
+
+    private fun Bitmap.copyBitmap(source: Bitmap, left: Int, top: Int) {
+        val pixels = IntArray(source.width * source.height)
+        source.getPixels(pixels, 0, source.width, 0, 0, source.width, source.height)
+        setPixels(pixels, 0, source.width, left, top, source.width, source.height)
+    }
 }
 
 

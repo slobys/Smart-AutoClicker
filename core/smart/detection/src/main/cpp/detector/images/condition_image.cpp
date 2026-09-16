@@ -26,12 +26,16 @@ void ConditionImage::processNewData(std::unique_ptr<cv::Mat> newData, int target
     if (newData->cols == targetWidth && newData->rows == targetHeight) {
         this->colorMat = std::move(*newData);
     } else {
+        const int interpolation =
+                targetWidth < newData->cols || targetHeight < newData->rows
+                ? cv::INTER_AREA
+                : cv::INTER_LINEAR;
         cv::resize(
                 *newData,
                 this->colorMat,
                 cv::Size(targetWidth, targetHeight),
                 0, 0,
-                cv::INTER_AREA);
+                interpolation);
     }
 
     grayValid = false;

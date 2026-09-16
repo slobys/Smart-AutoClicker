@@ -41,16 +41,18 @@ class ScalingManager @Inject constructor(
 
     internal fun startScaling(quality: Double, screenEvents: List<ScreenEvent>): Point {
         detectionQuality = quality
+        val screenConditions = screenEvents.toConditionsList()
 
-        val scaledScreenSize = refreshScalingMetrics()
-        refreshScalingData(scaledScreenSize, screenEvents.toConditionsList())
+        val scaledScreenSize = refreshScalingMetrics(screenConditions)
+        refreshScalingData(scaledScreenSize, screenConditions)
 
         return scaledScreenSize
     }
 
     internal fun refreshScaling(): Point {
-        val scaledScreenSize = refreshScalingMetrics()
-        refreshScalingData(scaledScreenSize, conditionScalingInfo.values.map { it.screenCondition })
+        val screenConditions = conditionScalingInfo.values.map { it.screenCondition }
+        val scaledScreenSize = refreshScalingMetrics(screenConditions)
+        refreshScalingData(scaledScreenSize, screenConditions)
 
         return scaledScreenSize
     }
@@ -69,18 +71,29 @@ class ScalingManager @Inject constructor(
         result.scaleUp()
 
 
-    private fun refreshScalingMetrics(): Point {
+    private fun refreshScalingMetrics(screenConditions: List<ScreenCondition> = emptyList()): Point {
         val displaySize: Point = displayConfigManager.displayConfig.sizePx
         val biggestScreenSideSize: Int = max(displaySize.x, displaySize.y)
-
-        scalingRatio =
+        val qualityRatio =
             if (biggestScreenSideSize <= detectionQuality) 1.0
             else detectionQuality / biggestScreenSideSize
 
+        val smallestImageSide = screenConditions
+            .asSequence()
+            .filterIsInstance<ScreenCondition.Image>()
+            .map { minOf(it.area.width(), it.area.height()) }
+            .filter { it > 0 }
+            .minOrNull()
+        val minimumImageRatio = smallestImageSide?.let { imageSide ->
+            (MIN_SCALED_IMAGE_SIDE / imageSide.toDouble()).coerceAtMost(1.0)
+        } ?: 0.0
+
+        scalingRatio = max(qualityRatio, minimumImageRatio)
+
         val scaledScreenSize = displaySize.scaleDown()
 
-        Log.i(TAG, "Scaling metrics refreshed: ratio=$scalingRatio, screenSize=$displaySize, " +
-                "scaledScreenSize=$scaledScreenSize")
+        Log.i(TAG, "Scaling metrics refreshed: ratio=$scalingRatio, qualityRatio=$qualityRatio, " +
+                "smallestImageSide=$smallestImageSide, screenSize=$displaySize, scaledScreenSize=$scaledScreenSize")
 
         return scaledScreenSize
     }
@@ -154,4 +167,6 @@ class ScalingManager @Inject constructor(
 }
 
 private const val QUALITY_MAX = 10000.0
+/** Keep small image templates detailed enough for reliable matching after screen downscaling. */
+private const val MIN_SCALED_IMAGE_SIDE = 32.0
 private const val TAG = "ScalingManager"

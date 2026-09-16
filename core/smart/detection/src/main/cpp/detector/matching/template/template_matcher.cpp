@@ -128,9 +128,10 @@ void TemplateMatcher::parseMatchingResult(
         // Check if result area is valid. If not, check next possible match
         if (!isRoiBiggerOrEquals(screenImage.getRoi(), currentMatchingResult.getResultArea())) continue;
 
-        // Check if the colors are matching in the candidate area.
-        cv::Mat hsvCrop = screenImage.cropHsv(currentMatchingResult.getResultArea());
-        double colorDiff = getColorDiff(hsvCrop, condition.getHsvMean());
+        // Validate the spatial color layout, not only the average color. Two different icons can
+        // have the same grayscale structure and mean HSV values while their colored pixels differ.
+        cv::Mat colorCrop = screenImage.cropColor(currentMatchingResult.getResultArea());
+        double colorDiff = getPixelColorDiff(colorCrop, condition.getColorMat());
 
         // If the colors are OK, the result is valid
         if (colorDiff <= threshold) currentMatchingResult.markResultAsDetected();
@@ -141,17 +142,21 @@ bool TemplateMatcher::isConfidenceValid(double confidence, int threshold) {
     return confidence > ((100.0 - threshold) / 100.0);
 }
 
-double TemplateMatcher::getColorDiff(const cv::Mat& hsvImage, const cv::Scalar& conditionHsvMean) {
-    cv::Scalar imageHsvMean = cv::mean(hsvImage);
+double TemplateMatcher::getPixelColorDiff(const cv::Mat& image, const cv::Mat& condition) {
+    if (image.empty() || condition.empty() || image.size() != condition.size() || image.type() != condition.type()) {
+        return 100.0;
+    }
 
-    // Compute shortest arc distance (H channel is circular [0, 180] in OpenCV)
-    double hDiff = std::abs(imageHsvMean.val[0] - conditionHsvMean.val[0]);
-    if (hDiff > 90.0) hDiff = 180.0 - hDiff;
+    cv::Mat difference;
+    cv::absdiff(image, condition, difference);
+    const cv::Scalar meanDifference = cv::mean(difference);
+    const int comparedChannels = std::min(3, image.channels());
+    if (comparedChannels <= 0) return 100.0;
 
-    // S and V channels are linear [0, 255]
-    double sDiff = std::abs(imageHsvMean.val[1] - conditionHsvMean.val[1]);
-    double vDiff = std::abs(imageHsvMean.val[2] - conditionHsvMean.val[2]);
+    double totalDifference = 0.0;
+    for (int channel = 0; channel < comparedChannels; ++channel) {
+        totalDifference += meanDifference.val[channel];
+    }
 
-    // Normalize each channel to [0, 100] then average
-    return ((hDiff / 90.0) + (sDiff / 255.0) + (vDiff / 255.0)) * (100.0 / 3.0);
+    return totalDifference * (100.0 / (255.0 * comparedChannels));
 }
