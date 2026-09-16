@@ -49,6 +49,20 @@ class ScreenEventStabilityTrackerTests {
     }
 
     @Test
+    fun `strong positive frame should be confirmed immediately`() {
+        val tracker = ScreenEventStabilityTracker(requiredHits = 2, windowSize = 3)
+
+        assertTrue(tracker.isConfirmed(eventId = 1L, isFulfilled = true, isStrongMatch = true))
+    }
+
+    @Test
+    fun `strong flag should not confirm an unfulfilled frame`() {
+        val tracker = ScreenEventStabilityTracker(requiredHits = 2, windowSize = 3)
+
+        assertFalse(tracker.isConfirmed(eventId = 1L, isFulfilled = false, isStrongMatch = true))
+    }
+
+    @Test
     fun `reset should discard previous positive frames`() {
         val tracker = ScreenEventStabilityTracker(requiredHits = 2, windowSize = 3)
 

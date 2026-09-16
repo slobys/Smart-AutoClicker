@@ -59,6 +59,7 @@ internal class ScenarioProcessor(
     private val progressListener: SmartProcessingListener?,
     screenEventConfirmationHits: Int = 1,
     screenEventConfirmationWindow: Int = 3,
+    private val strongSingleFrameConfidence: Double = 101.0,
 ) {
 
     /** Handle the processing state of the scenario. */
@@ -195,7 +196,11 @@ internal class ScenarioProcessor(
                 val isFulfilled = results.fulfilled == true
                 val isConfirmed =
                     if (screenEvent.conditions.any { it is ScreenCondition.Image }) {
-                        screenEventStabilityTracker.isConfirmed(eventId, isFulfilled)
+                        screenEventStabilityTracker.isConfirmed(
+                            eventId = eventId,
+                            isFulfilled = isFulfilled,
+                            isStrongMatch = isFulfilled && results.isStrongPositiveImageMatch(),
+                        )
                     } else {
                         screenEventStabilityTracker.reset(eventId)
                         isFulfilled
@@ -217,6 +222,23 @@ internal class ScenarioProcessor(
         } finally {
             // We are done processing this frame, release it
             imageDetector.releaseScreenBitmap(screenFrame)
+        }
+    }
+
+    /**
+     * A very high-confidence positive image match can be trusted immediately. This keeps fast-
+     * moving targets from disappearing before a second frame is processed, while negative-image
+     * conditions and ordinary-confidence matches still use the multi-frame stability filter.
+     */
+    private fun ConditionsResults.isStrongPositiveImageMatch(): Boolean {
+        val imageResults = getAllScreenConditionsResults()
+            .filter { it.condition is ScreenCondition.Image }
+
+        return imageResults.isNotEmpty() && imageResults.all { result ->
+            result.condition.shouldBeDetected &&
+                    result.isFulfilled &&
+                    result.haveBeenDetected &&
+                    result.confidenceRate >= strongSingleFrameConfidence
         }
     }
 }

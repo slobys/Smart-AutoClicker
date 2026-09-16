@@ -92,7 +92,6 @@ class ScenarioProcessorTests {
         private val TEST_CONDITION_AREA_3 = Rect(8 , 9, 10, 11)
         private const val TEST_CONDITION_THRESHOLD_3 = 3
 
-        private val TEST_DETECTION_OK = DetectionResult(true)
         private val TEST_DETECTION_KO = DetectionResult(false)
 
         private fun newDefaultClickAction(duration: Long = 1) =
@@ -135,13 +134,14 @@ class ScenarioProcessorTests {
         @DetectionType detectionType: Int,
         shouldBeOnScreen: Boolean,
         isDetected: Boolean,
+        confidenceRate: Double = 0.0,
     ) : ScreenCondition.Image = runBlocking {
         val condition = newCondition(path, area, threshold, detectionType, shouldBeOnScreen)
         val conditionBitmap = mock(Bitmap::class.java)
 
         mockWhen(mockBitmapSupplier.getBitmap(condition.path, area.width(), area.height())).thenReturn(conditionBitmap)
 
-        val pass = if (isDetected) TEST_DETECTION_OK else TEST_DETECTION_KO
+        val pass = if (isDetected) DetectionResult(true, confidenceRate) else TEST_DETECTION_KO
         mockWhen(mockImageDetector.detectImage(eq(conditionBitmap), anyInt(),anyInt(), anyNotNull(), anyInt())).thenReturn(pass)
         mockWhen(mockScalingManager.getScreenConditionScalingInfo(condition))
             .thenReturn(ScreenConditionScalingInfo.Image(condition, area, area))
@@ -167,6 +167,7 @@ class ScenarioProcessorTests {
         events: List<ScreenEvent>,
         triggerEvent: List<TriggerEvent>,
         screenEventConfirmationHits: Int = 1,
+        strongSingleFrameConfidence: Double = 101.0,
     ) : ScenarioProcessor {
         val processor = ScenarioProcessor(
             processingTag = "",
@@ -181,6 +182,7 @@ class ScenarioProcessorTests {
             onStopRequested = mockEndListener::onStopRequested,
             progressListener = mockProgressListener,
             screenEventConfirmationHits = screenEventConfirmationHits,
+            strongSingleFrameConfidence = strongSingleFrameConfidence,
         )
 
         Mockito.clearInvocations(mockAndroidExecutor)
@@ -330,6 +332,36 @@ class ScenarioProcessorTests {
         verifyNoInteractions(mockAndroidExecutor, mockEndListener)
 
         scenarioProcessor.process(mockScreenBitmap)
+        assertActionGesture(expectedDuration = 1L)
+        verifyNoInteractions(mockEndListener)
+    }
+
+    @Test
+    fun oneCondition_strongExactMatch_triggersOnFirstFrameWhenStabilityEnabled() = runTest {
+        val condition = createTestCondition(
+            TEST_CONDITION_PATH_1,
+            TEST_CONDITION_AREA_1,
+            TEST_CONDITION_THRESHOLD_1,
+            EXACT,
+            isDetected = true,
+            shouldBeOnScreen = true,
+            confidenceRate = 98.5,
+        )
+        val event = newEvent(
+            operator = AND,
+            conditions = listOf(condition),
+            actions = listOf(newDefaultClickAction()),
+        )
+
+        scenarioProcessor = createNewScenarioProcessor(
+            events = listOf(event),
+            triggerEvent = emptyList(),
+            screenEventConfirmationHits = 2,
+            strongSingleFrameConfidence = 98.0,
+        )
+
+        scenarioProcessor.process(mockScreenBitmap)
+
         assertActionGesture(expectedDuration = 1L)
         verifyNoInteractions(mockEndListener)
     }

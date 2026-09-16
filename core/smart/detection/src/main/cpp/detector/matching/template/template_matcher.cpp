@@ -16,6 +16,7 @@
  */
 
 #include <algorithm>
+#include <cmath>
 
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/imgproc/imgproc_c.h>
@@ -35,6 +36,7 @@ namespace {
     constexpr double SHAPE_SCORE_WEIGHT = 0.55;
     constexpr double EDGE_SCORE_WEIGHT = 0.30;
     constexpr double COLOR_SCORE_WEIGHT = 0.15;
+    constexpr int MIN_MOTION_TEMPLATE_SIDE = 12;
 
     struct ScoredCandidate {
         bool valid = false;
@@ -95,17 +97,73 @@ void TemplateMatcher::matchTemplate(
         return;
     }
 
-    // Initialize result mat
+    if (runMatchingPass(
+            screenImage,
+            screenCroppedGrayMat,
+            condition.getGrayMat(),
+            condition.getColorMat(),
+            detectionArea,
+            threshold)) {
+        return;
+    }
+
+    // During a swipe, Android can capture an intermediate frame where the target is directionally
+    // blurred. Keep the exact pass authoritative, then try small horizontal and vertical motion-
+    // blurred condition variants only as a fallback. This preserves static-image precision and
+    // avoids globally loosening the user's tolerated-difference threshold.
+    if (std::min(condition.getGrayMat().cols, condition.getGrayMat().rows) < MIN_MOTION_TEMPLATE_SIDE) {
+        return;
+    }
+
+    int blurLength = std::clamp(
+            static_cast<int>(std::round(
+                    static_cast<double>(std::min(condition.getGrayMat().cols, condition.getGrayMat().rows)) * 0.08)),
+            5,
+            9);
+    if (blurLength % 2 == 0) ++blurLength;
+
+    for (const cv::Size& blurKernel : {cv::Size(blurLength, 1), cv::Size(1, blurLength)}) {
+        cv::Mat blurredConditionGray;
+        cv::Mat blurredConditionColor;
+        cv::blur(condition.getGrayMat(), blurredConditionGray, blurKernel);
+        cv::blur(condition.getColorMat(), blurredConditionColor, blurKernel);
+
+        currentMatchingResult.reset();
+        if (runMatchingPass(
+                screenImage,
+                screenCroppedGrayMat,
+                blurredConditionGray,
+                blurredConditionColor,
+                detectionArea,
+                threshold)) {
+            LOGD(
+                    "TemplateMatcher",
+                    "Motion-blur fallback matched with kernel %dx%d",
+                    blurKernel.width,
+                    blurKernel.height);
+            return;
+        }
+    }
+}
+
+bool TemplateMatcher::runMatchingPass(
+        const ScreenImage& screenImage,
+        const cv::Mat& screenCroppedGray,
+        const cv::Mat& conditionGray,
+        const cv::Mat& conditionColor,
+        const cv::Rect& detectionArea,
+        int threshold
+) {
     cv::Mat newResultsMat = cv::Mat(
-            std::max(screenCroppedGrayMat.rows - condition.getGrayMat().rows + 1, 0),
-            std::max(screenCroppedGrayMat.cols - condition.getGrayMat().cols + 1, 0),
+            std::max(screenCroppedGray.rows - conditionGray.rows + 1, 0),
+            std::max(screenCroppedGray.cols - conditionGray.cols + 1, 0),
             CV_32F);
 
     try {
         // Run OpenCv template matching
         cv::matchTemplate(
-                screenCroppedGrayMat,
-                condition.getGrayMat(),
+                screenCroppedGray,
+                conditionGray,
                 newResultsMat,
                 cv::TM_CCOEFF_NORMED);
     } catch (const cv::Exception& e) {
@@ -120,12 +178,20 @@ void TemplateMatcher::matchTemplate(
     } // Rethrow the Exceptions to be caught by the JNI wrapper
 
     // Parse result Mat to check for matching
-    parseMatchingResult(screenImage, condition, detectionArea, threshold, newResultsMat);
+    parseMatchingResult(
+            screenImage,
+            conditionGray,
+            conditionColor,
+            detectionArea,
+            threshold,
+            newResultsMat);
+    return currentMatchingResult.isDetected();
 }
 
 void TemplateMatcher::parseMatchingResult(
         const ScreenImage& screenImage,
-        const ConditionImage& condition,
+        const cv::Mat& conditionGray,
+        const cv::Mat& conditionColor,
         const cv::Rect& detectionArea,
         int threshold,
         cv::Mat& matchingResult
@@ -139,14 +205,14 @@ void TemplateMatcher::parseMatchingResult(
         // Mark previous results as invalid, if any
         if (!currentMatchingResult.getResultArea().empty()) {
             currentMatchingResult.invalidateCurrentResult(
-                    condition.getGrayMat(),
+                    conditionGray,
                     matchingResult);
         }
 
         // Look for new best match
         currentMatchingResult.updateResults(
                 detectionArea,
-                condition.getGrayMat(),
+                conditionGray,
                 matchingResult);
 
         // Check if the highest result is above threshold. If not, we will never find.
@@ -159,11 +225,11 @@ void TemplateMatcher::parseMatchingResult(
         // Validate the spatial color layout, not only the average color. Two different icons can
         // have the same grayscale structure and mean HSV values while their colored pixels differ.
         cv::Mat colorCrop = screenImage.cropColor(currentMatchingResult.getResultArea());
-        const double colorDifference = getPixelColorDiff(colorCrop, condition.getColorMat());
+        const double colorDifference = getPixelColorDiff(colorCrop, conditionColor);
         if (colorDifference > maxColorDifference) continue;
 
         const cv::Mat grayCrop = screenImage.cropGray(currentMatchingResult.getResultArea());
-        const double edgeSimilarity = getEdgeSimilarity(grayCrop, condition.getGrayMat());
+        const double edgeSimilarity = getEdgeSimilarity(grayCrop, conditionGray);
         const double colorSimilarity = std::max(0.0, 1.0 - colorDifference / 100.0);
         const double compositeScore =
                 shapeConfidence * SHAPE_SCORE_WEIGHT +

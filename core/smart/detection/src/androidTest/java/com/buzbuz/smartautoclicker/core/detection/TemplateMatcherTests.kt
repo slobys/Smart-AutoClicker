@@ -306,6 +306,64 @@ class TemplateMatcherTests {
         assertFalse("Uniform templates should not be accepted as image conditions", result.isDetected)
     }
 
+    @Test
+    fun detection_HorizontalMotionBlur_UsesTolerantFallback() {
+        assertMotionBlurredConditionDetected(horizontal = true)
+    }
+
+    @Test
+    fun detection_VerticalMotionBlur_UsesTolerantFallback() {
+        assertMotionBlurredConditionDetected(horizontal = false)
+    }
+
+    @Test
+    fun detection_MotionBlurredColorDecoy_IsRejected() {
+        val conditionBitmap = createPatternBitmap(swappedColors = false)
+        val blurredDecoy = createMotionBlurredBitmap(
+            source = createPatternBitmap(swappedColors = true),
+            horizontal = true,
+        )
+        val screenBitmap = Bitmap.createBitmap(64, 40, Bitmap.Config.ARGB_8888).apply {
+            eraseColor(Color.rgb(24, 24, 24))
+            copyBitmap(blurredDecoy, left = 20, top = 8)
+        }
+
+        testedDetector.setScreenBitmap(screenBitmap, "")
+        val result = testedDetector.detectImage(
+            conditionBitmap = conditionBitmap,
+            conditionWidth = conditionBitmap.width,
+            conditionHeight = conditionBitmap.height,
+            detectionArea = Rect(0, 0, screenBitmap.width, screenBitmap.height),
+            threshold = 4,
+        )
+
+        assertFalse("Motion fallback should reject a different color layout", result.isDetected)
+    }
+
+    private fun assertMotionBlurredConditionDetected(horizontal: Boolean) {
+        val conditionBitmap = createScoringPatternBitmap(brightnessOffset = 0)
+        val blurredBitmap = createMotionBlurredBitmap(conditionBitmap, horizontal)
+        val screenBitmap = Bitmap.createBitmap(80, 48, Bitmap.Config.ARGB_8888).apply {
+            eraseColor(Color.rgb(20, 20, 20))
+            copyBitmap(blurredBitmap, left = 28, top = 12)
+        }
+
+        testedDetector.setScreenBitmap(screenBitmap, "")
+        val result = testedDetector.detectImage(
+            conditionBitmap = conditionBitmap,
+            conditionWidth = conditionBitmap.width,
+            conditionHeight = conditionBitmap.height,
+            detectionArea = Rect(0, 0, screenBitmap.width, screenBitmap.height),
+            threshold = 4,
+        )
+
+        assertTrue(
+            "Image detection should tolerate ${if (horizontal) "horizontal" else "vertical"} motion blur",
+            result.isDetected,
+        )
+        assertTrue("Motion-blurred target position is wrong: ${result.position}", result.position == Point(40, 24))
+    }
+
     private fun ImageDetector.executeImageDetectionTest(
         context: Context,
         screenImage: TestImage.Screen,
@@ -380,6 +438,46 @@ class TemplateMatcherTests {
         }
 
         return Bitmap.createBitmap(pixels, size, size, Bitmap.Config.ARGB_8888)
+    }
+
+    private fun createMotionBlurredBitmap(source: Bitmap, horizontal: Boolean): Bitmap {
+        val sourcePixels = IntArray(source.width * source.height)
+        val blurredPixels = IntArray(sourcePixels.size)
+        source.getPixels(sourcePixels, 0, source.width, 0, 0, source.width, source.height)
+
+        for (y in 0 until source.height) {
+            for (x in 0 until source.width) {
+                var red = 0
+                var green = 0
+                var blue = 0
+                var sampleCount = 0
+
+                for (offset in -2..2) {
+                    val sampleX = if (horizontal) x + offset else x
+                    val sampleY = if (horizontal) y else y + offset
+                    if (sampleX !in 0 until source.width || sampleY !in 0 until source.height) continue
+
+                    val color = sourcePixels[sampleY * source.width + sampleX]
+                    red += Color.red(color)
+                    green += Color.green(color)
+                    blue += Color.blue(color)
+                    sampleCount++
+                }
+
+                blurredPixels[y * source.width + x] = Color.rgb(
+                    red / sampleCount,
+                    green / sampleCount,
+                    blue / sampleCount,
+                )
+            }
+        }
+
+        return Bitmap.createBitmap(
+            blurredPixels,
+            source.width,
+            source.height,
+            Bitmap.Config.ARGB_8888,
+        )
     }
 
     private fun Bitmap.copyBitmap(source: Bitmap, left: Int, top: Int) {

@@ -33,10 +33,19 @@ namespace smartautoclicker {
 
         void parseMatchingResult(
                 const ScreenImage& screenImage,
-                const ConditionImage& condition,
+                const cv::Mat& conditionGray,
+                const cv::Mat& conditionColor,
                 const cv::Rect& detectionArea,
                 int threshold,
                 cv::Mat& matchingResult);
+
+        bool runMatchingPass(
+                const ScreenImage& screenImage,
+                const cv::Mat& screenCroppedGray,
+                const cv::Mat& conditionGray,
+                const cv::Mat& conditionColor,
+                const cv::Rect& detectionArea,
+                int threshold);
 
         static bool isShapeConfidenceValid(double confidence, int threshold);
         static double getMaxColorDifference(int threshold);

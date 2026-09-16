@@ -29,7 +29,12 @@ internal class ScreenEventStabilityTracker(
         require(requiredHits in 1..windowSize) { "requiredHits must be within the window" }
     }
 
-    fun isConfirmed(eventId: Long, isFulfilled: Boolean): Boolean {
+    fun isConfirmed(eventId: Long, isFulfilled: Boolean, isStrongMatch: Boolean = false): Boolean {
+        if (isFulfilled && isStrongMatch) {
+            histories.remove(eventId)
+            return true
+        }
+
         val history = histories.getOrPut(eventId) { ArrayDeque(windowSize) }
         if (history.size == windowSize) history.removeFirst()
         history.addLast(isFulfilled)
