@@ -22,6 +22,7 @@ import androidx.annotation.VisibleForTesting
 
 import com.buzbuz.smartautoclicker.core.common.actions.AndroidActionExecutor
 import com.buzbuz.smartautoclicker.core.detection.ImageDetector
+import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
 import com.buzbuz.smartautoclicker.core.domain.model.counter.Counter
 import com.buzbuz.smartautoclicker.core.domain.model.event.ScreenEvent
 import com.buzbuz.smartautoclicker.core.domain.model.event.TriggerEvent
@@ -56,6 +57,8 @@ internal class ScenarioProcessor(
     unblockWorkaroundEnabled: Boolean = false,
     private val onStopRequested: () -> Unit,
     private val progressListener: SmartProcessingListener?,
+    screenEventConfirmationHits: Int = 1,
+    screenEventConfirmationWindow: Int = 3,
 ) {
 
     /** Handle the processing state of the scenario. */
@@ -80,12 +83,19 @@ internal class ScenarioProcessor(
         randomize = randomize,
         unblockWorkaroundEnabled = unblockWorkaroundEnabled,
     )
+    /** Filters one-frame visual glitches before actions are executed. */
+    private val screenEventStabilityTracker = ScreenEventStabilityTracker(
+        requiredHits = screenEventConfirmationHits,
+        windowSize = screenEventConfirmationWindow,
+    )
 
     fun onScenarioStart(context: Context) {
+        screenEventStabilityTracker.resetAll()
         processingState.onProcessingStarted(context)
     }
 
     fun onScenarioEnd() {
+        screenEventStabilityTracker.resetAll()
         processingState.onProcessingStopped()
     }
 
@@ -156,14 +166,25 @@ internal class ScenarioProcessor(
         try {
             // Check all events
             for (screenEvent in processingState.getScreenEvents()) {
+                val eventId = screenEvent.id.databaseId
+
                 // Enabled state of the event might have changed during the loop
-                if (!processingState.isEventEnabled(screenEvent.id.databaseId)) continue
+                if (!processingState.isEventEnabled(eventId)) {
+                    screenEventStabilityTracker.reset(eventId)
+                    continue
+                }
 
                 // No conditions ? This should not happen, skip this event
-                if (screenEvent.conditions.isEmpty()) continue
+                if (screenEvent.conditions.isEmpty()) {
+                    screenEventStabilityTracker.reset(eventId)
+                    continue
+                }
 
                 // Event is under cooldown, skip it
-                if (processingState.isCooldownRunning(screenEvent)) continue
+                if (processingState.isCooldownRunning(screenEvent)) {
+                    screenEventStabilityTracker.reset(eventId)
+                    continue
+                }
 
                 progressListener?.onEventProcessingStarted(screenEvent)
                 val results = conditionsVerifier.verifyConditions(
@@ -171,11 +192,21 @@ internal class ScenarioProcessor(
                     conditions = screenEvent.conditions,
                 )
 
-                progressListener?.onEventProcessingCompleted(screenEvent, results.fulfilled == true, results.getAllScreenConditionsResults())
-                if (results.fulfilled == true) {
+                val isFulfilled = results.fulfilled == true
+                val isConfirmed =
+                    if (screenEvent.conditions.any { it is ScreenCondition.Image }) {
+                        screenEventStabilityTracker.isConfirmed(eventId, isFulfilled)
+                    } else {
+                        screenEventStabilityTracker.reset(eventId)
+                        isFulfilled
+                    }
+
+                progressListener?.onEventProcessingCompleted(screenEvent, isConfirmed, results.getAllScreenConditionsResults())
+                if (isConfirmed) {
                     actionExecutor.executeActions(screenEvent, results)
                     progressListener?.onEventActionsExecuted(screenEvent, results.getAllScreenConditionsResults())
 
+                    screenEventStabilityTracker.resetAll()
                     processingState.startCooldownIfNeeded(screenEvent)
                     if (!screenEvent.keepDetecting) break
                 }

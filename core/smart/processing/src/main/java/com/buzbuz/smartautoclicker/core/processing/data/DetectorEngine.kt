@@ -265,6 +265,8 @@ class DetectorEngine @Inject constructor(
                 unblockWorkaroundEnabled = settingsRepository.isInputBlockWorkaroundEnabled(),
                 onStopRequested = { stopDetection() },
                 progressListener  = if (liveDebugging || generateReport) debuggingListener else null,
+                screenEventConfirmationHits = SCREEN_EVENT_CONFIRMATION_HITS,
+                screenEventConfirmationWindow = SCREEN_EVENT_CONFIRMATION_WINDOW,
             )
             scenarioProcessor?.onScenarioStart(context)
 
@@ -470,6 +472,10 @@ private const val ONE_SECOND_IN_NANO = 1000000000L
 private const val ONE_MILLISECOND_IN_NANO = 1000000L
 /** The default minimal processing duration in nanoseconds. */
 private const val DEFAULT_MIN_PROCESSING_DURATION_NS = ONE_MILLISECOND_IN_NANO
+
+/** Require two positive detections among the last three processed frames before executing actions. */
+private const val SCREEN_EVENT_CONFIRMATION_HITS = 2
+private const val SCREEN_EVENT_CONFIRMATION_WINDOW = 3
 
 /** Tag for logs. */
 private const val TAG = "DetectorEngine"

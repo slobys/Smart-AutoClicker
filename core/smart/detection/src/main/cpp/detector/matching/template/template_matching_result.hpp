@@ -39,7 +39,7 @@ namespace smartautoclicker {
                 const cv::Rect& detectionArea,
                 const cv::Mat& condition,
                 cv::Mat& matchingResults);
-        void markResultAsDetected();
+        void setDetectedResult(const cv::Rect& resultArea, double confidence);
         void reset();
 
         [[nodiscard]] bool isDetected() const override;

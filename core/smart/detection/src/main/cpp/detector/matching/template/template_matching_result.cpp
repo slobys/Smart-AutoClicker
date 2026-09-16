@@ -37,7 +37,11 @@ void TemplateMatchingResult::updateResults(
     centerY = area.y + ((int) (area.height / 2));
 }
 
-void TemplateMatchingResult::markResultAsDetected() {
+void TemplateMatchingResult::setDetectedResult(const cv::Rect& resultArea, double confidence) {
+    area = resultArea;
+    maxVal = confidence;
+    centerX = area.x + (area.width / 2);
+    centerY = area.y + (area.height / 2);
     detected = true;
 }
 

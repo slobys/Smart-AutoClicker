@@ -251,6 +251,61 @@ class TemplateMatcherTests {
         )
     }
 
+    @Test
+    fun detection_MultipleValidCandidates_SelectsBestCompositeScore() {
+        // Given: the first candidate differs only by a small uniform brightness offset. Both pass
+        // the shape and color gates, but the exact candidate has the better composite score.
+        val conditionBitmap = createScoringPatternBitmap(brightnessOffset = 0)
+        val brightnessShiftedDecoy = createScoringPatternBitmap(brightnessOffset = 8)
+        val screenBitmap = Bitmap.createBitmap(80, 32, Bitmap.Config.ARGB_8888).apply {
+            eraseColor(Color.rgb(20, 20, 20))
+            copyBitmap(brightnessShiftedDecoy, left = 4, top = 4)
+            copyBitmap(conditionBitmap, left = 48, top = 4)
+        }
+
+        // When
+        testedDetector.setScreenBitmap(screenBitmap, "")
+        val result = testedDetector.detectImage(
+            conditionBitmap = conditionBitmap,
+            conditionWidth = conditionBitmap.width,
+            conditionHeight = conditionBitmap.height,
+            detectionArea = Rect(0, 0, screenBitmap.width, screenBitmap.height),
+            threshold = TEST_DETECTION_THRESHOLD_STANDARD,
+        )
+
+        // Then
+        assertTrue("Image detection should find a candidate", result.isDetected)
+        assertTrue(
+            "Image detection selected the merely acceptable candidate at ${result.position}",
+            result.position == Point(60, 16),
+        )
+    }
+
+    @Test
+    fun detection_UniformTemplate_IsRejectedAsLowInformation() {
+        // Given: normalized correlation is undefined for a constant template and can otherwise
+        // produce a false perfect match.
+        val conditionBitmap = Bitmap.createBitmap(24, 24, Bitmap.Config.ARGB_8888).apply {
+            eraseColor(Color.rgb(80, 120, 160))
+        }
+        val screenBitmap = Bitmap.createBitmap(64, 40, Bitmap.Config.ARGB_8888).apply {
+            eraseColor(Color.rgb(80, 120, 160))
+        }
+
+        // When
+        testedDetector.setScreenBitmap(screenBitmap, "")
+        val result = testedDetector.detectImage(
+            conditionBitmap = conditionBitmap,
+            conditionWidth = conditionBitmap.width,
+            conditionHeight = conditionBitmap.height,
+            detectionArea = Rect(0, 0, screenBitmap.width, screenBitmap.height),
+            threshold = TEST_DETECTION_THRESHOLD_STANDARD,
+        )
+
+        // Then
+        assertFalse("Uniform templates should not be accepted as image conditions", result.isDetected)
+    }
+
     private fun ImageDetector.executeImageDetectionTest(
         context: Context,
         screenImage: TestImage.Screen,
@@ -294,6 +349,33 @@ class TemplateMatcherTests {
                     val useRed = ((x / 4 + y / 4) % 2 == 0) xor swappedColors
                     if (useRed) red else equalGrayGreen
                 }
+            }
+        }
+
+        return Bitmap.createBitmap(pixels, size, size, Bitmap.Config.ARGB_8888)
+    }
+
+    private fun createScoringPatternBitmap(brightnessOffset: Int): Bitmap {
+        val size = 24
+        val pixels = IntArray(size * size)
+
+        fun shiftedColor(red: Int, green: Int, blue: Int): Int = Color.rgb(
+            red + brightnessOffset,
+            green + brightnessOffset,
+            blue + brightnessOffset,
+        )
+
+        for (y in 0 until size) {
+            for (x in 0 until size) {
+                val color = when {
+                    x < 3 || y < 3 || x >= size - 3 || y >= size - 3 ->
+                        shiftedColor(70, 90, 130)
+                    (x / 4 + y / 4) % 2 == 0 ->
+                        shiftedColor(180, 45, 55)
+                    else ->
+                        shiftedColor(45, 135, 70)
+                }
+                pixels[y * size + x] = color
             }
         }
 

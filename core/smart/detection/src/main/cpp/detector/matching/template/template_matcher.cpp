@@ -15,6 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <algorithm>
+
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/imgproc/imgproc_c.h>
 
@@ -24,6 +26,23 @@
 
 
 using namespace smartautoclicker;
+
+namespace {
+    constexpr int MAX_CANDIDATE_COUNT = 5;
+    constexpr double MIN_TEMPLATE_STDDEV = 5.0;
+    constexpr double MIN_COLOR_DIFFERENCE = 5.0;
+    constexpr double MAX_COLOR_DIFFERENCE = 30.0;
+    constexpr double SHAPE_SCORE_WEIGHT = 0.55;
+    constexpr double EDGE_SCORE_WEIGHT = 0.30;
+    constexpr double COLOR_SCORE_WEIGHT = 0.15;
+
+    struct ScoredCandidate {
+        bool valid = false;
+        cv::Rect area;
+        double shapeConfidence = 0.0;
+        double compositeScore = 0.0;
+    };
+}
 
 
 void TemplateMatcher::reset() {
@@ -71,6 +90,11 @@ void TemplateMatcher::matchTemplate(
         return;
     }
 
+    if (!isTemplateInformative(condition.getGrayMat())) {
+        LOGW("TemplateMatcher", "Image condition does not contain enough visual information.");
+        return;
+    }
+
     // Initialize result mat
     cv::Mat newResultsMat = cv::Mat(
             std::max(screenCroppedGrayMat.rows - condition.getGrayMat().rows + 1, 0),
@@ -107,7 +131,10 @@ void TemplateMatcher::parseMatchingResult(
         cv::Mat& matchingResult
 ) {
 
-    while (!currentMatchingResult.isDetected()) {
+    ScoredCandidate bestCandidate;
+    const double maxColorDifference = getMaxColorDifference(threshold);
+
+    for (int candidateIndex = 0; candidateIndex < MAX_CANDIDATE_COUNT; ++candidateIndex) {
 
         // Mark previous results as invalid, if any
         if (!currentMatchingResult.getResultArea().empty()) {
@@ -123,7 +150,8 @@ void TemplateMatcher::parseMatchingResult(
                 matchingResult);
 
         // Check if the highest result is above threshold. If not, we will never find.
-        if (!isConfidenceValid(currentMatchingResult.getResultConfidence(), threshold)) break;
+        const double shapeConfidence = currentMatchingResult.getResultConfidence();
+        if (!isShapeConfidenceValid(shapeConfidence, threshold)) break;
 
         // Check if result area is valid. If not, check next possible match
         if (!isRoiBiggerOrEquals(screenImage.getRoi(), currentMatchingResult.getResultArea())) continue;
@@ -131,15 +159,41 @@ void TemplateMatcher::parseMatchingResult(
         // Validate the spatial color layout, not only the average color. Two different icons can
         // have the same grayscale structure and mean HSV values while their colored pixels differ.
         cv::Mat colorCrop = screenImage.cropColor(currentMatchingResult.getResultArea());
-        double colorDiff = getPixelColorDiff(colorCrop, condition.getColorMat());
+        const double colorDifference = getPixelColorDiff(colorCrop, condition.getColorMat());
+        if (colorDifference > maxColorDifference) continue;
 
-        // If the colors are OK, the result is valid
-        if (colorDiff <= threshold) currentMatchingResult.markResultAsDetected();
+        const cv::Mat grayCrop = screenImage.cropGray(currentMatchingResult.getResultArea());
+        const double edgeSimilarity = getEdgeSimilarity(grayCrop, condition.getGrayMat());
+        const double colorSimilarity = std::max(0.0, 1.0 - colorDifference / 100.0);
+        const double compositeScore =
+                shapeConfidence * SHAPE_SCORE_WEIGHT +
+                edgeSimilarity * EDGE_SCORE_WEIGHT +
+                colorSimilarity * COLOR_SCORE_WEIGHT;
+
+        LOGD("TemplateMatcher", "Candidate %d: shape=%f edge=%f colorDiff=%f score=%f",
+             candidateIndex, shapeConfidence, edgeSimilarity, colorDifference, compositeScore);
+
+        if (!bestCandidate.valid || compositeScore > bestCandidate.compositeScore) {
+            bestCandidate.valid = true;
+            bestCandidate.area = currentMatchingResult.getResultArea();
+            bestCandidate.shapeConfidence = shapeConfidence;
+            bestCandidate.compositeScore = compositeScore;
+        }
+    }
+
+    if (bestCandidate.valid) {
+        currentMatchingResult.setDetectedResult(bestCandidate.area, bestCandidate.shapeConfidence);
     }
 }
 
-bool TemplateMatcher::isConfidenceValid(double confidence, int threshold) {
-    return confidence > ((100.0 - threshold) / 100.0);
+bool TemplateMatcher::isShapeConfidenceValid(double confidence, int threshold) {
+    return confidence >= ((100.0 - threshold) / 100.0);
+}
+
+double TemplateMatcher::getMaxColorDifference(int threshold) {
+    return std::min(
+            MAX_COLOR_DIFFERENCE,
+            std::max(MIN_COLOR_DIFFERENCE, static_cast<double>(threshold)));
 }
 
 double TemplateMatcher::getPixelColorDiff(const cv::Mat& image, const cv::Mat& condition) {
@@ -159,4 +213,40 @@ double TemplateMatcher::getPixelColorDiff(const cv::Mat& image, const cv::Mat& c
     }
 
     return totalDifference * (100.0 / (255.0 * comparedChannels));
+}
+
+double TemplateMatcher::getEdgeSimilarity(const cv::Mat& image, const cv::Mat& condition) {
+    if (image.empty() || condition.empty() || image.size() != condition.size()) return 0.0;
+
+    cv::Mat imageGradientX;
+    cv::Mat imageGradientY;
+    cv::Mat conditionGradientX;
+    cv::Mat conditionGradientY;
+    cv::Sobel(image, imageGradientX, CV_32F, 1, 0);
+    cv::Sobel(image, imageGradientY, CV_32F, 0, 1);
+    cv::Sobel(condition, conditionGradientX, CV_32F, 1, 0);
+    cv::Sobel(condition, conditionGradientY, CV_32F, 0, 1);
+
+    cv::Mat imageMagnitude;
+    cv::Mat conditionMagnitude;
+    cv::magnitude(imageGradientX, imageGradientY, imageMagnitude);
+    cv::magnitude(conditionGradientX, conditionGradientY, conditionMagnitude);
+
+    cv::Mat normalizedImage;
+    cv::Mat normalizedCondition;
+    cv::normalize(imageMagnitude, normalizedImage, 0.0, 1.0, cv::NORM_MINMAX);
+    cv::normalize(conditionMagnitude, normalizedCondition, 0.0, 1.0, cv::NORM_MINMAX);
+
+    cv::Mat difference;
+    cv::absdiff(normalizedImage, normalizedCondition, difference);
+    return std::max(0.0, 1.0 - cv::mean(difference).val[0]);
+}
+
+bool TemplateMatcher::isTemplateInformative(const cv::Mat& condition) {
+    if (condition.empty()) return false;
+
+    cv::Scalar mean;
+    cv::Scalar standardDeviation;
+    cv::meanStdDev(condition, mean, standardDeviation);
+    return standardDeviation.val[0] >= MIN_TEMPLATE_STDDEV;
 }

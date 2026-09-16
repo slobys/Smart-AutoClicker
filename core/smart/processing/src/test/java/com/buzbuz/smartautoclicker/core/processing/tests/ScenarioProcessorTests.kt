@@ -166,6 +166,7 @@ class ScenarioProcessorTests {
     private fun createNewScenarioProcessor(
         events: List<ScreenEvent>,
         triggerEvent: List<TriggerEvent>,
+        screenEventConfirmationHits: Int = 1,
     ) : ScenarioProcessor {
         val processor = ScenarioProcessor(
             processingTag = "",
@@ -179,6 +180,7 @@ class ScenarioProcessorTests {
             androidExecutor = mockAndroidExecutor,
             onStopRequested = mockEndListener::onStopRequested,
             progressListener = mockProgressListener,
+            screenEventConfirmationHits = screenEventConfirmationHits,
         )
 
         Mockito.clearInvocations(mockAndroidExecutor)
@@ -299,6 +301,36 @@ class ScenarioProcessorTests {
 
         verify(mockImageDetector).setScreenBitmap(mockScreenBitmap, "")
         assertActionGesture(expectedDuration)
+        verifyNoInteractions(mockEndListener)
+    }
+
+    @Test
+    fun oneCondition_exact_match_requiresTwoFramesWhenStabilityEnabled() = runTest {
+        val condition = createTestCondition(
+            TEST_CONDITION_PATH_1,
+            TEST_CONDITION_AREA_1,
+            TEST_CONDITION_THRESHOLD_1,
+            EXACT,
+            isDetected = true,
+            shouldBeOnScreen = true,
+        )
+        val event = newEvent(
+            operator = AND,
+            conditions = listOf(condition),
+            actions = listOf(newDefaultClickAction()),
+        )
+
+        scenarioProcessor = createNewScenarioProcessor(
+            events = listOf(event),
+            triggerEvent = emptyList(),
+            screenEventConfirmationHits = 2,
+        )
+
+        scenarioProcessor.process(mockScreenBitmap)
+        verifyNoInteractions(mockAndroidExecutor, mockEndListener)
+
+        scenarioProcessor.process(mockScreenBitmap)
+        assertActionGesture(expectedDuration = 1L)
         verifyNoInteractions(mockEndListener)
     }
 
