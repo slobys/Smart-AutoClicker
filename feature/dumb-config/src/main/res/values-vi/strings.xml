@@ -16,6 +16,7 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+    <string name="content_desc_switch_scenario">Chuyển kịch bản đang chạy</string>
 
     <string name="dialog_overlay_title_dumb_action_type">Loại hành động</string>
     <string name="dialog_overlay_title_dumb_scenario_config">Kịch bản</string>

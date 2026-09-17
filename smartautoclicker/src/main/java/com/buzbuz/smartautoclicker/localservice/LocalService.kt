@@ -20,13 +20,17 @@ import android.app.Notification
 import android.content.Context
 import android.content.Intent
 import android.media.projection.MediaProjectionManager
+import android.util.Log
 import android.view.KeyEvent
+import android.widget.Toast
 
 import com.buzbuz.smartautoclicker.core.base.data.AppComponentsProvider
 import com.buzbuz.smartautoclicker.core.common.accessibility.domain.LocalAccessibilityService
 import com.buzbuz.smartautoclicker.core.common.overlays.manager.OverlayManager
 import com.buzbuz.smartautoclicker.core.common.tutorial.domain.TutorialRepository
 import com.buzbuz.smartautoclicker.core.domain.model.scenario.Scenario
+import com.buzbuz.smartautoclicker.core.domain.IRepository
+import com.buzbuz.smartautoclicker.core.dumb.domain.IDumbRepository
 import com.buzbuz.smartautoclicker.core.dumb.domain.model.DumbScenario
 import com.buzbuz.smartautoclicker.core.dumb.engine.DumbEngine
 import com.buzbuz.smartautoclicker.core.processing.domain.SmartProcessingRepository
@@ -39,17 +43,25 @@ import com.buzbuz.smartautoclicker.feature.notifications.ServiceNotificationCont
 import com.buzbuz.smartautoclicker.feature.notifications.ServiceNotificationListener
 import com.buzbuz.smartautoclicker.feature.revenue.IRevenueRepository
 import com.buzbuz.smartautoclicker.feature.revenue.UserBillingState
+import com.buzbuz.smartautoclicker.feature.qstile.ui.QSTileLauncherActivity
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 class LocalService(
     private val context: Context,
@@ -58,12 +70,14 @@ class LocalService(
     private val settingsRepository: SettingsRepository,
     private val smartProcessingRepository: SmartProcessingRepository,
     private val dumbEngine: DumbEngine,
+    smartScenarioRepository: IRepository,
+    dumbScenarioRepository: IDumbRepository,
     private val tutorialRepository: TutorialRepository,
     private val revenueRepository: IRevenueRepository,
     private val debuggingRepository: DebuggingRepository,
     private val onStart: (scenarioId: Long, isSmart: Boolean, foregroundNotification: Notification?) -> Unit,
-    private val onScenarioChanged: (scenarioId: Long) -> Unit,
-    private val onStop: () -> Unit,
+    private val onScenarioChanged: (scenarioId: Long, isSmart: Boolean) -> Unit,
+    private val onStop: (isScenarioHandoff: Boolean) -> Unit,
 ) : LocalAccessibilityService {
 
     /** Scope for this LocalService. */
@@ -72,6 +86,8 @@ class LocalService(
     private var startJob: Job? = null
     /** Coroutine job for the paywall result upon start from notification. */
     private var paywallResultJob: Job? = null
+    /** Coroutine job serialising runtime script switches. */
+    private var scenarioSwitchJob: Job? = null
 
     /** Controls the notifications for the foreground service. */
     private val notificationController: ServiceNotificationController by lazy {
@@ -90,7 +106,27 @@ class LocalService(
     }
 
     /** State of this LocalService. */
-    private var state: LocalServiceState = LocalServiceState(isStarted = false, isSmartLoaded = false)
+    private val serviceState: MutableStateFlow<LocalServiceState> = MutableStateFlow(LocalServiceState())
+    private var state: LocalServiceState
+        get() = serviceState.value
+        set(value) { serviceState.value = value }
+
+    private val isScenarioSwitching: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    private val runtimeScenarioTargets: StateFlow<List<RuntimeScenarioTarget>> = combine(
+        smartScenarioRepository.scenarios,
+        dumbScenarioRepository.dumbScenarios,
+    ) { smartScenarios, dumbScenarios ->
+        buildList {
+            addAll(smartScenarios.filter { it.eventCount > 0 }.map(RuntimeScenarioTarget::Smart))
+            addAll(dumbScenarios.filter { it.isValid() }.map(RuntimeScenarioTarget::Dumb))
+        }.sortedWith(compareBy<RuntimeScenarioTarget> { !it.isSmart }.thenBy { it.name.lowercase() })
+    }.stateIn(serviceScope, SharingStarted.Eagerly, emptyList())
+
+    private val canSwitchScenario: StateFlow<Boolean> = combine(
+        runtimeScenarioTargets,
+        isScenarioSwitching,
+    ) { scenarios, switching -> scenarios.size > 1 && !switching }
+        .stateIn(serviceScope, SharingStarted.Eagerly, false)
     /** True if the overlay is started, false if not. */
     internal val isStarted: Boolean
         get() = state.isStarted
@@ -115,7 +151,11 @@ class LocalService(
 
     override fun startDumbScenario(dumbScenario: DumbScenario) {
         if (state.isStarted) return
-        state = LocalServiceState(isStarted = true, isSmartLoaded = false)
+        state = LocalServiceState(
+            isStarted = true,
+            isSmartLoaded = false,
+            scenarioId = dumbScenario.id.databaseId,
+        )
         onStart(dumbScenario.id.databaseId, false, null)
 
         startJob = serviceScope.launch {
@@ -125,7 +165,7 @@ class LocalService(
 
             overlayManager.navigateTo(
                 context = context,
-                newOverlay = DumbMainMenu(dumbScenario.id) { stopScenario() },
+                newOverlay = createDumbMainMenu(dumbScenario),
             )
         }
     }
@@ -146,7 +186,12 @@ class LocalService(
      */
     override fun startSmartScenario(resultCode: Int, data: Intent, scenario: Scenario) {
         if (isStarted) return
-        state = LocalServiceState(isStarted = true, isSmartLoaded = true)
+        state = LocalServiceState(
+            isStarted = true,
+            isSmartLoaded = true,
+            scenarioId = scenario.id.databaseId,
+            hasMediaProjection = true,
+        )
 
         onStart(
             scenario.id.databaseId,
@@ -160,14 +205,10 @@ class LocalService(
         )
 
         startJob = serviceScope.launch {
-            val mainMenu = MainMenu(
-                onStopClicked = { stopScenario() },
-                onScenarioSwitched = ::onSmartScenarioSwitched,
-            )
+            val mainMenu = createSmartMainMenu()
 
             smartProcessingRepository.apply {
                 setScenarioId(scenario.id, markAsUsed = true)
-                setProjectionErrorHandler { mainMenu.onMediaProjectionLost() }
             }
 
             overlayManager.navigateTo(
@@ -184,18 +225,13 @@ class LocalService(
 
     override fun stopScenario() {
         if (!isStarted) return
-        state = LocalServiceState(isStarted = false, isSmartLoaded = false)
+        scenarioSwitchJob?.cancel()
+        scenarioSwitchJob = null
+        isScenarioSwitching.value = false
+        state = LocalServiceState()
 
         serviceScope.launch {
-            startJob?.join()
-            startJob = null
-
-            dumbEngine.release()
-            overlayManager.closeAll(context)
-            smartProcessingRepository.stopScreenRecord()
-
-            onStop()
-            notificationController.destroyNotification()
+            stopScenarioInternal(isScenarioHandoff = false)
         }
     }
 
@@ -255,11 +291,6 @@ class LocalService(
         }
     }
 
-    private fun onSmartScenarioSwitched(scenario: Scenario) {
-        notificationController.updateScenarioName(context, scenario.name)
-        onScenarioChanged(scenario.id.databaseId)
-    }
-
     private fun hideMenu() {
         overlayManager.hideAll()
     }
@@ -267,9 +298,201 @@ class LocalService(
     private fun showMenu() {
         overlayManager.restoreVisibility()
     }
+
+    private fun createSmartMainMenu(): MainMenu = MainMenu(
+        onStopClicked = ::stopScenario,
+        onScenarioSwitchClicked = ::showScenarioSwitcher,
+        canSwitchScenario = canSwitchScenario,
+    ).also { mainMenu ->
+        smartProcessingRepository.setProjectionErrorHandler { mainMenu.onMediaProjectionLost() }
+    }
+
+    private fun createDumbMainMenu(scenario: DumbScenario): DumbMainMenu = DumbMainMenu(
+        dumbScenarioId = scenario.id,
+        onStopClicked = ::stopScenario,
+        onScenarioSwitchClicked = ::showScenarioSwitcher,
+        canSwitchScenario = canSwitchScenario,
+    )
+
+    private fun showScenarioSwitcher() {
+        val currentState = state
+        val items = runtimeScenarioTargets.value
+            .map { target ->
+                RuntimeScenarioListItem(
+                    target = target,
+                    isCurrent = target.databaseId == currentState.scenarioId &&
+                            target.isSmart == currentState.isSmartLoaded,
+                )
+            }
+            .sortedWith(compareByDescending<RuntimeScenarioListItem> { it.isCurrent }
+                .thenBy { !it.target.isSmart }
+                .thenBy { it.target.name.lowercase() })
+
+        showRuntimeScenarioSwitcher(context, items, ::switchScenario)
+    }
+
+    private fun switchScenario(target: RuntimeScenarioTarget) {
+        if (scenarioSwitchJob?.isActive == true) return
+        if (target.databaseId == state.scenarioId && target.isSmart == state.isSmartLoaded) return
+
+        scenarioSwitchJob = serviceScope.launch {
+            isScenarioSwitching.value = true
+            try {
+                val switched = when (target) {
+                    is RuntimeScenarioTarget.Smart -> switchToSmartScenario(target.scenario)
+                    is RuntimeScenarioTarget.Dumb -> switchToDumbScenario(target.scenario)
+                }
+
+                if (!switched && state.isStarted) {
+                    Toast.makeText(
+                        context,
+                        com.buzbuz.smartautoclicker.R.string.runtime_switcher_error,
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                }
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (exception: Exception) {
+                Log.e(TAG, "Failed to switch runtime scenario to ${target.databaseId}", exception)
+                if (state.isStarted) {
+                    Toast.makeText(
+                        context,
+                        com.buzbuz.smartautoclicker.R.string.runtime_switcher_error,
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                }
+            } finally {
+                isScenarioSwitching.value = false
+                scenarioSwitchJob = null
+            }
+        }
+    }
+
+    private suspend fun switchToDumbScenario(scenario: DumbScenario): Boolean {
+        val wasRunning = if (state.isSmartLoaded) {
+            stopSmartDetectionForSwitch() ?: return false
+        } else {
+            dumbEngine.isRunning.value.also { running -> if (running) dumbEngine.stopDumbScenario() }
+        }
+
+        dumbEngine.release()
+        dumbEngine.init(scenario)
+        if (state.hasMediaProjection) {
+            smartProcessingRepository.setProjectionErrorHandler(::stopScenario)
+        }
+        state = state.copy(
+            isSmartLoaded = false,
+            scenarioId = scenario.id.databaseId,
+        )
+        replaceRootMenu(createDumbMainMenu(scenario))
+        updateScenarioMetadata(scenario.id.databaseId, isSmart = false, scenario.name)
+
+        if (wasRunning) dumbEngine.startDumbScenario()
+        return true
+    }
+
+    private suspend fun switchToSmartScenario(scenario: Scenario): Boolean {
+        if (!state.hasMediaProjection) {
+            Toast.makeText(
+                context,
+                com.buzbuz.smartautoclicker.R.string.runtime_switcher_projection_required,
+                Toast.LENGTH_LONG,
+            ).show()
+            state = LocalServiceState()
+            stopScenarioInternal(isScenarioHandoff = true)
+            context.startActivity(
+                QSTileLauncherActivity.getStartIntent(context, scenario.id.databaseId, isSmartScenario = true)
+            )
+            return true
+        }
+
+        val wasSmartLoaded = state.isSmartLoaded
+        val wasRunning = if (wasSmartLoaded) {
+            stopSmartDetectionForSwitch() ?: return false
+        } else {
+            dumbEngine.isRunning.value.also { running -> if (running) dumbEngine.stopDumbScenario() }
+        }
+
+        dumbEngine.release()
+        smartProcessingRepository.setScenarioId(scenario.id, markAsUsed = true)
+        state = state.copy(
+            isSmartLoaded = true,
+            scenarioId = scenario.id.databaseId,
+        )
+
+        if (!wasSmartLoaded || overlayManager.getBackStackTop() !is MainMenu) {
+            replaceRootMenu(createSmartMainMenu())
+        }
+        updateScenarioMetadata(scenario.id.databaseId, isSmart = true, scenario.name)
+        if (wasRunning) startSmartScenario()
+        return true
+    }
+
+    private suspend fun stopSmartDetectionForSwitch(): Boolean? {
+        val stateBeforeSwitch = withTimeoutOrNull(SCENARIO_SWITCH_TIMEOUT_MS) {
+            smartProcessingRepository.detectionState.first { detectionState ->
+                detectionState == DetectionState.RECORDING || detectionState == DetectionState.DETECTING ||
+                        detectionState.isError()
+            }
+        } ?: return null
+        if (stateBeforeSwitch.isError()) return null
+
+        val wasRunning = stateBeforeSwitch == DetectionState.DETECTING
+        if (!wasRunning) return false
+
+        smartProcessingRepository.stopDetection()
+        val readyState = withTimeoutOrNull(SCENARIO_SWITCH_TIMEOUT_MS) {
+            smartProcessingRepository.detectionState.first { detectionState ->
+                detectionState == DetectionState.RECORDING || detectionState.isError()
+            }
+        }
+        return if (readyState == DetectionState.RECORDING) true else null
+    }
+
+    private suspend fun replaceRootMenu(newMenu: com.buzbuz.smartautoclicker.core.common.overlays.base.Overlay) {
+        overlayManager.closeAll(context)
+        val rootClosed = withTimeoutOrNull(SCENARIO_SWITCH_TIMEOUT_MS) {
+            overlayManager.backStackTopFlow.first { overlay -> overlay == null }
+            true
+        } == true
+        check(rootClosed) { "Timed out while replacing the runtime scenario menu" }
+        overlayManager.navigateTo(context, newMenu)
+    }
+
+    private fun updateScenarioMetadata(scenarioId: Long, isSmart: Boolean, scenarioName: String) {
+        notificationController.updateScenarioName(context, scenarioName)
+        onScenarioChanged(scenarioId, isSmart)
+    }
+
+    private suspend fun stopScenarioInternal(isScenarioHandoff: Boolean) {
+        startJob?.join()
+        startJob = null
+
+        dumbEngine.release()
+        overlayManager.closeAll(context)
+        withTimeoutOrNull(SCENARIO_SWITCH_TIMEOUT_MS) {
+            overlayManager.backStackTopFlow.first { overlay -> overlay == null }
+        }
+        smartProcessingRepository.stopScreenRecord()
+
+        onStop(isScenarioHandoff)
+        notificationController.destroyNotification()
+    }
 }
 
 private data class LocalServiceState(
-    val isStarted: Boolean,
-    val isSmartLoaded: Boolean
+    val isStarted: Boolean = false,
+    val isSmartLoaded: Boolean = false,
+    val scenarioId: Long? = null,
+    val hasMediaProjection: Boolean = false,
 )
+
+private fun DetectionState.isError(): Boolean = when (this) {
+    DetectionState.ERROR_NO_NATIVE_LIB,
+    DetectionState.ERROR_OCR_MODEL_NOT_FOUND,
+    DetectionState.ERROR_SCREEN_IMAGE_CAPTURE_FAILED -> true
+    else -> false
+}
+
+private const val SCENARIO_SWITCH_TIMEOUT_MS = 10_000L
+private const val TAG = "LocalService"

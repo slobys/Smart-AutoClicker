@@ -16,6 +16,14 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+    <string name="runtime_switcher_title">Змінити скрипт</string>
+    <string name="runtime_switcher_summary">Скриптів: %1$d · розумних: %2$d · простих: %3$d</string>
+    <string name="runtime_switcher_smart_details">Розумний скрипт · подій: %1$d</string>
+    <string name="runtime_switcher_dumb_details">Простий скрипт · дій: %1$d</string>
+    <string name="runtime_switcher_current">Поточний</string>
+    <string name="runtime_switcher_empty">Створіть принаймні ще один дійсний скрипт для перемикання.</string>
+    <string name="runtime_switcher_error">Не вдалося безпечно змінити скрипт. Призупиніть його та повторіть спробу.</string>
+    <string name="runtime_switcher_projection_required">Перед запуском цього розумного скрипта Android запитає дозвіл на запис екрана.</string>
 
     <string name="activity_scenario_title">Сценарії</string>
     <string name="accessibility_service_description">Ця програма потребує цю службу для впровадження натискань, які ви

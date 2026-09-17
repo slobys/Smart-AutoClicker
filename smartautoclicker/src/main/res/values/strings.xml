@@ -16,6 +16,14 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+    <string name="runtime_switcher_title">Switch script</string>
+    <string name="runtime_switcher_summary">%1$d scripts · %2$d smart · %3$d simple</string>
+    <string name="runtime_switcher_smart_details">Smart script · %1$d events</string>
+    <string name="runtime_switcher_dumb_details">Simple script · %1$d actions</string>
+    <string name="runtime_switcher_current">Current</string>
+    <string name="runtime_switcher_empty">Create at least one other valid script to switch here.</string>
+    <string name="runtime_switcher_error">The script could not be switched safely. Pause it and try again.</string>
+    <string name="runtime_switcher_projection_required">Android will ask for screen recording permission before starting this smart script.</string>
 
     <string name="app_name" translatable="false">Klick\'r</string>
 

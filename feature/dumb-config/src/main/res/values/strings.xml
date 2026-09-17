@@ -17,6 +17,8 @@
 -->
 <resources>
 
+    <string name="content_desc_switch_scenario">Switch the running script</string>
+
     <!--
       - Titles for the dialogs displayed as overlay.
       - Allowed characters can be small due to save/delete/close buttons.

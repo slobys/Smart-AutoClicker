@@ -16,6 +16,8 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+    <string name="content_desc_expand_overlay_menu">Espandi controlli</string>
+    <string name="content_desc_collapse_overlay_menu">Riduci controlli</string>
     <string name="dialog_move_to_title">Spostarsi a</string>
     <string name="dialog_move_to_position_label">Indice</string>
     <string name="overlay_instructions_gesture_record">Registrazione del gesto…</string>

@@ -87,6 +87,12 @@
                     android:src="@drawable/ic_move"
                     android:contentDescription="@string/content_desc_move_menu" />
 
+                <ImageButton
+                    android:id="@id/btn_collapse_menu"
+                    style="@style/AppTheme.Overlay.FloatingMenu.Buttons"
+                    android:src="@drawable/ic_overlay_menu_toggle"
+                    android:contentDescription="@string/content_desc_collapse_overlay_menu" />
+
             </LinearLayout>
 
             <androidx.constraintlayout.widget.ConstraintLayout

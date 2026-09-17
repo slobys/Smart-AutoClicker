@@ -16,6 +16,14 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+    <string name="runtime_switcher_title">Trocar script</string>
+    <string name="runtime_switcher_summary">%1$d scripts · %2$d inteligentes · %3$d simples</string>
+    <string name="runtime_switcher_smart_details">Script inteligente · %1$d eventos</string>
+    <string name="runtime_switcher_dumb_details">Script simples · %1$d ações</string>
+    <string name="runtime_switcher_current">Atual</string>
+    <string name="runtime_switcher_empty">Crie pelo menos outro script válido para trocar aqui.</string>
+    <string name="runtime_switcher_error">Não foi possível trocar o script com segurança. Pause e tente novamente.</string>
+    <string name="runtime_switcher_projection_required">O Android solicitará permissão para gravar a tela antes de iniciar este script inteligente.</string>
 
     <string name="activity_scenario_title">Cenários</string>
     <string name="accessibility_service_description">Este aplicativo precisa deste serviço para injetar os cliques que você

@@ -35,8 +35,10 @@ import androidx.annotation.CallSuper
 import androidx.annotation.IdRes
 import androidx.annotation.StyleRes
 import androidx.core.view.forEach
+import androidx.core.view.children
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
 
 import com.buzbuz.smartautoclicker.core.base.addDumpTabulationLvl
 import com.buzbuz.smartautoclicker.core.base.extensions.disableMoveAnimations
@@ -54,6 +56,9 @@ import com.buzbuz.smartautoclicker.core.common.overlays.menu.implementation.comm
 import com.buzbuz.smartautoclicker.core.common.overlays.menu.implementation.common.OverlayMenuResizeController
 
 import dagger.hilt.EntryPoints
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.PrintWriter
 
 /**
@@ -84,6 +89,7 @@ import java.io.PrintWriter
 abstract class OverlayMenu(
     @StyleRes theme: Int? = null,
     private val recreateOverlayViewOnRotation: Boolean = false,
+    private val autoCollapseDelayMs: Long? = null,
 ) : BaseOverlay(theme = theme, recreateOnRotation = false) {
 
     /** The base layout parameters of the menu layout & overlay view. */
@@ -138,6 +144,13 @@ abstract class OverlayMenu(
     private var hideOverlayButton: ImageButton? = null
     /** The move button, if provided. */
     private var moveButton: View? = null
+    /** Button kept visible while the menu is collapsed. */
+    private var collapseButton: ImageButton? = null
+    /** Visibility requested for each regular menu item while the menu is expanded. */
+    private val expandedItemVisibility: MutableMap<Int, Boolean> = mutableMapOf()
+    /** Delayed automatic collapse operation. */
+    private var autoCollapseJob: Job? = null
+    private var isMenuCollapsed: Boolean = false
 
     /**
      * The view to be displayed between the current activity and the overlay menu.
@@ -250,12 +263,33 @@ abstract class OverlayMenu(
                     setOverlayViewVisibility(true)
                     view.setOnClickListener { onToggleOverlayVisibilityClicked() }
                 }
+                R.id.btn_collapse_menu -> {
+                    collapseButton = view as ImageButton
+                    view.contentDescription = context.getString(R.string.content_desc_collapse_overlay_menu)
+                    view.setDebouncedOnClickListener { toggleMenuCollapsedState() }
+                }
                 else -> view.setDebouncedOnClickListener { v ->
                     if (resizeController.isAnimating) return@setDebouncedOnClickListener
+                    scheduleAutoCollapse()
                     onMenuItemClicked(v.id)
                 }
             }
         }
+
+        buttonsContainer.children
+            .filterNot { view -> view.id == R.id.btn_collapse_menu }
+            .forEach { view -> expandedItemVisibility[view.id] = view.isVisible }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        scheduleAutoCollapse()
+    }
+
+    override fun onPause() {
+        autoCollapseJob?.cancel()
+        autoCollapseJob = null
+        super.onPause()
     }
 
     final override fun start() {
@@ -463,6 +497,11 @@ abstract class OverlayMenu(
     protected fun setMenuItemVisibility(view: View, visible: Boolean) {
         Log.d(TAG, "setMenuItemVisibility for ${hashCode()}, $view to $visible")
 
+        if (view.parent === buttonsContainer && view.id != R.id.btn_collapse_menu) {
+            expandedItemVisibility[view.id] = visible
+            if (isMenuCollapsed) return
+        }
+
         if (view.isVisible == visible) return
         view.isVisible = visible
 
@@ -480,6 +519,10 @@ abstract class OverlayMenu(
 
         var haveChanged = false
         viewState.forEach { (view, isVisible) ->
+            if (view.parent === buttonsContainer && view.id != R.id.btn_collapse_menu) {
+                expandedItemVisibility[view.id] = isVisible
+                if (isMenuCollapsed) return@forEach
+            }
             haveChanged = haveChanged || view.isVisible != isVisible
             view.isVisible = isVisible
         }
@@ -564,7 +607,82 @@ abstract class OverlayMenu(
     private fun onMoveTouched(event: MotionEvent) : Boolean {
         if (resizeController.isAnimating) return false
 
+        scheduleAutoCollapse()
+
         return moveTouchEventHandler.onTouchEvent(menuLayout, event)
+    }
+
+    /** Allows specialised menus to temporarily prevent automatic collapsing, such as while debug details are shown. */
+    protected open fun canAutoCollapseMenu(): Boolean = true
+
+    private fun toggleMenuCollapsedState() {
+        if (resizeController.isAnimating) return
+        if (isMenuCollapsed) expandMenu() else collapseMenu()
+    }
+
+    private fun scheduleAutoCollapse() {
+        val delayMs = autoCollapseDelayMs ?: return
+        if (collapseButton == null || isMenuCollapsed || !lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+            return
+        }
+
+        autoCollapseJob?.cancel()
+        autoCollapseJob = lifecycleScope.launch {
+            delay(delayMs)
+            if (canAutoCollapseMenu()) collapseMenu()
+            else scheduleAutoCollapse()
+        }
+    }
+
+    private fun collapseMenu() {
+        if (isMenuCollapsed || !canAutoCollapseMenu()) return
+        val button = collapseButton ?: return
+
+        autoCollapseJob?.cancel()
+        autoCollapseJob = null
+        buttonsContainer.children
+            .filterNot { view -> view.id == R.id.btn_collapse_menu }
+            .forEach { view -> expandedItemVisibility[view.id] = view.isVisible }
+
+        isMenuCollapsed = true
+        button.contentDescription = context.getString(R.string.content_desc_expand_overlay_menu)
+        animateLayoutChanges {
+            buttonsContainer.children
+                .filterNot { view -> view.id == R.id.btn_collapse_menu }
+                .forEach { view -> view.isVisible = false }
+        }
+
+        lifecycleScope.launch {
+            delay(MENU_RESIZE_ANIMATION_MS)
+            snapMenuToNearestHorizontalEdge()
+        }
+    }
+
+    private fun expandMenu() {
+        if (!isMenuCollapsed) return
+        val button = collapseButton ?: return
+
+        isMenuCollapsed = false
+        button.contentDescription = context.getString(R.string.content_desc_collapse_overlay_menu)
+        animateLayoutChanges {
+            buttonsContainer.children
+                .filterNot { view -> view.id == R.id.btn_collapse_menu }
+                .forEach { view -> view.isVisible = expandedItemVisibility[view.id] ?: true }
+        }
+        scheduleAutoCollapse()
+    }
+
+    private fun snapMenuToNearestHorizontalEdge() {
+        if (!isMenuCollapsed || menuLayout.width <= 0) return
+
+        val displayWidth = displayConfigManager.displayConfig.sizePx.x
+        val targetX = if (menuLayoutParams.x + menuLayout.width / 2 <= displayWidth / 2) {
+            0
+        } else {
+            displayWidth - menuLayout.width
+        }
+        updateMenuPosition(Point(targetX, menuLayoutParams.y))
+        collapseButton?.rotation = if (targetX == 0) 0f else 180f
     }
 
 
@@ -636,3 +754,4 @@ abstract class OverlayMenu(
 
 /** Tag for logs */
 private const val TAG = "OverlayMenu"
+private const val MENU_RESIZE_ANIMATION_MS = 350L

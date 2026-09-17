@@ -16,6 +16,14 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+    <string name="runtime_switcher_title">切换脚本</string>
+    <string name="runtime_switcher_summary">共 %1$d 个脚本 · 智能 %2$d · 简单 %3$d</string>
+    <string name="runtime_switcher_smart_details">智能脚本 · %1$d 个事件</string>
+    <string name="runtime_switcher_dumb_details">简单脚本 · %1$d 个操作</string>
+    <string name="runtime_switcher_current">当前</string>
+    <string name="runtime_switcher_empty">请至少再创建一个有效脚本，即可在这里快速切换。</string>
+    <string name="runtime_switcher_error">无法安全切换脚本，请暂停后重试。</string>
+    <string name="runtime_switcher_projection_required">启动这个智能脚本前，Android 会请求一次屏幕录制权限。</string>
 
     <string name="activity_scenario_title">场景</string>
     <string name="accessibility_service_description">本应用需要此服务，以便在检测到条件后，将您创建的点击操作注入其他应用。\n\n本应用不会收集任何数据。欢迎访问我们的 GitHub 仓库，代码为开源。</string>

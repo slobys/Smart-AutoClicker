@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="content_desc_switch_scenario">切換正在執行的腳本</string>
     <string name="dialog_overlay_title_dumb_action_type">動作類型</string>
     <string name="dialog_overlay_title_dumb_scenario_config">情境</string>
     <string name="menu_item_title_dumb_actions">動作</string>

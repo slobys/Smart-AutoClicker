@@ -37,6 +37,8 @@ import com.buzbuz.smartautoclicker.core.common.quality.domain.QualityRepository
 import com.buzbuz.smartautoclicker.core.common.tutorial.domain.TutorialRepository
 import com.buzbuz.smartautoclicker.core.display.config.DisplayConfigManager
 import com.buzbuz.smartautoclicker.core.domain.model.scenario.Scenario
+import com.buzbuz.smartautoclicker.core.domain.IRepository
+import com.buzbuz.smartautoclicker.core.dumb.domain.IDumbRepository
 import com.buzbuz.smartautoclicker.core.dumb.domain.model.DumbScenario
 import com.buzbuz.smartautoclicker.core.dumb.engine.DumbEngine
 import com.buzbuz.smartautoclicker.core.processing.domain.SmartProcessingRepository
@@ -76,6 +78,8 @@ class SmartAutoClickerService : AccessibilityService() {
     @Inject lateinit var displayConfigManager: DisplayConfigManager
     @Inject lateinit var smartProcessingRepository: SmartProcessingRepository
     @Inject lateinit var dumbEngine: DumbEngine
+    @Inject lateinit var smartScenarioRepository: IRepository
+    @Inject lateinit var dumbScenarioRepository: IDumbRepository
     @Inject lateinit var bitmapManager: BitmapRepository
     @Inject lateinit var qualityRepository: QualityRepository
     @Inject lateinit var qualityMetricsMonitor: QualityMetricsMonitor
@@ -116,6 +120,8 @@ class SmartAutoClickerService : AccessibilityService() {
                 appComponentsProvider = appComponentsProvider,
                 smartProcessingRepository = smartProcessingRepository,
                 dumbEngine = dumbEngine,
+                smartScenarioRepository = smartScenarioRepository,
+                dumbScenarioRepository = dumbScenarioRepository,
                 revenueRepository = revenueRepository,
                 settingsRepository = settingsRepository,
                 debuggingRepository = debuggingRepository,
@@ -152,12 +158,12 @@ class SmartAutoClickerService : AccessibilityService() {
         tileRepository.setTileScenario(scenarioId = scenarioId, isSmart = isSmart)
     }
 
-    private fun onLocalServiceStopped() {
+    private fun onLocalServiceStopped(isScenarioHandoff: Boolean) {
         qualityMetricsMonitor.onServiceForegroundEnd()
         reviewRepository.onUserSessionStopped()
         actionExecutor.resetState()
 
-        if (reviewRepository.isUserCandidateForReview()) {
+        if (!isScenarioHandoff && reviewRepository.isUserCandidateForReview()) {
             Log.i(TAG, "User is candidate for review")
 
             reviewRepository.getReviewActivityIntent(this)?.let { intent ->
@@ -173,8 +179,8 @@ class SmartAutoClickerService : AccessibilityService() {
         bitmapManager.clearCache()
     }
 
-    private fun onLocalServiceScenarioChanged(scenarioId: Long) {
-        tileRepository.setTileScenario(scenarioId = scenarioId, isSmart = true)
+    private fun onLocalServiceScenarioChanged(scenarioId: Long, isSmart: Boolean) {
+        tileRepository.setTileScenario(scenarioId = scenarioId, isSmart = isSmart)
     }
 
     override fun onKeyEvent(event: KeyEvent?): Boolean =

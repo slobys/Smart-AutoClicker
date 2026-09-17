@@ -16,6 +16,14 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+    <string name="runtime_switcher_title">Chuyển tập lệnh</string>
+    <string name="runtime_switcher_summary">%1$d tập lệnh · %2$d thông minh · %3$d đơn giản</string>
+    <string name="runtime_switcher_smart_details">Tập lệnh thông minh · %1$d sự kiện</string>
+    <string name="runtime_switcher_dumb_details">Tập lệnh đơn giản · %1$d hành động</string>
+    <string name="runtime_switcher_current">Hiện tại</string>
+    <string name="runtime_switcher_empty">Hãy tạo ít nhất một tập lệnh hợp lệ khác để chuyển tại đây.</string>
+    <string name="runtime_switcher_error">Không thể chuyển tập lệnh một cách an toàn. Hãy tạm dừng rồi thử lại.</string>
+    <string name="runtime_switcher_projection_required">Android sẽ yêu cầu quyền ghi màn hình trước khi chạy tập lệnh thông minh này.</string>
 
     <string name="activity_scenario_title">Kịch bản</string>
     <string name="accessibility_service_description">Ứng dụng này cần dịch vụ này để đưa các nhấp chuột bạn đã tạo vào các ứng dụng khác sau khi phát hiện được các Sự kiện.\n\nKhông có dữ liệu sẽ được thu thập từ ứng dụng này. Vui lòng truy cập github của chúng tôi, mã là nguồn mở!</string>

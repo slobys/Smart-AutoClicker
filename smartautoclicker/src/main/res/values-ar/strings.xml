@@ -16,6 +16,14 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+    <string name="runtime_switcher_title">تبديل البرنامج النصي</string>
+    <string name="runtime_switcher_summary">%1$d نصوص برمجية · %2$d ذكية · %3$d بسيطة</string>
+    <string name="runtime_switcher_smart_details">برنامج نصي ذكي · %1$d من الأحداث</string>
+    <string name="runtime_switcher_dumb_details">برنامج نصي بسيط · %1$d من الإجراءات</string>
+    <string name="runtime_switcher_current">الحالي</string>
+    <string name="runtime_switcher_empty">أنشئ نصًا برمجيًا صالحًا آخر على الأقل للتبديل إليه.</string>
+    <string name="runtime_switcher_error">تعذر تبديل البرنامج النصي بأمان. أوقفه مؤقتًا وحاول مرة أخرى.</string>
+    <string name="runtime_switcher_projection_required">سيطلب Android إذن تسجيل الشاشة قبل بدء هذا البرنامج النصي الذكي.</string>
 
     <string name="activity_scenario_title">السيناريوهات</string>
     <string name="accessibility_service_description">تحتاج هذه التطبيق إلى هذه الخدمة لإدخال النقرات التي قمت بإنشائها في التطبيقات الأخرى بمجرد اكتشاف الشروط.\n\nلن يتم جمع أي بيانات من هذا التطبيق. لا تتردد في زيارة حسابنا على GitHub، الشيفرة مفتوحة المصدر!</string>

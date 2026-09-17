@@ -16,6 +16,7 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+    <string name="content_desc_switch_scenario">Alternar cenário em execução</string>
 
     <!--
       - Titles for the dialogs displayed as overlay.

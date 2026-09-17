@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="content_desc_switch_scenario">実行中のシナリオを切り替え</string>
     <string name="dialog_overlay_title_dumb_action_type">操作の種類</string>
     <string name="dialog_overlay_title_dumb_scenario_config">シナリオ</string>
     <string name="menu_item_title_dumb_actions">操作</string>

@@ -39,11 +39,14 @@ import com.buzbuz.smartautoclicker.feature.dumb.config.ui.brief.DumbScenarioBrie
 import com.buzbuz.smartautoclicker.feature.dumb.config.ui.scenario.DumbScenarioDialog
 
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.StateFlow
 
 class DumbMainMenu(
     private val dumbScenarioId: Identifier,
     private val onStopClicked: () -> Unit,
-) : OverlayMenu(theme = R.style.AppTheme) {
+    private val onScenarioSwitchClicked: () -> Unit,
+    private val canSwitchScenario: StateFlow<Boolean>,
+) : OverlayMenu(theme = R.style.AppTheme, autoCollapseDelayMs = AUTO_COLLAPSE_DELAY_MS) {
 
     /** The view model for this menu. */
     private val viewModel: DumbMainMenuModel by viewModels(
@@ -73,6 +76,7 @@ class DumbMainMenu(
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.isPlaying.collect(::updateMenuPlayingState) }
                 launch { viewModel.canPlay.collect(::updatePlayPauseButtonEnabledState) }
+                launch { canSwitchScenario.collect(::updateScenarioSwitchButtonEnabledState) }
             }
         }
     }
@@ -159,6 +163,7 @@ class DumbMainMenu(
         when (viewId) {
             R.id.btn_play -> onPlayPauseClicked()
             R.id.btn_stop -> onStopClicked()
+            R.id.btn_switch_scenario -> onScenarioSwitchClicked()
             R.id.btn_show_actions -> onShowBriefClicked()
             R.id.btn_action_list -> onDumbScenarioConfigClicked()
         }
@@ -172,6 +177,9 @@ class DumbMainMenu(
 
         viewModel.toggleScenarioPlay()
     }
+
+    private fun updateScenarioSwitchButtonEnabledState(enabled: Boolean) =
+        setMenuItemViewEnabled(viewBinding.btnSwitchScenario, enabled)
 
     private fun onShowBriefClicked() {
         viewModel.startEdition(dumbScenarioId) {
@@ -204,3 +212,5 @@ class DumbMainMenu(
         }
     }
 }
+
+private const val AUTO_COLLAPSE_DELAY_MS = 5_000L

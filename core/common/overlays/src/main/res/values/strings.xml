@@ -16,6 +16,8 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+    <string name="content_desc_expand_overlay_menu">Expand controls</string>
+    <string name="content_desc_collapse_overlay_menu">Collapse controls</string>
     <string name="dialog_move_to_title">Move to</string>
     <string name="dialog_move_to_position_label">Index</string>
     <string name="overlay_instructions_gesture_record">Recording gesture…</string>

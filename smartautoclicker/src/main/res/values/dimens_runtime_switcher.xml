@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="runtime_switcher_list_height">360dp</dimen>
+</resources>
