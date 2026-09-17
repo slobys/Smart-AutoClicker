@@ -274,7 +274,8 @@
 
     <style name="AppTheme.Overlay.FloatingMenu.RuntimeLauncherButton" parent="AppTheme.Overlay.FloatingMenu.RuntimeButton">
         <item name="android:background">@drawable/bg_overlay_runtime_launcher</item>
-        <item name="android:padding">15dp</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:tint">@null</item>
     </style>
 
     <!-- Style for the click/swipe position(s) overlay selector view. -->

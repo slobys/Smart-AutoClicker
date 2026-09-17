@@ -1,10 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24">
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+    <!-- Circuit traces connecting the control core to the four edges. -->
     <path
-        android:fillColor="@android:color/white"
-        android:pathData="M7,4.5a2.5,2.5 0,1 0,0,5a2.5,2.5 0,1 0,0,-5M17,4.5a2.5,2.5 0,1 0,0,5a2.5,2.5 0,1 0,0,-5M7,14.5a2.5,2.5 0,1 0,0,5a2.5,2.5 0,1 0,0,-5M17,14.5a2.5,2.5 0,1 0,0,5a2.5,2.5 0,1 0,0,-5" />
+        android:fillColor="@android:color/transparent"
+        android:pathData="M16,3L16,7M16,25L16,29M3,16L7,16M25,16L29,16M8.3,8.3L10.8,10.8M21.2,21.2L23.7,23.7M23.7,8.3L21.2,10.8M10.8,21.2L8.3,23.7"
+        android:strokeColor="#FF45DFFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="1.7" />
+    <!-- Angular frame gives the launcher a compact control-core silhouette. -->
+    <path
+        android:fillColor="#B3101D34"
+        android:pathData="M16,6.2L24.5,11.1L24.5,20.9L16,25.8L7.5,20.9L7.5,11.1Z"
+        android:strokeColor="#FF5CE7FF"
+        android:strokeLineJoin="round"
+        android:strokeWidth="1.5" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M16,9.4A6.6,6.6 0,1 1,16,22.6A6.6,6.6 0,1 1,16,9.4"
+        android:strokeColor="#997C8CFF"
+        android:strokeWidth="1.2" />
+    <!-- Bright energy core remains readable over busy game imagery. -->
+    <path
+        android:fillColor="#FFE9FCFF"
+        android:pathData="M16,11.6L20.4,16L16,20.4L11.6,16Z" />
+    <path
+        android:fillColor="#FF3EDCFF"
+        android:pathData="M16,13.7A2.3,2.3 0,1 1,16,18.3A2.3,2.3 0,1 1,16,13.7" />
+    <path
+        android:fillColor="#FFB5F5FF"
+        android:pathData="M16,2A1,1 0,1 1,16,4A1,1 0,1 1,16,2M16,28A1,1 0,1 1,16,30A1,1 0,1 1,16,28M2,16A1,1 0,1 1,4,16A1,1 0,1 1,2,16M28,16A1,1 0,1 1,30,16A1,1 0,1 1,28,16" />
 </vector>

@@ -27,8 +27,12 @@
     <color name="overlayMenuButtons">#FFFFFF</color>
     <color name="overlayRuntimeMenuBackground">#E61B1D26</color>
     <color name="overlayRuntimeMenuButtonPressed">#33FFFFFF</color>
-    <color name="overlayRuntimeMenuLauncher">#FF3468D4</color>
-    <color name="overlayRuntimeMenuLauncherPressed">#FF2853AD</color>
+    <color name="overlayRuntimeMenuLauncher">#F21B2B48</color>
+    <color name="overlayRuntimeMenuLauncherEnd">#F2081226</color>
+    <color name="overlayRuntimeMenuLauncherStroke">#CC35D9FF</color>
+    <color name="overlayRuntimeMenuLauncherPressed">#FF164B67</color>
+    <color name="overlayRuntimeMenuLauncherPressedEnd">#FF0B263C</color>
+    <color name="overlayRuntimeMenuLauncherStrokePressed">#FF8EF1FF</color>
     <color name="overlayViewPrimary">#FFFFFF</color>
     <color name="overlayViewAccentPrimary">@color/primary</color>
     <color name="overlayViewAccentSecondary">@color/accent</color>

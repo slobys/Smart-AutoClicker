@@ -3,13 +3,25 @@
     <item android:state_pressed="true">
         <shape android:shape="rectangle">
             <corners android:radius="16dp" />
-            <solid android:color="@color/overlayRuntimeMenuLauncherPressed" />
+            <gradient
+                android:angle="315"
+                android:endColor="@color/overlayRuntimeMenuLauncherPressedEnd"
+                android:startColor="@color/overlayRuntimeMenuLauncherPressed" />
+            <stroke
+                android:width="1dp"
+                android:color="@color/overlayRuntimeMenuLauncherStrokePressed" />
         </shape>
     </item>
     <item>
         <shape android:shape="rectangle">
             <corners android:radius="16dp" />
-            <solid android:color="@color/overlayRuntimeMenuLauncher" />
+            <gradient
+                android:angle="315"
+                android:endColor="@color/overlayRuntimeMenuLauncherEnd"
+                android:startColor="@color/overlayRuntimeMenuLauncher" />
+            <stroke
+                android:width="1dp"
+                android:color="@color/overlayRuntimeMenuLauncherStroke" />
         </shape>
     </item>
 </selector>
