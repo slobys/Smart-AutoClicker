@@ -69,14 +69,14 @@ class TextMatcherTests {
             conditionText = TEST_TEXT,
             recognitionModelId = LATIN_MODEL_ID,
             detectionArea = Rect(0, 0, bitmap.width, bitmap.height),
-            threshold = TEXT_MATCH_THRESHOLD,
+            threshold = STRICT_TOLERATED_DIFFERENCE,
         )
 
         assertTrue("Text was not recognized after large-area downscaling", result.isDetected)
     }
 
     @Test
-    fun detection_Text_UsesConfiguredFuzzyThreshold() {
+    fun detection_Text_UsesConfiguredToleratedDifference() {
         val bitmap = createLargeTextBitmap()
         testedDetector.setScreenBitmap(bitmap, "")
 
@@ -84,14 +84,14 @@ class TextMatcherTests {
             conditionText = "PLAX",
             recognitionModelId = LATIN_MODEL_ID,
             detectionArea = Rect(0, 0, bitmap.width, bitmap.height),
-            threshold = 70,
+            threshold = 25,
         )
 
-        assertTrue("A 75% text match should satisfy a 70% threshold", result.isDetected)
+        assertTrue("A 75% text match should satisfy a 25% tolerated difference", result.isDetected)
     }
 
     @Test
-    fun detection_Text_DoesNotBypassConfiguredFuzzyThreshold() {
+    fun detection_Text_DoesNotBypassConfiguredToleratedDifference() {
         val bitmap = createLargeTextBitmap()
         testedDetector.setScreenBitmap(bitmap, "")
 
@@ -99,10 +99,25 @@ class TextMatcherTests {
             conditionText = "PLAX",
             recognitionModelId = LATIN_MODEL_ID,
             detectionArea = Rect(0, 0, bitmap.width, bitmap.height),
-            threshold = 80,
+            threshold = 20,
         )
 
-        assertFalse("A 75% text match must not satisfy an 80% threshold", result.isDetected)
+        assertFalse("A 75% text match must not satisfy a 20% tolerated difference", result.isDetected)
+    }
+
+    @Test
+    fun detection_Text_RejectsPartialTargetAtStrictTolerance() {
+        val bitmap = createLargeTextBitmap()
+        testedDetector.setScreenBitmap(bitmap, "")
+
+        val result = testedDetector.detectText(
+            conditionText = "$TEST_TEXT MODE",
+            recognitionModelId = LATIN_MODEL_ID,
+            detectionArea = Rect(0, 0, bitmap.width, bitmap.height),
+            threshold = STRICT_TOLERATED_DIFFERENCE,
+        )
+
+        assertFalse("A partial OCR result must not satisfy a strict full-text condition", result.isDetected)
     }
 
     @Test
@@ -114,7 +129,7 @@ class TextMatcherTests {
             conditionText = OUTLINED_TEXT,
             recognitionModelId = LATIN_MODEL_ID,
             detectionArea = Rect(0, 0, bitmap.width, bitmap.height),
-            threshold = TEXT_MATCH_THRESHOLD,
+            threshold = 30,
         )
 
         assertTrue("Outlined low-contrast game text was not recognized", result.isDetected)
@@ -175,6 +190,6 @@ class TextMatcherTests {
         const val TEST_TEXT = "PLAY"
         const val OUTLINED_TEXT = "QUEST"
         const val LATIN_MODEL_ID = "latin"
-        const val TEXT_MATCH_THRESHOLD = 70
+        const val STRICT_TOLERATED_DIFFERENCE = 4
     }
 }

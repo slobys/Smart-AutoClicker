@@ -297,8 +297,15 @@ bool TextMatcher::updateTextMatchingResult(
         float minimumRecognizerConfidence,
         const char* passName
 ) {
+    // The UI stores a tolerated difference (0% means exact, 4% means at least 96% similar),
+    // while the matcher works with similarity. Keep the conversion here next to both the
+    // fuzzy-comparison cutoff and the final acceptance check so the two can never diverge.
+    const float minimumRequiredScore = std::clamp(
+            100.0f - static_cast<float>(threshold),
+            0.0f,
+            100.0f);
     const float minimumSimilarity = std::clamp(
-            static_cast<float>(threshold) / 100.0f,
+            minimumRequiredScore / 100.0f,
             0.0f,
             1.0f);
 
@@ -320,7 +327,7 @@ bool TextMatcher::updateTextMatchingResult(
         if (score <= currentMatchingResult.getResultConfidence()) continue;
 
         currentMatchingResult.updateResults(detectionArea, recognizerResult.boundingBox, score);
-        if (score >= static_cast<float>(threshold)) {
+        if (score >= minimumRequiredScore) {
             currentMatchingResult.markResultAsDetected();
             return true;
         }

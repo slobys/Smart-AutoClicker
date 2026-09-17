@@ -193,7 +193,8 @@ namespace smartautoclicker {
          * @param conditionText The text to look for.
          * @param recognitionModelId The identifier of the recognition model provided with [init].
          * @param detectionArea The region of the screen to search in.
-         * @param threshold Confidence threshold for the detection/recognition.
+         * @param threshold Maximum tolerated text difference in percent. A value of 4 requires
+         *                  at least 96% text similarity.
          */
         TextMatchingResult* matchText(
                 const ScreenImage& screenImage,
