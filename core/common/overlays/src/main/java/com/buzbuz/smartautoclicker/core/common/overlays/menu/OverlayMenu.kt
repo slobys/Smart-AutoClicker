@@ -653,7 +653,7 @@ abstract class OverlayMenu(
 
     private fun toggleMenuCollapsedState() {
         if (resizeController.isAnimating) return
-        if (isMenuCollapsed) expandMenu() else collapseMenu()
+        if (isMenuCollapsed) expandMenu() else collapseMenu(isUserInitiated = true)
     }
 
     private fun scheduleAutoCollapse() {
@@ -670,8 +670,8 @@ abstract class OverlayMenu(
         }
     }
 
-    private fun collapseMenu() {
-        if (isMenuCollapsed || !canAutoCollapseMenu()) return
+    private fun collapseMenu(isUserInitiated: Boolean = false) {
+        if (!shouldCollapseOverlayMenu(isMenuCollapsed, isUserInitiated, canAutoCollapseMenu())) return
         val button = collapseButton ?: return
 
         autoCollapseJob?.cancel()
@@ -808,6 +808,13 @@ abstract class OverlayMenu(
         }
     }
 }
+
+/** Keeps automatic-collapse protection separate from an explicit user request. */
+internal fun shouldCollapseOverlayMenu(
+    isMenuCollapsed: Boolean,
+    isUserInitiated: Boolean,
+    canAutoCollapse: Boolean,
+): Boolean = !isMenuCollapsed && (isUserInitiated || canAutoCollapse)
 
 /** Tag for logs */
 private const val TAG = "OverlayMenu"
