@@ -167,4 +167,8 @@
     <string name="button_import">Importar</string>
     <string name="button_export">Exportar</string>
 
+    <string name="field_overlay_menu_auto_collapse_title">Recolher automaticamente os controles flutuantes</string>
+    <string name="field_overlay_menu_auto_collapse_desc">Mantenha a tela livre reduzindo a barra de controles a um único ícone após um curto período sem uso.</string>
+    <string name="field_overlay_menu_auto_collapse_delay_title">Espera para recolher os controles flutuantes</string>
+    <string name="field_overlay_menu_auto_collapse_delay_value">%1$d segundos</string>
 </resources>

@@ -55,6 +55,12 @@ class SettingsViewModel @Inject constructor(
     val isInputWorkaroundEnabled: Flow<Boolean> =
         settingsRepository.isInputBlockWorkaroundEnabledFlow
 
+    val isOverlayMenuAutoCollapseEnabled: Flow<Boolean> =
+        settingsRepository.isOverlayMenuAutoCollapseEnabledFlow
+
+    val overlayMenuAutoCollapseDelaySeconds: Flow<Int> =
+        settingsRepository.overlayMenuAutoCollapseDelaySecondsFlow
+
     val shouldShowEntireScreenCapture: Flow<Boolean> =
         flowOf(Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM)
 
@@ -88,6 +94,14 @@ class SettingsViewModel @Inject constructor(
 
     fun toggleInputBlockWorkaround() {
         settingsRepository.toggleInputBlockWorkaround()
+    }
+
+    fun toggleOverlayMenuAutoCollapse() {
+        settingsRepository.toggleOverlayMenuAutoCollapse()
+    }
+
+    fun setOverlayMenuAutoCollapseDelaySeconds(delaySeconds: Int) {
+        settingsRepository.setOverlayMenuAutoCollapseDelaySeconds(delaySeconds)
     }
 
     fun showPrivacySettings(activity: Activity) {

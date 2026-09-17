@@ -5,6 +5,6 @@
     android:viewportWidth="24"
     android:viewportHeight="24">
     <path
-        android:fillColor="@color/overlayMenuButtons"
-        android:pathData="M4,6h16v2H4zM4,11h11v2H4zM4,16h16v2H4zM17,9l4,3 -4,3z" />
+        android:fillColor="@android:color/white"
+        android:pathData="M7,4.5a2.5,2.5 0,1 0,0,5a2.5,2.5 0,1 0,0,-5M17,4.5a2.5,2.5 0,1 0,0,5a2.5,2.5 0,1 0,0,-5M7,14.5a2.5,2.5 0,1 0,0,5a2.5,2.5 0,1 0,0,-5M17,14.5a2.5,2.5 0,1 0,0,5a2.5,2.5 0,1 0,0,-5" />
 </vector>

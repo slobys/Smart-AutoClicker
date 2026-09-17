@@ -32,6 +32,7 @@ import com.buzbuz.smartautoclicker.core.ui.bindings.fields.setDescription
 import com.buzbuz.smartautoclicker.core.ui.bindings.fields.setOnClickListener
 import com.buzbuz.smartautoclicker.core.ui.bindings.fields.setTitle
 import com.buzbuz.smartautoclicker.databinding.FragmentSettingsBinding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -55,6 +56,17 @@ class SettingsFragment : Fragment() {
             setTitle(requireContext().getString(R.string.field_show_scenario_filters_ui_title))
             setDescription(requireContext().getString(R.string.field_show_scenario_filters_ui_desc))
             setOnClickListener(viewModel::toggleScenarioFiltersUi)
+        }
+
+        viewBinding.fieldOverlayMenuAutoCollapse.apply {
+            setTitle(requireContext().getString(R.string.field_overlay_menu_auto_collapse_title))
+            setDescription(requireContext().getString(R.string.field_overlay_menu_auto_collapse_desc))
+            setOnClickListener(viewModel::toggleOverlayMenuAutoCollapse)
+        }
+
+        viewBinding.fieldOverlayMenuAutoCollapseDelay.apply {
+            setTitle(requireContext().getString(R.string.field_overlay_menu_auto_collapse_delay_title))
+            setOnClickListener(::showOverlayMenuAutoCollapseDelayDialog)
         }
 
         viewBinding.fieldLegacyActionsUi.apply {
@@ -103,12 +115,41 @@ class SettingsFragment : Fragment() {
                 launch { viewModel.isLegacyNotificationUiEnabled.collect(viewBinding.fieldLegacyNotificationUi::setChecked) }
                 launch { viewModel.isEntireScreenCaptureForced.collect(viewBinding.fieldForceEntireScreen::setChecked) }
                 launch { viewModel.isInputWorkaroundEnabled.collect(viewBinding.fieldInputBlockWorkaround::setChecked) }
+                launch {
+                    viewModel.isOverlayMenuAutoCollapseEnabled.collect { enabled ->
+                        viewBinding.fieldOverlayMenuAutoCollapse.setChecked(enabled)
+                        viewBinding.fieldOverlayMenuAutoCollapseDelay.root.isEnabled = enabled
+                        viewBinding.fieldOverlayMenuAutoCollapseDelay.root.alpha = if (enabled) 1f else 0.5f
+                    }
+                }
+                launch {
+                    viewModel.overlayMenuAutoCollapseDelaySeconds.collect { delaySeconds ->
+                        viewBinding.fieldOverlayMenuAutoCollapseDelay.setDescription(
+                            getString(R.string.field_overlay_menu_auto_collapse_delay_value, delaySeconds)
+                        )
+                    }
+                }
                 launch { viewModel.shouldShowInputBlockWorkaround.collect(::updateInputBlockWorkaroundVisibility) }
                 launch { viewModel.shouldShowEntireScreenCapture.collect(::updateForceEntireScreenVisibility) }
                 launch { viewModel.shouldShowPrivacySettings.collect(::updatePrivacySettingsVisibility) }
                 launch { viewModel.shouldShowPurchase.collect(::updateRemoveAdsVisibility) }
             }
         }
+    }
+
+    private fun showOverlayMenuAutoCollapseDelayDialog() {
+        val values = intArrayOf(3, 5, 10, 15)
+        val labels = values.map { seconds ->
+            getString(R.string.field_overlay_menu_auto_collapse_delay_value, seconds)
+        }.toTypedArray()
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.field_overlay_menu_auto_collapse_delay_title)
+            .setItems(labels) { _, index ->
+                viewModel.setOverlayMenuAutoCollapseDelaySeconds(values[index])
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private fun updateForceEntireScreenVisibility(shouldBeVisible: Boolean) {

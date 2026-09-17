@@ -41,6 +41,12 @@ interface SettingsRepository {
     fun isInputBlockWorkaroundEnabled(): Boolean
     fun toggleInputBlockWorkaround()
 
+    val isOverlayMenuAutoCollapseEnabledFlow: Flow<Boolean>
+    val overlayMenuAutoCollapseDelaySecondsFlow: Flow<Int>
+    fun getOverlayMenuAutoCollapseDelayMs(): Long?
+    fun toggleOverlayMenuAutoCollapse()
+    fun setOverlayMenuAutoCollapseDelaySeconds(delaySeconds: Int)
+
 
     val scenarioSortSettings: Flow<ScenarioSortSettings>
     fun setScenarioSortType(type: ScenarioSortType)

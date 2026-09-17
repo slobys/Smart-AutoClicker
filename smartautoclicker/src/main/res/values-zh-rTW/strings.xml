@@ -113,4 +113,8 @@
     <string name="button_import">匯入</string>
     <string name="button_export">匯出</string>
 
+    <string name="field_overlay_menu_auto_collapse_title">自動收起懸浮控制項</string>
+    <string name="field_overlay_menu_auto_collapse_desc">閒置一段時間後將控制列縮成一個控制中心圖示，減少遮擋畫面。</string>
+    <string name="field_overlay_menu_auto_collapse_delay_title">懸浮控制項收起延遲</string>
+    <string name="field_overlay_menu_auto_collapse_delay_value">%1$d 秒</string>
 </resources>

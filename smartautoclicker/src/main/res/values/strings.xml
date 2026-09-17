@@ -126,6 +126,11 @@
     <string name="field_show_scenario_filters_ui_title">Show Scenarios filters</string>
     <string name="field_show_scenario_filters_ui_desc">Display or hide the filters in the scenario list screen.</string>
 
+    <string name="field_overlay_menu_auto_collapse_title">Automatically collapse floating controls</string>
+    <string name="field_overlay_menu_auto_collapse_desc">Keep the screen clear by reducing the control rail to one control-centre icon after a short idle period.</string>
+    <string name="field_overlay_menu_auto_collapse_delay_title">Floating controls collapse delay</string>
+    <string name="field_overlay_menu_auto_collapse_delay_value">%1$d seconds</string>
+
     <string name="field_legacy_action_ui_title">Legacy Action UI</string>
     <string name="field_legacy_action_ui_desc">Change the action display by a list. Useful for complex scenarios.</string>
 

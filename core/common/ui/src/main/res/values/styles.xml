@@ -249,6 +249,34 @@
         <item name="android:scaleType">fitCenter</item>
     </style>
 
+    <!-- Compact runtime control rail. Keeps the target large while reducing the visual weight of the glyphs. -->
+    <style name="AppTheme.Overlay.FloatingMenu.RuntimeCard" parent="AppTheme.Overlay.FloatingMenu.CardView">
+        <item name="cardBackgroundColor">@color/overlayRuntimeMenuBackground</item>
+        <item name="cardCornerRadius">18dp</item>
+        <item name="cardElevation">8dp</item>
+    </style>
+
+    <style name="AppTheme.Overlay.FloatingMenu.RuntimeLayoutButtons" parent="AppTheme.Overlay.FloatingMenu.LayoutButtons">
+        <item name="android:paddingStart">6dp</item>
+        <item name="android:paddingEnd">6dp</item>
+        <item name="android:paddingTop">6dp</item>
+        <item name="android:paddingBottom">6dp</item>
+    </style>
+
+    <style name="AppTheme.Overlay.FloatingMenu.RuntimeButton" parent="AppTheme.Overlay.FloatingMenu.Buttons">
+        <item name="android:layout_width">56dp</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:layout_marginTop">2dp</item>
+        <item name="android:layout_marginBottom">2dp</item>
+        <item name="android:background">@drawable/bg_overlay_runtime_button</item>
+        <item name="android:padding">13dp</item>
+    </style>
+
+    <style name="AppTheme.Overlay.FloatingMenu.RuntimeLauncherButton" parent="AppTheme.Overlay.FloatingMenu.RuntimeButton">
+        <item name="android:background">@drawable/bg_overlay_runtime_launcher</item>
+        <item name="android:padding">15dp</item>
+    </style>
+
     <!-- Style for the click/swipe position(s) overlay selector view. -->
     <style name="AppTheme.Overlay.PositionSelector">
         <item name="colorBackground">@color/overlayActionsBriefBackground</item>

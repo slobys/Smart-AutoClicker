@@ -113,4 +113,8 @@
     <string name="button_import">インポート</string>
     <string name="button_export">エクスポート</string>
 
+    <string name="field_overlay_menu_auto_collapse_title">フローティング操作を自動的に格納</string>
+    <string name="field_overlay_menu_auto_collapse_desc">一定時間操作がないときに操作バーを1つのアイコンに縮小し、画面を広く使います。</string>
+    <string name="field_overlay_menu_auto_collapse_delay_title">フローティング操作の格納時間</string>
+    <string name="field_overlay_menu_auto_collapse_delay_value">%1$d 秒</string>
 </resources>

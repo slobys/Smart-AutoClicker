@@ -66,6 +66,17 @@ internal class SettingsRepositoryImpl @Inject constructor(
         .stateIn(coroutineScope, SharingStarted.Eagerly, false)
     override val isInputBlockWorkaroundEnabledFlow: Flow<Boolean> = _isInputBlockWorkaroundEnabledFlow
 
+    private val _isOverlayMenuAutoCollapseEnabledFlow: StateFlow<Boolean> =
+        dataSource.isOverlayMenuAutoCollapseEnabled()
+            .stateIn(coroutineScope, SharingStarted.Eagerly, true)
+    override val isOverlayMenuAutoCollapseEnabledFlow: Flow<Boolean> = _isOverlayMenuAutoCollapseEnabledFlow
+
+    private val _overlayMenuAutoCollapseDelaySecondsFlow: StateFlow<Int> =
+        dataSource.overlayMenuAutoCollapseDelaySeconds()
+            .stateIn(coroutineScope, SharingStarted.Eagerly, 5)
+    override val overlayMenuAutoCollapseDelaySecondsFlow: Flow<Int> =
+        _overlayMenuAutoCollapseDelaySecondsFlow
+
     override val scenarioSortSettings: Flow<ScenarioSortSettings> = scenarioSortSettingsDatasource.getSortConfig()
 
 
@@ -113,6 +124,21 @@ internal class SettingsRepositoryImpl @Inject constructor(
         coroutineScope.launch {
             dataSource.toggleInputBlockWorkaround()
         }
+    }
+
+    override fun getOverlayMenuAutoCollapseDelayMs(): Long? =
+        if (_isOverlayMenuAutoCollapseEnabledFlow.value) {
+            _overlayMenuAutoCollapseDelaySecondsFlow.value * 1_000L
+        } else {
+            null
+        }
+
+    override fun toggleOverlayMenuAutoCollapse() {
+        coroutineScope.launch { dataSource.toggleOverlayMenuAutoCollapse() }
+    }
+
+    override fun setOverlayMenuAutoCollapseDelaySeconds(delaySeconds: Int) {
+        coroutineScope.launch { dataSource.setOverlayMenuAutoCollapseDelaySeconds(delaySeconds) }
     }
 
     override fun setScenarioSortType(type: ScenarioSortType) {

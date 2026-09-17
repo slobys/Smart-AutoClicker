@@ -93,4 +93,8 @@
         <item quantity="other">%1$d ngày trước</item>
     </plurals>
 
+    <string name="field_overlay_menu_auto_collapse_title">Tự động thu gọn điều khiển nổi</string>
+    <string name="field_overlay_menu_auto_collapse_desc">Giữ màn hình gọn gàng bằng cách thu thanh điều khiển thành một biểu tượng sau thời gian ngắn không sử dụng.</string>
+    <string name="field_overlay_menu_auto_collapse_delay_title">Thời gian chờ thu gọn điều khiển nổi</string>
+    <string name="field_overlay_menu_auto_collapse_delay_value">%1$d giây</string>
 </resources>

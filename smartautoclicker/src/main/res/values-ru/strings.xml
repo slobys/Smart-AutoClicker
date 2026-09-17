@@ -165,4 +165,8 @@
     <string name="button_import">Импортировать</string>
     <string name="button_export">Экспортировать</string>
 
+    <string name="field_overlay_menu_auto_collapse_title">Автоматически сворачивать плавающие элементы</string>
+    <string name="field_overlay_menu_auto_collapse_desc">Освобождает экран, сворачивая панель до одного значка после короткого бездействия.</string>
+    <string name="field_overlay_menu_auto_collapse_delay_title">Задержка сворачивания плавающих элементов</string>
+    <string name="field_overlay_menu_auto_collapse_delay_value">%1$d сек.</string>
 </resources>

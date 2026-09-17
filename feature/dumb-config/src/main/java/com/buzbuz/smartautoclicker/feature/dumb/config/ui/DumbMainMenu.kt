@@ -46,7 +46,8 @@ class DumbMainMenu(
     private val onStopClicked: () -> Unit,
     private val onScenarioSwitchClicked: () -> Unit,
     private val canSwitchScenario: StateFlow<Boolean>,
-) : OverlayMenu(theme = R.style.AppTheme, autoCollapseDelayMs = AUTO_COLLAPSE_DELAY_MS) {
+    autoCollapseDelayMs: Long?,
+) : OverlayMenu(theme = R.style.AppTheme, autoCollapseDelayMs = autoCollapseDelayMs) {
 
     /** The view model for this menu. */
     private val viewModel: DumbMainMenuModel by viewModels(
@@ -212,5 +213,3 @@ class DumbMainMenu(
         }
     }
 }
-
-private const val AUTO_COLLAPSE_DELAY_MS = 5_000L

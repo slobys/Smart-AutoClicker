@@ -175,4 +175,8 @@
     <string name="button_import">استيراد</string>
     <string name="button_export">تصدير</string>
 
+    <string name="field_overlay_menu_auto_collapse_title">طي عناصر التحكم العائمة تلقائيًا</string>
+    <string name="field_overlay_menu_auto_collapse_desc">حافظ على وضوح الشاشة بتصغير شريط التحكم إلى أيقونة واحدة بعد فترة خمول قصيرة.</string>
+    <string name="field_overlay_menu_auto_collapse_delay_title">مهلة طي عناصر التحكم العائمة</string>
+    <string name="field_overlay_menu_auto_collapse_delay_value">%1$d ثوانٍ</string>
 </resources>

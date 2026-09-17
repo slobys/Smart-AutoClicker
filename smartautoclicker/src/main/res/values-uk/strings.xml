@@ -168,4 +168,8 @@
     <string name="button_import">Імпорт</string>
     <string name="button_export">Експорт</string>
 
+    <string name="field_overlay_menu_auto_collapse_title">Автоматично згортати плаваючі елементи</string>
+    <string name="field_overlay_menu_auto_collapse_desc">Звільняє екран, згортаючи панель до однієї піктограми після короткої бездіяльності.</string>
+    <string name="field_overlay_menu_auto_collapse_delay_title">Затримка згортання плаваючих елементів</string>
+    <string name="field_overlay_menu_auto_collapse_delay_value">%1$d с</string>
 </resources>

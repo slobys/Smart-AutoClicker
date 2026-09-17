@@ -113,4 +113,8 @@
     <string name="button_import">导入</string>
     <string name="button_export">导出</string>
 
+    <string name="field_overlay_menu_auto_collapse_title">自动收起悬浮控件</string>
+    <string name="field_overlay_menu_auto_collapse_desc">空闲一段时间后将控制栏缩成一个控制中心图标，减少对屏幕的遮挡。</string>
+    <string name="field_overlay_menu_auto_collapse_delay_title">悬浮控件收起延时</string>
+    <string name="field_overlay_menu_auto_collapse_delay_value">%1$d 秒</string>
 </resources>

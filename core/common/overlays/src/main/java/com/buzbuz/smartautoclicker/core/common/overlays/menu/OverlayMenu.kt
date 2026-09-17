@@ -646,6 +646,7 @@ abstract class OverlayMenu(
 
         isMenuCollapsed = true
         button.contentDescription = context.getString(R.string.content_desc_expand_overlay_menu)
+        animateCollapseButton(button)
         animateLayoutChanges {
             buttonsContainer.children
                 .filterNot { view -> view.id == R.id.btn_collapse_menu }
@@ -664,6 +665,7 @@ abstract class OverlayMenu(
 
         isMenuCollapsed = false
         button.contentDescription = context.getString(R.string.content_desc_collapse_overlay_menu)
+        animateCollapseButton(button)
         animateLayoutChanges {
             buttonsContainer.children
                 .filterNot { view -> view.id == R.id.btn_collapse_menu }
@@ -682,7 +684,26 @@ abstract class OverlayMenu(
             displayWidth - menuLayout.width
         }
         updateMenuPosition(Point(targetX, menuLayoutParams.y))
-        collapseButton?.rotation = if (targetX == 0) 0f else 180f
+        collapseButton?.rotation = 0f
+    }
+
+    /** Gives the launcher a short tactile-looking pulse without changing its control-centre glyph. */
+    private fun animateCollapseButton(button: ImageButton) {
+        button.animate().cancel()
+        button.animate()
+            .alpha(0.72f)
+            .scaleX(0.88f)
+            .scaleY(0.88f)
+            .setDuration(MENU_LAUNCHER_PULSE_HALF_DURATION_MS)
+            .withEndAction {
+                button.animate()
+                    .alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(MENU_LAUNCHER_PULSE_HALF_DURATION_MS)
+                    .start()
+            }
+            .start()
     }
 
 
@@ -755,3 +776,4 @@ abstract class OverlayMenu(
 /** Tag for logs */
 private const val TAG = "OverlayMenu"
 private const val MENU_RESIZE_ANIMATION_MS = 350L
+private const val MENU_LAUNCHER_PULSE_HALF_DURATION_MS = 110L

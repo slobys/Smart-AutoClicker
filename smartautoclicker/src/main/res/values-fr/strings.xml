@@ -169,4 +169,8 @@
     <string name="button_import">Importer</string>
     <string name="button_export">Exporter</string>
 
+    <string name="field_overlay_menu_auto_collapse_title">Réduire automatiquement les commandes flottantes</string>
+    <string name="field_overlay_menu_auto_collapse_desc">Dégagez l’écran en réduisant la barre de commandes à une seule icône après une courte inactivité.</string>
+    <string name="field_overlay_menu_auto_collapse_delay_title">Délai de réduction des commandes flottantes</string>
+    <string name="field_overlay_menu_auto_collapse_delay_value">%1$d secondes</string>
 </resources>

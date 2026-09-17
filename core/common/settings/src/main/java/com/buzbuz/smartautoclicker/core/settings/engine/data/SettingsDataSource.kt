@@ -19,6 +19,7 @@ package com.buzbuz.smartautoclicker.core.settings.engine.data
 import android.content.Context
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 
 import com.buzbuz.smartautoclicker.core.base.PreferencesDataStore
 import com.buzbuz.smartautoclicker.core.base.di.Dispatcher
@@ -53,6 +54,10 @@ internal class SettingsDataSource @Inject constructor(
             booleanPreferencesKey("forceEntireScreen")
         val KEY_INPUT_BLOCK_WORKAROUND: Preferences.Key<Boolean> =
             booleanPreferencesKey("inputBlockWorkaround")
+        val KEY_OVERLAY_MENU_AUTO_COLLAPSE_ENABLED: Preferences.Key<Boolean> =
+            booleanPreferencesKey("overlayMenuAutoCollapseEnabled")
+        val KEY_OVERLAY_MENU_AUTO_COLLAPSE_DELAY_SECONDS: Preferences.Key<Int> =
+            intPreferencesKey("overlayMenuAutoCollapseDelaySeconds")
     }
 
     private val dataStore: PreferencesDataStore =
@@ -104,4 +109,30 @@ internal class SettingsDataSource @Inject constructor(
             preferences[KEY_INPUT_BLOCK_WORKAROUND] = !(preferences[KEY_INPUT_BLOCK_WORKAROUND] ?: false)
         }
     }
+
+    internal fun isOverlayMenuAutoCollapseEnabled(): Flow<Boolean> =
+        dataStore.data.map { preferences -> preferences[KEY_OVERLAY_MENU_AUTO_COLLAPSE_ENABLED] ?: true }
+
+    internal suspend fun toggleOverlayMenuAutoCollapse() =
+        dataStore.edit { preferences ->
+            preferences[KEY_OVERLAY_MENU_AUTO_COLLAPSE_ENABLED] =
+                !(preferences[KEY_OVERLAY_MENU_AUTO_COLLAPSE_ENABLED] ?: true)
+        }
+
+    internal fun overlayMenuAutoCollapseDelaySeconds(): Flow<Int> =
+        dataStore.data.map { preferences ->
+            preferences[KEY_OVERLAY_MENU_AUTO_COLLAPSE_DELAY_SECONDS]
+                ?.takeIf(OVERLAY_MENU_AUTO_COLLAPSE_DELAYS_SECONDS::contains)
+                ?: DEFAULT_OVERLAY_MENU_AUTO_COLLAPSE_DELAY_SECONDS
+        }
+
+    internal suspend fun setOverlayMenuAutoCollapseDelaySeconds(delaySeconds: Int) {
+        if (delaySeconds !in OVERLAY_MENU_AUTO_COLLAPSE_DELAYS_SECONDS) return
+        dataStore.edit { preferences ->
+            preferences[KEY_OVERLAY_MENU_AUTO_COLLAPSE_DELAY_SECONDS] = delaySeconds
+        }
+    }
 }
+
+internal val OVERLAY_MENU_AUTO_COLLAPSE_DELAYS_SECONDS = setOf(3, 5, 10, 15)
+internal const val DEFAULT_OVERLAY_MENU_AUTO_COLLAPSE_DELAY_SECONDS = 5

@@ -167,4 +167,8 @@
     <string name="button_import">Importa</string>
     <string name="button_export">Esporta</string>
 
+    <string name="field_overlay_menu_auto_collapse_title">Comprimi automaticamente i controlli mobili</string>
+    <string name="field_overlay_menu_auto_collapse_desc">Mantieni libero lo schermo riducendo la barra dei controlli a una sola icona dopo un breve periodo di inattività.</string>
+    <string name="field_overlay_menu_auto_collapse_delay_title">Ritardo compressione controlli mobili</string>
+    <string name="field_overlay_menu_auto_collapse_delay_value">%1$d secondi</string>
 </resources>

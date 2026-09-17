@@ -168,4 +168,8 @@
     <string name="button_import">Importar</string>
     <string name="button_export">Exportar</string>
 
+    <string name="field_overlay_menu_auto_collapse_title">Contraer automáticamente los controles flotantes</string>
+    <string name="field_overlay_menu_auto_collapse_desc">Mantén la pantalla despejada reduciendo la barra de controles a un solo icono tras un breve periodo de inactividad.</string>
+    <string name="field_overlay_menu_auto_collapse_delay_title">Espera para contraer los controles flotantes</string>
+    <string name="field_overlay_menu_auto_collapse_delay_value">%1$d segundos</string>
 </resources>

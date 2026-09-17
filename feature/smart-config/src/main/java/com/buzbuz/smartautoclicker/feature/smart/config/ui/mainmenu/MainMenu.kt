@@ -70,7 +70,8 @@ class MainMenu(
     private val onStopClicked: () -> Unit,
     private val onScenarioSwitchClicked: () -> Unit,
     private val canSwitchScenario: StateFlow<Boolean>,
-) : OverlayMenu(autoCollapseDelayMs = AUTO_COLLAPSE_DELAY_MS) {
+    autoCollapseDelayMs: Long?,
+) : OverlayMenu(autoCollapseDelayMs = autoCollapseDelayMs) {
 
     override fun tutorialMonitoringTag(): String = MonitoredOverlayType.MAIN_MENU.name
 
@@ -427,5 +428,3 @@ class MainMenu(
     }
 
 }
-
-private const val AUTO_COLLAPSE_DELAY_MS = 5_000L
