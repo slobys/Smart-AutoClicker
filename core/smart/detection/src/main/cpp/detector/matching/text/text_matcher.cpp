@@ -29,9 +29,15 @@ using namespace smartautoclicker;
 
 namespace {
     constexpr int MIN_NUMBER_DETECTION_SIDE = 384;
+    constexpr int MIN_ENHANCED_TEXT_DETECTION_SIDE = 320;
     constexpr float MIN_MAPPED_NUMBER_CONFIDENCE = 0.25f;
     constexpr float MIN_CORNER_FALLBACK_CONFIDENCE = 0.25f;
+    constexpr float MIN_ENHANCED_TEXT_CONFIDENCE = 0.25f;
     constexpr float SMALL_ROI_CORNER_RANKING_BONUS = 20.0f;
+    constexpr int MIN_DIRECT_TEXT_SIDE = 12;
+    constexpr int MAX_DIRECT_TEXT_SHORT_SIDE = 192;
+    constexpr int MAX_DIRECT_TEXT_LONG_SIDE = 960;
+    constexpr float MAX_DIRECT_TEXT_ASPECT_RATIO = 12.0f;
 }
 
 bool TextMatcher::init(const std::string& detectionModelPath, const std::map<std::string, std::string>& recognitionModels) {
@@ -64,22 +70,30 @@ TextMatchingResult* TextMatcher::matchText(
         return &currentMatchingResult;
     }
 
-    // Recognize the text in the regions detected
+    // Keep the original image as the primary path. Most clear text is recognized here without
+    // paying for extra inference or exposing it to preprocessing artifacts.
     auto recognizerResults = recognizeText(screenImage, detectionArea, recognitionModelId);
-
-    // Parse results and find matching candidate, if any
-    for (const auto& recognizerResult: recognizerResults) {
-        float score = bestSubstringSimilarity(recognizerResult.text,conditionText) * 100;
-        LOGD("TextMatcher", "Score=%f; recognized=%s", score, recognizerResult.text.c_str());
-
-        if (score < currentMatchingResult.getResultConfidence()) continue;
-
-        currentMatchingResult.updateResults(detectionArea, recognizerResult.boundingBox, score);
-        if ((int) score >= threshold) {
-            currentMatchingResult.markResultAsDetected();
-            break;
-        }
+    if (updateTextMatchingResult(
+            recognizerResults,
+            conditionText,
+            detectionArea,
+            threshold,
+            0.0f,
+            "original")) {
+        return &currentMatchingResult;
     }
+
+    // Only failed primary matches use the more expensive fallback. CLAHE makes outlined and
+    // low-contrast glyphs more uniform while a conservative unsharp mask recovers mildly blurred
+    // edges. Fallback candidates must also meet a model-confidence floor to limit false positives.
+    recognizerResults = recognizeEnhancedText(screenImage, detectionArea, recognitionModelId);
+    updateTextMatchingResult(
+            recognizerResults,
+            conditionText,
+            detectionArea,
+            threshold,
+            MIN_ENHANCED_TEXT_CONFIDENCE,
+            "enhanced");
 
     return &currentMatchingResult;
 }
@@ -209,6 +223,110 @@ std::vector<TextRecognizerResult> TextMatcher::recognizeText(
     }
 
     return recognizeTextInImage(rgbScreenCrop, recognitionModelId, minimumDetectionSide);
+}
+
+std::vector<TextRecognizerResult> TextMatcher::recognizeEnhancedText(
+        const ScreenImage& screenImage,
+        const cv::Rect& detectionArea,
+        const std::string& recognitionModelId
+) {
+    cv::Mat screenCrop = screenImage.cropColor(detectionArea);
+    if (screenCrop.empty()) {
+        LOGE("TextMatcher", "Can't get screen crop for enhanced text recognition");
+        return {};
+    }
+
+    cv::Mat rgbScreenCrop;
+    cv::cvtColor(screenCrop, rgbScreenCrop, cv::COLOR_RGBA2RGB);
+
+    cv::Mat gray;
+    cv::cvtColor(rgbScreenCrop, gray, cv::COLOR_RGB2GRAY);
+
+    cv::Mat contrastEnhanced;
+    cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(2.0, cv::Size(8, 8));
+    clahe->apply(gray, contrastEnhanced);
+
+    cv::Mat blurred;
+    cv::GaussianBlur(contrastEnhanced, blurred, cv::Size(0, 0), 0.9);
+
+    cv::Mat sharpened;
+    cv::addWeighted(contrastEnhanced, 1.65, blurred, -0.65, 0.0, sharpened);
+
+    cv::Mat enhancedRgb;
+    cv::cvtColor(sharpened, enhancedRgb, cv::COLOR_GRAY2RGB);
+
+    auto results = recognizeTextInImage(
+            enhancedRgb,
+            recognitionModelId,
+            MIN_ENHANCED_TEXT_DETECTION_SIDE);
+
+    // A tightly selected text line may be readable by the recognizer even when the localization
+    // model rejects its outline or animated background. Restrict direct recognition to compact
+    // areas so a large game scene is never squeezed into one OCR line.
+    const int shortestSide = std::min(enhancedRgb.cols, enhancedRgb.rows);
+    const int longestSide = std::max(enhancedRgb.cols, enhancedRgb.rows);
+    const float aspectRatio = static_cast<float>(longestSide) /
+            static_cast<float>(std::max(1, shortestSide));
+    if (shortestSide >= MIN_DIRECT_TEXT_SIDE &&
+        shortestSide <= MAX_DIRECT_TEXT_SHORT_SIDE &&
+        longestSide <= MAX_DIRECT_TEXT_LONG_SIDE &&
+        aspectRatio <= MAX_DIRECT_TEXT_ASPECT_RATIO) {
+        cv::Mat directCrop = enhancedRgb;
+        if (directCrop.rows > directCrop.cols) {
+            cv::rotate(directCrop, directCrop, cv::ROTATE_90_CLOCKWISE);
+        }
+
+        std::vector<TextDetectorResult> directDetectionResults;
+        directDetectionResults.emplace_back(
+                cv::Rect(0, 0, enhancedRgb.cols, enhancedRgb.rows),
+                directCrop);
+        auto directResults = textRecognizer->recognizeText(
+                recognitionModelId,
+                directDetectionResults);
+        results.insert(results.end(), directResults.begin(), directResults.end());
+    }
+
+    return results;
+}
+
+bool TextMatcher::updateTextMatchingResult(
+        const std::vector<TextRecognizerResult>& recognizerResults,
+        const std::string& conditionText,
+        const cv::Rect& detectionArea,
+        int threshold,
+        float minimumRecognizerConfidence,
+        const char* passName
+) {
+    const float minimumSimilarity = std::clamp(
+            static_cast<float>(threshold) / 100.0f,
+            0.0f,
+            1.0f);
+
+    for (const auto& recognizerResult: recognizerResults) {
+        if (recognizerResult.confidence < minimumRecognizerConfidence) continue;
+
+        const float score = bestSubstringSimilarity(
+                recognizerResult.text,
+                conditionText,
+                minimumSimilarity) * 100.0f;
+        LOGD(
+                "TextMatcher",
+                "Pass=%s; score=%f; ocrConfidence=%f; recognized=%s",
+                passName,
+                score,
+                recognizerResult.confidence,
+                recognizerResult.text.c_str());
+
+        if (score <= currentMatchingResult.getResultConfidence()) continue;
+
+        currentMatchingResult.updateResults(detectionArea, recognizerResult.boundingBox, score);
+        if (score >= static_cast<float>(threshold)) {
+            currentMatchingResult.markResultAsDetected();
+            return true;
+        }
+    }
+
+    return false;
 }
 
 std::vector<TextRecognizerResult> TextMatcher::recognizeNumber(
@@ -346,23 +464,30 @@ float TextMatcher::bestSubstringSimilarity(const std::string& recognized, const 
     // Fast exact substring match
     if (recognized.find(target) != std::string::npos) return 1.f;
 
-    const int targetLen = static_cast<int>(target.size());
-    const int recognizedLen = static_cast<int>(recognized.size());
+    const auto recognizedCodePoints = decodeUtf8(recognized);
+    const auto targetCodePoints = decodeUtf8(target);
+    const int targetLen = static_cast<int>(targetCodePoints.size());
+    const int recognizedLen = static_cast<int>(recognizedCodePoints.size());
 
     // Fast path
-    if (recognizedLen <= targetLen + 2) return similarity(recognized, target, minSimilarity);
+    if (recognizedLen <= targetLen + 2) {
+        return similarityCodePoints(recognizedCodePoints, targetCodePoints, minSimilarity);
+    }
 
-    // Allow small OCR insertions/deletions
+    // Allow small OCR insertions/deletions. Window boundaries are Unicode code points, never the
+    // continuation bytes inside a Chinese, Japanese, Korean, or other multibyte character.
     float bestScore = 0.f;
     const int minWindow = std::max(1, targetLen - 2);
     const int maxWindow = std::min(recognizedLen, targetLen + 4);
 
-    std::string window;
+    std::vector<std::uint32_t> window;
     for (int windowSize = minWindow; windowSize <= maxWindow; ++windowSize) {
         for (int start = 0; start <= recognizedLen - windowSize; ++start) {
-            window.assign(recognized.data() + start, windowSize);
+            window.assign(
+                    recognizedCodePoints.begin() + start,
+                    recognizedCodePoints.begin() + start + windowSize);
 
-            float score = similarity(window, target, minSimilarity);
+            float score = similarityCodePoints(window, targetCodePoints, minSimilarity);
             if (score > bestScore) {
                 bestScore = score;
 
@@ -376,6 +501,16 @@ float TextMatcher::bestSubstringSimilarity(const std::string& recognized, const 
 }
 
 float TextMatcher::similarity(const std::string &recognized, const std::string &target, float minSimilarity) {
+    if (recognized.empty() || target.empty()) return 0.f;
+
+    return similarityCodePoints(decodeUtf8(recognized), decodeUtf8(target), minSimilarity);
+}
+
+float TextMatcher::similarityCodePoints(
+        const std::vector<std::uint32_t>& recognized,
+        const std::vector<std::uint32_t>& target,
+        float minSimilarity
+) {
     if (recognized.empty() || target.empty()) return 0.f;
 
     const int n = static_cast<int>(recognized.size());
@@ -396,9 +531,9 @@ float TextMatcher::similarity(const std::string &recognized, const std::string &
         comparisonCurrRow[0] = i;
         int rowMin = comparisonCurrRow[0];
 
-        char ca = normalizeChar(recognized[i - 1]);
+        const std::uint32_t ca = normalizeCodePoint(recognized[i - 1]);
         for (int j = 1; j <= m; ++j) {
-            char cb = normalizeChar(target[j - 1]);
+            const std::uint32_t cb = normalizeCodePoint(target[j - 1]);
 
             int cost = (ca == cb) ? 0 : 1;
 
@@ -408,7 +543,9 @@ float TextMatcher::similarity(const std::string &recognized, const std::string &
             int value = std::min({ deletion, insertion, substitution });
 
             // Damerau transposition
-            if (i > 1 && j > 1 && ca == normalizeChar(target[j - 2]) && normalizeChar(recognized[i - 2]) == cb) {
+            if (i > 1 && j > 1 &&
+                ca == normalizeCodePoint(target[j - 2]) &&
+                normalizeCodePoint(recognized[i - 2]) == cb) {
                 value = std::min(value, comparisonPrevPrevRow[j - 2] + 1);
             }
 
@@ -429,9 +566,51 @@ float TextMatcher::similarity(const std::string &recognized, const std::string &
     return std::max(0.f, score);
 }
 
-char TextMatcher::normalizeChar(char c) {
-    if (c >= 'A' && c <= 'Z') return static_cast<char>(c + 32);
-    return c;
+std::vector<std::uint32_t> TextMatcher::decodeUtf8(const std::string& text) {
+    std::vector<std::uint32_t> codePoints;
+    codePoints.reserve(text.size());
+
+    for (std::size_t index = 0; index < text.size();) {
+        const auto first = static_cast<unsigned char>(text[index]);
+        std::uint32_t codePoint = first;
+        std::size_t length = 1;
+
+        if ((first & 0xE0u) == 0xC0u) {
+            codePoint = first & 0x1Fu;
+            length = 2;
+        } else if ((first & 0xF0u) == 0xE0u) {
+            codePoint = first & 0x0Fu;
+            length = 3;
+        } else if ((first & 0xF8u) == 0xF0u) {
+            codePoint = first & 0x07u;
+            length = 4;
+        }
+
+        bool valid = index + length <= text.size();
+        for (std::size_t offset = 1; valid && offset < length; ++offset) {
+            const auto continuation = static_cast<unsigned char>(text[index + offset]);
+            if ((continuation & 0xC0u) != 0x80u) {
+                valid = false;
+                break;
+            }
+            codePoint = (codePoint << 6u) | (continuation & 0x3Fu);
+        }
+
+        if (!valid) {
+            codePoint = first;
+            length = 1;
+        }
+
+        codePoints.push_back(codePoint);
+        index += length;
+    }
+
+    return codePoints;
+}
+
+std::uint32_t TextMatcher::normalizeCodePoint(std::uint32_t codePoint) {
+    if (codePoint >= 'A' && codePoint <= 'Z') return codePoint + ('a' - 'A');
+    return codePoint;
 }
 
 bool TextMatcher::isNumber(const std::string& text) {

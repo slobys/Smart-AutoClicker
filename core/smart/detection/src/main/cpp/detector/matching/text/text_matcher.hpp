@@ -18,6 +18,7 @@
 #define KLICK_R_TEXT_MATCHER_HPP
 
 #include <opencv2/core/types.hpp>
+#include <cstdint>
 #include <map>
 #include <net.h>
 #include <limits>
@@ -95,6 +96,24 @@ namespace smartautoclicker {
                 const std::string& recognitionModelId,
                 int minimumDetectionSide = 0);
 
+        /**
+         * Runs a contrast-enhanced fallback for outlined, low-contrast, or mildly blurred game
+         * text. This is only called after the original image fails to reach the user threshold.
+         */
+        std::vector<TextRecognizerResult> recognizeEnhancedText(
+                const ScreenImage& screenImage,
+                const cv::Rect& detectionArea,
+                const std::string& recognitionModelId);
+
+        /** Scores one OCR pass and keeps the best result found across all passes. */
+        bool updateTextMatchingResult(
+                const std::vector<TextRecognizerResult>& recognizerResults,
+                const std::string& conditionText,
+                const cv::Rect& detectionArea,
+                int threshold,
+                float minimumRecognizerConfidence,
+                const char* passName);
+
         /** Runs number-specific OCR passes, including contrast enhancement for tiny game counters. */
         std::vector<TextRecognizerResult> recognizeNumber(
                 const ScreenImage& screenImage,
@@ -130,12 +149,24 @@ namespace smartautoclicker {
         float bestSubstringSimilarity(const std::string& recognized, const std::string& target, float minSimilarity = 0.80f);
 
         /**
-         * Normalizes a character for comparison (e.g., case folding).
-         * @param c The character to normalize.
-         *
-         * @return The normalized character.
+         * Decodes UTF-8 before fuzzy matching so multilingual thresholds are character based.
+         * Invalid bytes are preserved as individual code points instead of being discarded.
          */
-        static char normalizeChar(char c);
+        static std::vector<std::uint32_t> decodeUtf8(const std::string& text);
+
+        /** Calculates edit similarity between already decoded Unicode code points. */
+        float similarityCodePoints(
+                const std::vector<std::uint32_t>& recognized,
+                const std::vector<std::uint32_t>& target,
+                float minSimilarity);
+
+        /**
+         * Normalizes a Unicode code point for comparison (currently ASCII case folding).
+         * @param codePoint The code point to normalize.
+         *
+         * @return The normalized code point.
+         */
+        static std::uint32_t normalizeCodePoint(std::uint32_t codePoint);
 
     public:
         /** Resets the matcher state for a new search. */

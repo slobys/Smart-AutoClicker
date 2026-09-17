@@ -28,6 +28,7 @@ import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.buzbuz.smartautoclicker.core.detection.utils.extractTestOcrModels
 import org.junit.After
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -74,6 +75,51 @@ class TextMatcherTests {
         assertTrue("Text was not recognized after large-area downscaling", result.isDetected)
     }
 
+    @Test
+    fun detection_Text_UsesConfiguredFuzzyThreshold() {
+        val bitmap = createLargeTextBitmap()
+        testedDetector.setScreenBitmap(bitmap, "")
+
+        val result = testedDetector.detectText(
+            conditionText = "PLAX",
+            recognitionModelId = LATIN_MODEL_ID,
+            detectionArea = Rect(0, 0, bitmap.width, bitmap.height),
+            threshold = 70,
+        )
+
+        assertTrue("A 75% text match should satisfy a 70% threshold", result.isDetected)
+    }
+
+    @Test
+    fun detection_Text_DoesNotBypassConfiguredFuzzyThreshold() {
+        val bitmap = createLargeTextBitmap()
+        testedDetector.setScreenBitmap(bitmap, "")
+
+        val result = testedDetector.detectText(
+            conditionText = "PLAX",
+            recognitionModelId = LATIN_MODEL_ID,
+            detectionArea = Rect(0, 0, bitmap.width, bitmap.height),
+            threshold = 80,
+        )
+
+        assertFalse("A 75% text match must not satisfy an 80% threshold", result.isDetected)
+    }
+
+    @Test
+    fun detection_Text_RecognizesOutlinedLowContrastGameText() {
+        val bitmap = createOutlinedGameTextBitmap()
+        testedDetector.setScreenBitmap(bitmap, "")
+
+        val result = testedDetector.detectText(
+            conditionText = OUTLINED_TEXT,
+            recognitionModelId = LATIN_MODEL_ID,
+            detectionArea = Rect(0, 0, bitmap.width, bitmap.height),
+            threshold = TEXT_MATCH_THRESHOLD,
+        )
+
+        assertTrue("Outlined low-contrast game text was not recognized", result.isDetected)
+    }
+
     private fun createLargeTextBitmap(): Bitmap =
         Bitmap.createBitmap(1440, 800, Bitmap.Config.ARGB_8888).apply {
             val canvas = Canvas(this)
@@ -94,8 +140,40 @@ class TextMatcherTests {
             canvas.drawText(TEST_TEXT, 720f, 435f, textPaint)
         }
 
+    private fun createOutlinedGameTextBitmap(): Bitmap =
+        Bitmap.createBitmap(520, 110, Bitmap.Config.ARGB_8888).apply {
+            val canvas = Canvas(this)
+            canvas.drawColor(Color.rgb(72, 84, 91))
+
+            val decorationPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.rgb(88, 103, 109)
+                strokeWidth = 9f
+            }
+            for (x in -80..600 step 70) {
+                canvas.drawLine(x.toFloat(), 0f, (x + 90).toFloat(), 110f, decorationPaint)
+            }
+
+            val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                textSize = 62f
+                typeface = Typeface.DEFAULT_BOLD
+                textAlign = Paint.Align.CENTER
+            }
+            textPaint.apply {
+                color = Color.rgb(45, 52, 57)
+                style = Paint.Style.STROKE
+                strokeWidth = 8f
+            }
+            canvas.drawText(OUTLINED_TEXT, 260f, 78f, textPaint)
+            textPaint.apply {
+                color = Color.rgb(164, 175, 178)
+                style = Paint.Style.FILL
+            }
+            canvas.drawText(OUTLINED_TEXT, 260f, 78f, textPaint)
+        }
+
     private companion object {
         const val TEST_TEXT = "PLAY"
+        const val OUTLINED_TEXT = "QUEST"
         const val LATIN_MODEL_ID = "latin"
         const val TEXT_MATCH_THRESHOLD = 70
     }
