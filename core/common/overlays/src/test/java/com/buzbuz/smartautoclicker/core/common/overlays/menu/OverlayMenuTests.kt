@@ -303,6 +303,22 @@ class OverlayMenuTests {
     }
 
     @Test
+    fun setupCollapsedLauncherClickAndTouchListeners() {
+        overlayMenuController = OverlayMenuTestImpl(overlayMenuControllerImpl)
+        val collapseItem = createMockMenuItemView(R.id.btn_collapse_menu)
+        mockViewsFromImpl(createMockMenuView(sequenceOf(
+            createMockMenuItemView(),
+            collapseItem,
+            createMockMenuItemView(),
+        )))
+
+        overlayMenuController.create(mockContext)
+
+        verify(collapseItem).setOnClickListener(any())
+        verify(collapseItem).setOnTouchListener(any())
+    }
+
+    @Test
     fun destroy_removeView() {
         overlayMenuController = OverlayMenuTestImpl(overlayMenuControllerImpl)
         val menuView = mock(ViewGroup::class.java)

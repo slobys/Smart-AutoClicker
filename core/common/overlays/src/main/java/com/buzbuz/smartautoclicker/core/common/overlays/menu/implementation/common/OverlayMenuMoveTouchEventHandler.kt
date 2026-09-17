@@ -21,30 +21,48 @@ import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import kotlin.math.abs
 
 internal class OverlayMenuMoveTouchEventHandler(
     private val onMenuMoved: (Point) -> Unit,
+    private val touchSlop: Int = 0,
+    private val onDragFinished: () -> Unit = {},
 ) {
 
     /** The initial position of the overlay menu when pressing the move menu item. */
     private var moveInitialViewPosition: Point = Point(0, 0)
     /** The initial position of the touch event that as initiated the move of the overlay menu. */
     private var moveInitialTouchPosition: Point = Point(0, 0)
+    /** Whether the current gesture has crossed the movement threshold. */
+    private var isDragging: Boolean = false
 
-    fun onTouchEvent(viewToMove: View, event: MotionEvent): Boolean =
-        when (event.action) {
+    fun onTouchEvent(viewToMove: View, event: MotionEvent): OverlayMenuMoveTouchResult =
+        when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                viewToMove.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                 onDownEvent(viewToMove, event)
-                true
+                isDragging = touchSlop == 0
+                if (isDragging) viewToMove.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                OverlayMenuMoveTouchResult.HANDLED
             }
 
             MotionEvent.ACTION_MOVE -> {
-                onMoveEvent(event)
-                true
+                if (!isDragging && hasCrossedTouchSlop(event)) {
+                    isDragging = true
+                    viewToMove.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                }
+                if (isDragging) onMoveEvent(event)
+                OverlayMenuMoveTouchResult.HANDLED
             }
 
-            else -> false
+            MotionEvent.ACTION_UP -> finishGesture()
+
+            MotionEvent.ACTION_CANCEL -> {
+                if (isDragging) onDragFinished()
+                isDragging = false
+                OverlayMenuMoveTouchResult.HANDLED
+            }
+
+            else -> OverlayMenuMoveTouchResult.IGNORED
         }
 
     private fun onDownEvent(viewToMove: View, event: MotionEvent) {
@@ -61,4 +79,25 @@ internal class OverlayMenuMoveTouchEventHandler(
             )
         )
     }
+
+    private fun hasCrossedTouchSlop(event: MotionEvent): Boolean =
+        abs(event.rawX.toInt() - moveInitialTouchPosition.x) > touchSlop ||
+                abs(event.rawY.toInt() - moveInitialTouchPosition.y) > touchSlop
+
+    private fun finishGesture(): OverlayMenuMoveTouchResult {
+        val result = if (isDragging) {
+            onDragFinished()
+            OverlayMenuMoveTouchResult.HANDLED
+        } else {
+            OverlayMenuMoveTouchResult.CLICK
+        }
+        isDragging = false
+        return result
+    }
+}
+
+internal enum class OverlayMenuMoveTouchResult {
+    HANDLED,
+    CLICK,
+    IGNORED,
 }

@@ -28,6 +28,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.View.MeasureSpec
 import android.view.ViewGroup
+import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.widget.ImageButton
 
@@ -52,6 +53,7 @@ import com.buzbuz.smartautoclicker.core.common.overlays.di.OverlaysEntryPoint
 import com.buzbuz.smartautoclicker.core.common.overlays.manager.OverlayManager
 import com.buzbuz.smartautoclicker.core.common.overlays.menu.implementation.common.OverlayMenuAnimations
 import com.buzbuz.smartautoclicker.core.common.overlays.menu.implementation.common.OverlayMenuMoveTouchEventHandler
+import com.buzbuz.smartautoclicker.core.common.overlays.menu.implementation.common.OverlayMenuMoveTouchResult
 import com.buzbuz.smartautoclicker.core.common.overlays.menu.implementation.common.OverlayMenuPositionDataSource
 import com.buzbuz.smartautoclicker.core.common.overlays.menu.implementation.common.OverlayMenuResizeController
 
@@ -130,6 +132,8 @@ abstract class OverlayMenu(
     private lateinit var resizeController: OverlayMenuResizeController
     /** Handles the touch events on the move button. */
     private lateinit var moveTouchEventHandler: OverlayMenuMoveTouchEventHandler
+    /** Handles click-or-drag gestures on the launcher while the menu is collapsed. */
+    private var collapsedLauncherTouchEventHandler: OverlayMenuMoveTouchEventHandler? = null
 
     /** Handles the save/load of the position of the menus. */
     private val positionDataSource: OverlayMenuPositionDataSource by lazy {
@@ -267,6 +271,9 @@ abstract class OverlayMenu(
                     collapseButton = view as ImageButton
                     view.contentDescription = context.getString(R.string.content_desc_collapse_overlay_menu)
                     view.setDebouncedOnClickListener { toggleMenuCollapsedState() }
+                    view.setOnTouchListener { touchedView, event ->
+                        onCollapseButtonTouched(touchedView, event)
+                    }
                 }
                 else -> view.setDebouncedOnClickListener { v ->
                     if (resizeController.isAnimating) return@setDebouncedOnClickListener
@@ -609,7 +616,36 @@ abstract class OverlayMenu(
 
         scheduleAutoCollapse()
 
-        return moveTouchEventHandler.onTouchEvent(menuLayout, event)
+        return moveTouchEventHandler.onTouchEvent(menuLayout, event) != OverlayMenuMoveTouchResult.IGNORED
+    }
+
+    /**
+     * Allows the collapsed launcher to be moved directly without expanding the menu first.
+     * A short tap remains the regular expand action, while movement beyond the system touch slop starts dragging.
+     */
+    private fun onCollapseButtonTouched(view: View, event: MotionEvent): Boolean {
+        if (!isMenuCollapsed || resizeController.isAnimating || positionDataSource.isPositionLocked()) return false
+
+        val touchEventHandler = collapsedLauncherTouchEventHandler
+            ?: OverlayMenuMoveTouchEventHandler(
+                onMenuMoved = ::updateMenuPosition,
+                touchSlop = ViewConfiguration.get(context).scaledTouchSlop,
+                onDragFinished = ::onCollapsedLauncherDragFinished,
+            ).also { collapsedLauncherTouchEventHandler = it }
+
+        return when (touchEventHandler.onTouchEvent(menuLayout, event)) {
+            OverlayMenuMoveTouchResult.HANDLED -> true
+            OverlayMenuMoveTouchResult.CLICK -> {
+                view.performClick()
+                true
+            }
+            OverlayMenuMoveTouchResult.IGNORED -> false
+        }
+    }
+
+    private fun onCollapsedLauncherDragFinished() {
+        snapMenuToNearestHorizontalEdge()
+        saveMenuPosition(displayConfigManager.displayConfig.orientation)
     }
 
     /** Allows specialised menus to temporarily prevent automatic collapsing, such as while debug details are shown. */

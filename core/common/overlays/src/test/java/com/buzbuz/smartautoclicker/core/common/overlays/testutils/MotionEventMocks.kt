@@ -33,6 +33,7 @@ private fun newMock(): MotionEvent = Mockito.mock(MotionEvent::class.java)
  */
 fun mockSimpleRawEvent(action: Int, rawXPos: Float, rawYPos: Float) = newMock().also {
     mockWhen(it.action).thenReturn(action)
+    mockWhen(it.actionMasked).thenReturn(action)
     mockWhen(it.rawX).thenReturn(rawXPos)
     mockWhen(it.rawY).thenReturn(rawYPos)
 }
@@ -51,6 +52,7 @@ fun mockSimpleRawEvent(action: Int, rawXPos: Float, rawYPos: Float) = newMock().
 fun mockEvent(action: Int, xPos: Float, yPos: Float, pointerId: Int, pointerCount: Int = 1, pointerIndex: Int = 0,
               actionIndex: Int = pointerIndex) = newMock().also {
     mockWhen(it.action).thenReturn(action)
+    mockWhen(it.actionMasked).thenReturn(action)
     mockWhen(it.pointerCount).thenReturn(pointerCount)
     mockWhen(it.getPointerId(pointerIndex)).thenReturn(pointerId)
     mockWhen(it.findPointerIndex(pointerId)).thenReturn(pointerIndex)
