@@ -49,8 +49,12 @@ std::vector<TextDetectorResult> TextDetector::detectText(
     // Resize screen image for optimal detection
     cv::Size resizedSize = getDetectionSize(rgbScreenCrop, minimumLongestSide);
     cv::Mat resized;
-    const int interpolation =
-            resizedSize.width > rgbScreenCrop.cols ? cv::INTER_CUBIC : cv::INTER_AREA;
+    const bool isUpscaling =
+            resizedSize.width > rgbScreenCrop.cols || resizedSize.height > rgbScreenCrop.rows;
+    // Cubic interpolation is reserved for the tiny-number enlargement path. Keep the original
+    // linear resampling for normal text and large-area downscaling: area interpolation can average
+    // away the thin strokes and outlines used by many game fonts before OCR localization.
+    const int interpolation = isUpscaling ? cv::INTER_CUBIC : cv::INTER_LINEAR;
     cv::resize(
             rgbScreenCrop,
             resized,
