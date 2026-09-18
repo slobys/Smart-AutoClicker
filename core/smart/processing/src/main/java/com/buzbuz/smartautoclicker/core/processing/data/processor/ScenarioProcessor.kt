@@ -18,6 +18,7 @@ package com.buzbuz.smartautoclicker.core.processing.data.processor
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.annotation.VisibleForTesting
 
 import com.buzbuz.smartautoclicker.core.common.actions.AndroidActionExecutor
@@ -59,8 +60,15 @@ internal class ScenarioProcessor(
     private val progressListener: SmartProcessingListener?,
     screenEventConfirmationHits: Int = 1,
     screenEventConfirmationWindow: Int = 3,
-    private val strongSingleFrameConfidence: Double = 101.0,
+    private val singleFrameConfidenceMargin: Double = 0.5,
 ) {
+
+    private companion object {
+        private const val TAG = "ScenarioProcessor"
+        private const val NANOS_PER_MILLISECOND = 1_000_000L
+        private const val SLOW_EVENT_LOG_THRESHOLD_MS = 100L
+        private const val SLOW_FRAME_LOG_THRESHOLD_MS = 250L
+    }
 
     /** Handle the processing state of the scenario. */
     @VisibleForTesting internal val processingState: ProcessingState = ProcessingState(
@@ -161,6 +169,7 @@ internal class ScenarioProcessor(
     }
 
     private suspend fun processScreenEvents(screenFrame: Bitmap) {
+        val frameStartedAt = System.nanoTime()
         // Set the current screen image
         imageDetector.setScreenBitmap(screenFrame, processingTag)
 
@@ -188,9 +197,16 @@ internal class ScenarioProcessor(
                 }
 
                 progressListener?.onEventProcessingStarted(screenEvent)
+                val eventStartedAt = System.nanoTime()
                 val results = conditionsVerifier.verifyConditions(
                     operator = screenEvent.conditionOperator,
                     conditions = screenEvent.conditions,
+                )
+                logSlowOperation(
+                    operation = "condition check",
+                    event = screenEvent,
+                    startedAt = eventStartedAt,
+                    thresholdMs = SLOW_EVENT_LOG_THRESHOLD_MS,
                 )
 
                 val isFulfilled = results.fulfilled == true
@@ -208,7 +224,14 @@ internal class ScenarioProcessor(
 
                 progressListener?.onEventProcessingCompleted(screenEvent, isConfirmed, results.getAllScreenConditionsResults())
                 if (isConfirmed) {
+                    val actionsStartedAt = System.nanoTime()
                     actionExecutor.executeActions(screenEvent, results)
+                    logSlowOperation(
+                        operation = "actions",
+                        event = screenEvent,
+                        startedAt = actionsStartedAt,
+                        thresholdMs = SLOW_EVENT_LOG_THRESHOLD_MS,
+                    )
                     progressListener?.onEventActionsExecuted(screenEvent, results.getAllScreenConditionsResults())
 
                     screenEventStabilityTracker.resetAll()
@@ -222,23 +245,48 @@ internal class ScenarioProcessor(
         } finally {
             // We are done processing this frame, release it
             imageDetector.releaseScreenBitmap(screenFrame)
+            val frameDurationMs = elapsedMillisecondsSince(frameStartedAt)
+            if (frameDurationMs >= SLOW_FRAME_LOG_THRESHOLD_MS) {
+                Log.i(TAG, "Slow scenario frame: ${frameDurationMs}ms")
+            }
         }
     }
 
     /**
-     * A very high-confidence positive image match can be trusted immediately. This keeps fast-
-     * moving targets from disappearing before a second frame is processed, while negative-image
-     * conditions and ordinary-confidence matches still use the multi-frame stability filter.
+     * A positive image match that is clearly above its own configured acceptance threshold can be
+     * trusted immediately. Borderline and negative-image matches still use the multi-frame filter.
+     * This avoids forcing a second full scenario scan for normal matches while keeping protection
+     * against unstable results close to the configured threshold.
      */
     private fun ConditionsResults.isStrongPositiveImageMatch(): Boolean {
         val imageResults = getAllScreenConditionsResults()
             .filter { it.condition is ScreenCondition.Image }
 
         return imageResults.isNotEmpty() && imageResults.all { result ->
-            result.condition.shouldBeDetected &&
+            val condition = result.condition as ScreenCondition.Image
+            val minimumConfidence = 100.0 - condition.threshold
+            val immediateConfidence =
+                (minimumConfidence + singleFrameConfidenceMargin).coerceAtMost(100.0)
+
+            condition.shouldBeDetected &&
                     result.isFulfilled &&
                     result.haveBeenDetected &&
-                    result.confidenceRate >= strongSingleFrameConfidence
+                    result.confidenceRate >= immediateConfidence
         }
     }
+
+    private fun logSlowOperation(
+        operation: String,
+        event: ScreenEvent,
+        startedAt: Long,
+        thresholdMs: Long,
+    ) {
+        val durationMs = elapsedMillisecondsSince(startedAt)
+        if (durationMs >= thresholdMs) {
+            Log.i(TAG, "Slow $operation: event=${event.id.databaseId} (${event.name}), ${durationMs}ms")
+        }
+    }
+
+    private fun elapsedMillisecondsSince(startedAt: Long): Long =
+        (System.nanoTime() - startedAt) / NANOS_PER_MILLISECOND
 }

@@ -267,7 +267,7 @@ class DetectorEngine @Inject constructor(
                 progressListener  = if (liveDebugging || generateReport) debuggingListener else null,
                 screenEventConfirmationHits = SCREEN_EVENT_CONFIRMATION_HITS,
                 screenEventConfirmationWindow = SCREEN_EVENT_CONFIRMATION_WINDOW,
-                strongSingleFrameConfidence = STRONG_SINGLE_FRAME_CONFIDENCE,
+                singleFrameConfidenceMargin = SINGLE_FRAME_CONFIDENCE_MARGIN,
             )
             scenarioProcessor?.onScenarioStart(context)
 
@@ -477,8 +477,11 @@ private const val DEFAULT_MIN_PROCESSING_DURATION_NS = ONE_MILLISECOND_IN_NANO
 /** Require two positive detections among the last three processed frames before executing actions. */
 private const val SCREEN_EVENT_CONFIRMATION_HITS = 2
 private const val SCREEN_EVENT_CONFIRMATION_WINDOW = 3
-/** Let a very high-confidence match trigger immediately before a moving target leaves the frame. */
-private const val STRONG_SINGLE_FRAME_CONFIDENCE = 98.0
+/**
+ * Confidence points required above each image condition's own acceptance threshold before the
+ * match can bypass the multi-frame stability filter.
+ */
+private const val SINGLE_FRAME_CONFIDENCE_MARGIN = 0.5
 
 /** Tag for logs. */
 private const val TAG = "DetectorEngine"

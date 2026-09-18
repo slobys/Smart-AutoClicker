@@ -167,7 +167,7 @@ class ScenarioProcessorTests {
         events: List<ScreenEvent>,
         triggerEvent: List<TriggerEvent>,
         screenEventConfirmationHits: Int = 1,
-        strongSingleFrameConfidence: Double = 101.0,
+        singleFrameConfidenceMargin: Double = 0.5,
     ) : ScenarioProcessor {
         val processor = ScenarioProcessor(
             processingTag = "",
@@ -182,7 +182,7 @@ class ScenarioProcessorTests {
             onStopRequested = mockEndListener::onStopRequested,
             progressListener = mockProgressListener,
             screenEventConfirmationHits = screenEventConfirmationHits,
-            strongSingleFrameConfidence = strongSingleFrameConfidence,
+            singleFrameConfidenceMargin = singleFrameConfidenceMargin,
         )
 
         Mockito.clearInvocations(mockAndroidExecutor)
@@ -337,15 +337,15 @@ class ScenarioProcessorTests {
     }
 
     @Test
-    fun oneCondition_strongExactMatch_triggersOnFirstFrameWhenStabilityEnabled() = runTest {
+    fun oneCondition_matchClearlyAboveOwnThreshold_triggersOnFirstFrameWhenStabilityEnabled() = runTest {
         val condition = createTestCondition(
             TEST_CONDITION_PATH_1,
             TEST_CONDITION_AREA_1,
-            TEST_CONDITION_THRESHOLD_1,
-            EXACT,
+            threshold = 4,
+            detectionType = EXACT,
             isDetected = true,
             shouldBeOnScreen = true,
-            confidenceRate = 98.5,
+            confidenceRate = 97.0,
         )
         val event = newEvent(
             operator = AND,
@@ -357,11 +357,41 @@ class ScenarioProcessorTests {
             events = listOf(event),
             triggerEvent = emptyList(),
             screenEventConfirmationHits = 2,
-            strongSingleFrameConfidence = 98.0,
         )
 
         scenarioProcessor.process(mockScreenBitmap)
 
+        assertActionGesture(expectedDuration = 1L)
+        verifyNoInteractions(mockEndListener)
+    }
+
+    @Test
+    fun oneCondition_borderlineMatchStillRequiresTwoFramesWhenStabilityEnabled() = runTest {
+        val condition = createTestCondition(
+            TEST_CONDITION_PATH_1,
+            TEST_CONDITION_AREA_1,
+            threshold = 4,
+            detectionType = EXACT,
+            isDetected = true,
+            shouldBeOnScreen = true,
+            confidenceRate = 96.2,
+        )
+        val event = newEvent(
+            operator = AND,
+            conditions = listOf(condition),
+            actions = listOf(newDefaultClickAction()),
+        )
+
+        scenarioProcessor = createNewScenarioProcessor(
+            events = listOf(event),
+            triggerEvent = emptyList(),
+            screenEventConfirmationHits = 2,
+        )
+
+        scenarioProcessor.process(mockScreenBitmap)
+        verifyNoInteractions(mockAndroidExecutor, mockEndListener)
+
+        scenarioProcessor.process(mockScreenBitmap)
         assertActionGesture(expectedDuration = 1L)
         verifyNoInteractions(mockEndListener)
     }

@@ -70,4 +70,16 @@ class ScreenEventStabilityTrackerTests {
         tracker.reset(eventId = 1L)
         assertFalse(tracker.isConfirmed(eventId = 1L, isFulfilled = true))
     }
+
+    @Test
+    fun `reset all should discard positive frames for every event`() {
+        val tracker = ScreenEventStabilityTracker(requiredHits = 2, windowSize = 3)
+
+        assertFalse(tracker.isConfirmed(eventId = 1L, isFulfilled = true))
+        assertFalse(tracker.isConfirmed(eventId = 2L, isFulfilled = true))
+        tracker.resetAll()
+
+        assertFalse(tracker.isConfirmed(eventId = 1L, isFulfilled = true))
+        assertFalse(tracker.isConfirmed(eventId = 2L, isFulfilled = true))
+    }
 }
