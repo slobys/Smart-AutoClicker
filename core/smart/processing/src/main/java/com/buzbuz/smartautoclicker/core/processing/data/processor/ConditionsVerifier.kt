@@ -207,7 +207,7 @@ internal class ConditionsVerifier(
 
         val numberDetected: Double? = detectionResult.numberDetected
         val result =
-            if (!detectionResult.isDetected || numberDetected == null) condition.toInvalidConditionResult()
+            if (numberDetected == null) condition.toInvalidConditionResult()
             else {
                 val operandValue = when (val operationValue = condition.counterValue) {
                     is CounterOperationValue.Counter -> state.getCounterValue(operationValue.value) ?: 0.0
@@ -223,12 +223,14 @@ internal class ConditionsVerifier(
                 }
 
                 ProcessedConditionResult.Screen(
-                    isFulfilled = comparisonResult,
-                    haveBeenDetected = true,
+                    isFulfilled = detectionResult.isDetected && comparisonResult,
+                    haveBeenDetected = detectionResult.isDetected,
                     condition = condition,
                     position = scalingManager.scaleUpDetectionResult(detectionResult.position),
                     confidenceRate = detectionResult.confidenceRate,
                     size = scalingManager.scaleUpDetectionResult(detectionResult.size),
+                    numberDetected = numberDetected,
+                    numberComparisonFulfilled = comparisonResult,
                 )
             }
 

@@ -28,6 +28,9 @@ void TextMatchingResult::updateResults(
         float confidence,
         double numberRecognized
 ) {
+    // Each update replaces the selected candidate. Detection must therefore be recomputed from
+    // this candidate's confidence instead of leaking the accepted state of an earlier candidate.
+    detected = false;
     area.x = detectionArea.x + boundingBox.x;
     area.y = detectionArea.y + boundingBox.y;
     area.width = boundingBox.width;

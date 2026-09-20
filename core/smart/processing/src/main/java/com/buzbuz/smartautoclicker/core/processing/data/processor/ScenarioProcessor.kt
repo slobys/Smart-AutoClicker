@@ -60,7 +60,7 @@ internal class ScenarioProcessor(
     private val progressListener: SmartProcessingListener?,
     screenEventConfirmationHits: Int = 1,
     screenEventConfirmationWindow: Int = 3,
-    private val singleFrameConfidenceMargin: Double = 0.5,
+    private val singleFrameConfidenceMargin: Double = 0.005,
 ) {
 
     private companion object {
@@ -264,9 +264,11 @@ internal class ScenarioProcessor(
 
         return imageResults.isNotEmpty() && imageResults.all { result ->
             val condition = result.condition as ScreenCondition.Image
-            val minimumConfidence = 100.0 - condition.threshold
+            // Native image matching reports a normalized confidence in [0, 1], while the
+            // configured threshold is an allowed difference percentage in [0, 100].
+            val minimumConfidence = 1.0 - condition.threshold / 100.0
             val immediateConfidence =
-                (minimumConfidence + singleFrameConfidenceMargin).coerceAtMost(100.0)
+                (minimumConfidence + singleFrameConfidenceMargin).coerceAtMost(1.0)
 
             condition.shouldBeDetected &&
                     result.isFulfilled &&

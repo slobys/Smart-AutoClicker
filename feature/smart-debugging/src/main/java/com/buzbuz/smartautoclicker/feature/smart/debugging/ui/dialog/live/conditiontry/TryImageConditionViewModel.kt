@@ -54,7 +54,6 @@ class TryImageConditionViewModel @Inject constructor(
         .distinctUntilChanged()
 
     private val userThreshold: MutableStateFlow<Int> = MutableStateFlow(0)
-    private val useUserThreshold: MutableStateFlow<Boolean> = MutableStateFlow(true)
 
     private val detectionResult: Flow<ScreenConditionResultUiState?> = detectionResultUseCase(filterNotFulfilled = false)
         .combine(isPlaying) { results, playing -> if (playing) results else null }
@@ -64,11 +63,13 @@ class TryImageConditionViewModel @Inject constructor(
         }
 
     val displayResults: Flow<ScreenConditionResultUiState?> =
-        combine(userThreshold, useUserThreshold, detectionResult) { userThreshold, useUserThreshold, result ->
+        combine(userThreshold, detectionResult) { userThreshold, result ->
             result?.copy(
-                positive =
-                    if (useUserThreshold) (1.0 - (userThreshold / 100.0)) < result.confidenceRate
-                    else result.positive
+                positive = isTryConditionPositive(
+                    threshold = userThreshold,
+                    confidenceRate = result.confidenceRate,
+                    conditionFulfilledWithoutThreshold = result.conditionFulfilledWithoutThreshold,
+                )
             )
         }
 
@@ -84,7 +85,6 @@ class TryImageConditionViewModel @Inject constructor(
 
     fun startTry(context: Context, scenario: Scenario, screenCondition: ScreenCondition) {
         viewModelScope.launch {
-            useUserThreshold.value = screenCondition !is ScreenCondition.Number
             userThreshold.value = screenCondition.threshold
 
             delay(500.milliseconds)
@@ -105,3 +105,13 @@ class TryImageConditionViewModel @Inject constructor(
 internal const val MIN_THRESHOLD = 0f
 /** The maximum threshold value selectable by the user. */
 internal const val MAX_THRESHOLD = 20f
+
+internal fun isTryConditionPositive(
+    threshold: Int,
+    confidenceRate: Double,
+    conditionFulfilledWithoutThreshold: Boolean?,
+): Boolean {
+    val minimumConfidence = 1.0 - (threshold / 100.0)
+    val thresholdFulfilled = confidenceRate >= minimumConfidence
+    return thresholdFulfilled && (conditionFulfilledWithoutThreshold ?: true)
+}

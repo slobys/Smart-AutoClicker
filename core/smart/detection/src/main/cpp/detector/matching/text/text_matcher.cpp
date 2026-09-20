@@ -19,6 +19,7 @@
 #include <opencv2/imgproc/imgproc_c.h>
 #include <cctype>
 #include <algorithm>
+#include <cmath>
 #include <limits>
 
 #include "text_matcher.hpp"
@@ -34,10 +35,15 @@ namespace {
     constexpr float MIN_CORNER_FALLBACK_CONFIDENCE = 0.25f;
     constexpr float MIN_ENHANCED_TEXT_CONFIDENCE = 0.25f;
     constexpr float SMALL_ROI_CORNER_RANKING_BONUS = 20.0f;
+    constexpr float NUMBER_EXTRA_DIGIT_RANKING_BONUS = 1.5f;
+    constexpr float NUMBER_CONSENSUS_RANKING_BONUS = 3.0f;
+    constexpr float NUMBER_RANKING_SCORE_EPSILON = 0.01f;
     constexpr int MIN_DIRECT_TEXT_SIDE = 12;
     constexpr int MAX_DIRECT_TEXT_SHORT_SIDE = 192;
     constexpr int MAX_DIRECT_TEXT_LONG_SIDE = 960;
     constexpr float MAX_DIRECT_TEXT_ASPECT_RATIO = 12.0f;
+    constexpr int MAX_DIRECT_NUMBER_SIDE = 384;
+    constexpr float MAX_DIRECT_NUMBER_ASPECT_RATIO = 8.0f;
 }
 
 bool TextMatcher::init(const std::string& detectionModelPath, const std::map<std::string, std::string>& recognitionModels) {
@@ -122,9 +128,27 @@ TextMatchingResult* TextMatcher::matchNumber(
             screenImage,
             detectionArea,
             defaultRecognitionModelId,
-            threshold);
+            threshold,
+            numberFormat);
 
+    const float minimumRequiredScore = std::clamp(
+            100.0f - static_cast<float>(threshold),
+            0.0f,
+            100.0f);
     float bestRankingScore = 0.0f;
+    int bestDigitCount = 0;
+    int bestBoundingBoxArea = 0;
+
+    // Repeated readings produced from the original and background-suppressed crops are more
+    // trustworthy than a one-off high-confidence reading caused by a moving effect. Keep the
+    // reported confidence untouched and use agreement only to rank competing OCR candidates.
+    std::vector<double> numericCandidateValues;
+    numericCandidateValues.reserve(recognizerResults.size());
+    for (const auto& result: recognizerResults) {
+        const std::string normalizedText = normalizeNumberText(result.text);
+        if (!isNumber(normalizedText)) continue;
+        numericCandidateValues.push_back(stringToDouble(normalizedText, numberFormat));
+    }
 
     // Parse results and find matching candidate, if any
     for (const auto& recognizerResult: recognizerResults) {
@@ -165,7 +189,28 @@ TextMatchingResult* TextMatcher::matchNumber(
                 recognizerResult.boundingBox.width,
                 recognizerResult.boundingBox.height);
 
-        float rankingScore = score;
+        const int digitCount = static_cast<int>(std::count_if(
+                normalizedText.begin(),
+                normalizedText.end(),
+                [](unsigned char character) { return std::isdigit(character) != 0; }));
+
+        // OCR confidence is averaged over decoded glyphs. A short fragment such as "22" can
+        // therefore score slightly higher than the complete "124" after the thin leading 1 has
+        // been dropped. Use a deliberately small completeness prior; confidence remains dominant
+        // and the unmodified score is still used for the user's acceptance threshold.
+        float rankingScore = score +
+                static_cast<float>(std::min(std::max(digitCount - 1, 0), 4)) *
+                NUMBER_EXTRA_DIGIT_RANKING_BONUS;
+        const int agreeingCandidateCount = static_cast<int>(std::count_if(
+                numericCandidateValues.begin(),
+                numericCandidateValues.end(),
+                [&](double candidateValue) {
+                    return std::abs(candidateValue - recognizedNumber) <=
+                            std::numeric_limits<double>::epsilon();
+                }));
+        rankingScore += static_cast<float>(
+                std::min(std::max(agreeingCandidateCount - 1, 0), 2)) *
+                NUMBER_CONSENSUS_RANKING_BONUS;
         if (std::max(detectionArea.width, detectionArea.height) <= MIN_NUMBER_DETECTION_SIDE) {
             const float centerX = static_cast<float>(
                     recognizerResult.boundingBox.x + recognizerResult.boundingBox.width / 2);
@@ -178,17 +223,32 @@ TextMatchingResult* TextMatcher::matchNumber(
         }
 
         // Rank tiny game-counter candidates with a conservative corner prior while keeping the
-        // recognizer confidence itself unchanged for the user's threshold check.
-        if (rankingScore < bestRankingScore) continue;
+        // recognizer confidence itself unchanged for the user's threshold check. OCR can return
+        // both a complete number and shorter fragments with the exact same confidence. In that
+        // case, keep the most complete candidate instead of letting the last fragment win.
+        const int boundingBoxArea =
+                recognizerResult.boundingBox.width * recognizerResult.boundingBox.height;
+        const bool hasClearlyLowerScore =
+                rankingScore + NUMBER_RANKING_SCORE_EPSILON < bestRankingScore;
+        const bool hasEquivalentScore =
+                std::abs(rankingScore - bestRankingScore) <= NUMBER_RANKING_SCORE_EPSILON;
+        const bool isLessCompleteAtEquivalentScore =
+                hasEquivalentScore &&
+                (digitCount < bestDigitCount ||
+                 (digitCount == bestDigitCount && boundingBoxArea <= bestBoundingBoxArea));
+        if (hasClearlyLowerScore || isLessCompleteAtEquivalentScore) continue;
+
         bestRankingScore = rankingScore;
+        bestDigitCount = digitCount;
+        bestBoundingBoxArea = boundingBoxArea;
 
         currentMatchingResult.updateResults(
                 detectionArea,
                 recognizerResult.boundingBox,
-                score,
+                score / 100.0f,
                 recognizedNumber);
 
-        if ((int) score >= threshold) {
+        if (score >= minimumRequiredScore) {
             currentMatchingResult.markResultAsDetected();
         }
     }
@@ -324,9 +384,13 @@ bool TextMatcher::updateTextMatchingResult(
                 recognizerResult.confidence,
                 recognizerResult.text.c_str());
 
-        if (score <= currentMatchingResult.getResultConfidence()) continue;
+        const float normalizedScore = score / 100.0f;
+        if (normalizedScore <= currentMatchingResult.getResultConfidence()) continue;
 
-        currentMatchingResult.updateResults(detectionArea, recognizerResult.boundingBox, score);
+        currentMatchingResult.updateResults(
+                detectionArea,
+                recognizerResult.boundingBox,
+                normalizedScore);
         if (score >= minimumRequiredScore) {
             currentMatchingResult.markResultAsDetected();
             return true;
@@ -340,7 +404,8 @@ std::vector<TextRecognizerResult> TextMatcher::recognizeNumber(
         const ScreenImage& screenImage,
         const cv::Rect& detectionArea,
         const std::string& recognitionModelId,
-        int threshold
+        int threshold,
+        NumberFormat numberFormat
 ) {
     cv::Mat screenCrop = screenImage.cropColor(detectionArea);
     cv::Mat rgbScreenCrop;
@@ -371,31 +436,98 @@ std::vector<TextRecognizerResult> TextMatcher::recognizeNumber(
                      result.boundingBox.width == largeTileSize);
             if (isCornerFallback && result.confidence < MIN_CORNER_FALLBACK_CONFIDENCE) return false;
 
-            return result.confidence * 100.0f >= static_cast<float>(threshold);
+            const float minimumRequiredScore = std::clamp(
+                    100.0f - static_cast<float>(threshold),
+                    0.0f,
+                    100.0f);
+            return result.confidence * 100.0f >= minimumRequiredScore;
         });
     };
 
-    auto results = recognizeTextInImage(
-            rgbScreenCrop,
-            recognitionModelId,
-            MIN_NUMBER_DETECTION_SIDE);
-    if (hasUsableNumericCandidate(results)) return results;
+    auto hasConfidentNumericConsensus = [&](const std::vector<TextRecognizerResult>& results) {
+        const float minimumRequiredScore = std::clamp(
+                100.0f - static_cast<float>(threshold),
+                0.0f,
+                100.0f);
+        std::vector<double> confidentValues;
+        for (const auto& result: results) {
+            if (result.confidence * 100.0f < minimumRequiredScore) continue;
+            const std::string normalizedText = normalizeNumberText(result.text);
+            if (!isNumber(normalizedText)) continue;
+            confidentValues.push_back(stringToDouble(normalizedText, numberFormat));
+        }
 
-    // Game counters are often tiny outlined glyphs rendered over colorful icons. A contrast-
-    // enhanced grayscale pass suppresses most hue changes while preserving those glyph edges.
+        return std::any_of(
+                confidentValues.begin(),
+                confidentValues.end(),
+                [&](double value) {
+                    return std::count_if(
+                            confidentValues.begin(),
+                            confidentValues.end(),
+                            [&](double other) {
+                                return std::abs(value - other) <=
+                                        std::numeric_limits<double>::epsilon();
+                            }) >= 2;
+                });
+    };
+
     cv::Mat gray;
     cv::cvtColor(rgbScreenCrop, gray, cv::COLOR_RGB2GRAY);
     cv::Mat enhancedGray;
     cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
     clahe->apply(gray, enhancedGray);
-
     cv::Mat enhancedRgb;
     cv::cvtColor(enhancedGray, enhancedRgb, cv::COLOR_GRAY2RGB);
-    results = recognizeTextInImage(
+
+    // A tightly selected number does not need the text locator. Read the whole crop twice: first
+    // in its original form, then with colour and illumination changes suppressed. When both passes
+    // agree we can return immediately, which is both more stable on animated game backgrounds and
+    // cheaper than running the locator on every frame.
+    const int directShortestSide = std::min(rgbScreenCrop.cols, rgbScreenCrop.rows);
+    const int directLongestSide = std::max(rgbScreenCrop.cols, rgbScreenCrop.rows);
+    const float directAspectRatio = static_cast<float>(directLongestSide) /
+            static_cast<float>(std::max(1, directShortestSide));
+    const bool isCompactDirectArea =
+            directShortestSide >= MIN_DIRECT_TEXT_SIDE &&
+            directLongestSide <= MAX_DIRECT_NUMBER_SIDE &&
+            directAspectRatio <= MAX_DIRECT_NUMBER_ASPECT_RATIO;
+    std::vector<TextRecognizerResult> results;
+    if (isCompactDirectArea) {
+        auto appendDirectRecognition = [&](const cv::Mat& image) {
+            std::vector<TextDetectorResult> directDetectionResults;
+            directDetectionResults.emplace_back(
+                    cv::Rect(0, 0, image.cols, image.rows),
+                    image);
+            auto directResults = textRecognizer->recognizeText(
+                    recognitionModelId,
+                    directDetectionResults);
+            results.insert(results.end(), directResults.begin(), directResults.end());
+        };
+        appendDirectRecognition(rgbScreenCrop);
+        appendDirectRecognition(enhancedRgb);
+        if (hasConfidentNumericConsensus(results)) return results;
+    }
+
+    // If the two direct reads disagree or cannot find a number, ask the locator for an independent
+    // candidate. Preserve the direct results so matchNumber can prefer values confirmed by more
+    // than one visual representation.
+    auto locatedResults = recognizeTextInImage(
+            rgbScreenCrop,
+            recognitionModelId,
+            MIN_NUMBER_DETECTION_SIDE);
+    results.insert(results.end(), locatedResults.begin(), locatedResults.end());
+    if ((!isCompactDirectArea && hasUsableNumericCandidate(results)) ||
+        hasConfidentNumericConsensus(results)) return results;
+
+    // Game counters are often tiny outlined glyphs rendered over colorful icons. A contrast-
+    // enhanced grayscale pass suppresses most hue changes while preserving those glyph edges.
+    auto enhancedResults = recognizeTextInImage(
             enhancedRgb,
             recognitionModelId,
             MIN_NUMBER_DETECTION_SIDE);
-    if (hasUsableNumericCandidate(results)) return results;
+    results.insert(results.end(), enhancedResults.begin(), enhancedResults.end());
+    if ((!isCompactDirectArea && hasUsableNumericCandidate(results)) ||
+        hasConfidentNumericConsensus(results)) return results;
 
     // Last resort for low-contrast digits: local thresholding separates the outline from a
     // non-uniform background better than a single global threshold.
@@ -413,10 +545,11 @@ std::vector<TextRecognizerResult> TextMatcher::recognizeNumber(
                 5.0);
         cv::Mat binaryRgb;
         cv::cvtColor(binary, binaryRgb, cv::COLOR_GRAY2RGB);
-        results = recognizeTextInImage(
+        auto binaryResults = recognizeTextInImage(
                 binaryRgb,
                 recognitionModelId,
                 MIN_NUMBER_DETECTION_SIDE);
+        results.insert(results.end(), binaryResults.begin(), binaryResults.end());
         if (hasUsableNumericCandidate(results)) return results;
     }
 
@@ -447,10 +580,13 @@ std::vector<TextRecognizerResult> TextMatcher::recognizeNumber(
         return textRecognizer->recognizeText(recognitionModelId, tiles);
     };
 
-    results = recognizeCorner(rgbScreenCrop);
+    auto cornerResults = recognizeCorner(rgbScreenCrop);
+    results.insert(results.end(), cornerResults.begin(), cornerResults.end());
     if (hasUsableNumericCandidate(results)) return results;
 
-    return recognizeCorner(enhancedRgb);
+    cornerResults = recognizeCorner(enhancedRgb);
+    results.insert(results.end(), cornerResults.begin(), cornerResults.end());
+    return results;
 }
 
 std::vector<TextRecognizerResult> TextMatcher::recognizeTextInImage(

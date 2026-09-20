@@ -142,13 +142,13 @@ internal class SelectorComponent(
     /**
      * Set the default area selected.
      * @param area the selected area.
-     * @param minimumArea the minimal size of the area selectable.
+     * @param minimumArea the minimal size of the area selectable, or null to use the default adaptive size.
      * @return true if it wasn't defined, false if it already was.
      */
-    fun setDefaultSelectionArea(area: Rect, minimumArea: Rect): Boolean {
+    fun setDefaultSelectionArea(area: Rect, minimumArea: Rect?): Boolean {
         val result = defaultSelectionArea == null
         defaultSelectionArea = area.toRectF()
-        defaultMinimumArea = minimumArea.toRectF()
+        defaultMinimumArea = minimumArea?.toRectF()
         resetSelectorPosition(notify = false)
         invalidate()
         return result

@@ -119,7 +119,8 @@ namespace smartautoclicker {
                 const ScreenImage& screenImage,
                 const cv::Rect& detectionArea,
                 const std::string& recognitionModelId,
-                int threshold);
+                int threshold,
+                NumberFormat numberFormat);
 
         /** Runs text localization and recognition on an already prepared RGB crop. */
         std::vector<TextRecognizerResult> recognizeTextInImage(

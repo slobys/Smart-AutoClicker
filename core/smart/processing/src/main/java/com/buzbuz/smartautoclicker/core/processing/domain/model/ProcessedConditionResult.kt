@@ -31,8 +31,10 @@ sealed class ProcessedConditionResult {
      *
      * @param haveBeenDetected true if the condition have been detected, false if not.
      * @param condition the condition that triggered this result.
-     * @param confidenceRate the confidence rate of the detection algorithm on this result. Between [0 - 100].
+     * @param confidenceRate the confidence rate of the detection algorithm on this result. Between [0 - 1].
      * @param position the position at which the condition have been detected. Null if not detected.
+     * @param numberDetected the numeric value read by OCR for a number condition. Null for other conditions or failures.
+     * @param numberComparisonFulfilled whether the number itself satisfies its comparison operation, without the OCR threshold.
      */
     data class Screen(
         override val isFulfilled: Boolean,
@@ -41,6 +43,8 @@ sealed class ProcessedConditionResult {
         val confidenceRate: Double,
         val position: Point?,
         val size: Point?,
+        val numberDetected: Double? = null,
+        val numberComparisonFulfilled: Boolean? = null,
     ) : ProcessedConditionResult()
 
     /**

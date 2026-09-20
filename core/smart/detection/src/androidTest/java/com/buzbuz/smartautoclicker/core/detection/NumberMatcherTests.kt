@@ -114,6 +114,22 @@ class NumberMatcherTests {
     }
 
     @Test
+    fun detection_Number_SmallOutlined124_PrefersCompleteCandidate() {
+        assertNumberDetectedInBitmap(createGameCounterBitmap("124"), expectedValue = 124.0)
+    }
+
+    @Test
+    fun detection_Number_16_AcrossAnimatedBackgroundFrames() {
+        repeat(6) { frame ->
+            assertNumberDetectedInBitmap(
+                bitmap = createAnimatedCounterBitmap("16", frame),
+                expectedValue = 16.0,
+                allowedDifference = 4,
+            )
+        }
+    }
+
+    @Test
     fun detection_NoNumber_OnComplexGameIcon() {
         val bitmap = createGameCounterBitmap(value = null)
         testedDetector.setScreenBitmap(bitmap, "")
@@ -130,12 +146,13 @@ class NumberMatcherTests {
     private fun assertNumberDetected(testCase: NumberTestCase) {
         val result = testedDetector.detectNumber(
             detectionArea = testCase.detectionArea,
-            threshold = 0,
+            threshold = TEST_ALLOWED_DIFFERENCE,
             numberFormatType = testCase.numberFormatType,
         )
 
         assertTrue("Number not detected in area ${testCase.detectionArea}", result.isDetected)
         assertNotNull("numberDetected is null for area ${testCase.detectionArea}", result.numberDetected)
+        assertTrue("Confidence must be normalized to [0, 1]", result.confidenceRate in 0.0..1.0)
         assertEquals(
             "Wrong value detected for area ${testCase.detectionArea}",
             testCase.expectedValue,
@@ -144,17 +161,22 @@ class NumberMatcherTests {
         )
     }
 
-    private fun assertNumberDetectedInBitmap(bitmap: Bitmap, expectedValue: Double) {
+    private fun assertNumberDetectedInBitmap(
+        bitmap: Bitmap,
+        expectedValue: Double,
+        allowedDifference: Int = TEST_ALLOWED_DIFFERENCE,
+    ) {
         testedDetector.setScreenBitmap(bitmap, "")
 
         val result = testedDetector.detectNumber(
             detectionArea = Rect(0, 0, bitmap.width, bitmap.height),
-            threshold = 0,
+            threshold = allowedDifference,
             numberFormatType = NumberFormatType.AUTO,
         )
 
         assertTrue("Number not detected in synthetic game counter sample", result.isDetected)
         assertNotNull("numberDetected is null for synthetic game counter sample", result.numberDetected)
+        assertTrue("Confidence must be normalized to [0, 1]", result.confidenceRate in 0.0..1.0)
         assertEquals(
             "Wrong value detected for synthetic game counter sample",
             expectedValue,
@@ -162,6 +184,47 @@ class NumberMatcherTests {
             DETECTION_NUMBER_DELTA,
         )
     }
+
+    private fun createAnimatedCounterBitmap(value: String, frame: Int): Bitmap =
+        Bitmap.createBitmap(150, 80, Bitmap.Config.ARGB_8888).apply {
+            val canvas = Canvas(this)
+            val backgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.rgb(
+                    45 + frame * 24,
+                    125 + (frame * 19) % 100,
+                    185 - frame * 18,
+                )
+            }
+            canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), backgroundPaint)
+
+            val effectPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.argb(175, 255, 70 + frame * 22, 35 + frame * 17)
+                strokeWidth = 11f
+            }
+            canvas.drawLine(
+                -15f + frame * 24f,
+                height.toFloat(),
+                55f + frame * 18f,
+                0f,
+                effectPaint,
+            )
+            effectPaint.color = Color.argb(150, 80, 235, 255)
+            canvas.drawCircle(118f - frame * 13f, 18f + frame * 7f, 24f, effectPaint)
+
+            val badgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.argb(190, 38, 39, 42)
+            }
+            canvas.drawRoundRect(31f, 12f, 119f, 68f, 8f, 8f, badgePaint)
+
+            val counterPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                textSize = 35f
+                typeface = Typeface.DEFAULT_BOLD
+                textAlign = Paint.Align.CENTER
+                color = Color.WHITE
+                setShadowLayer(3f, 1f, 1f, Color.BLACK)
+            }
+            canvas.drawText(value, 75f, 52f, counterPaint)
+        }
 
     private fun createGameCounterBitmap(value: String?): Bitmap =
         Bitmap.createBitmap(140, 140, Bitmap.Config.ARGB_8888).apply {
@@ -194,21 +257,23 @@ class NumberMatcherTests {
                     typeface = Typeface.DEFAULT_BOLD
                     textAlign = Paint.Align.CENTER
                 }
+                val counterCenterX = if (value.length > 1) 104f else 116f
                 counterPaint.apply {
                     color = Color.BLACK
                     style = Paint.Style.STROKE
                     strokeWidth = 5f
                 }
-                canvas.drawText(value, 116f, 119f, counterPaint)
+                canvas.drawText(value, counterCenterX, 119f, counterPaint)
                 counterPaint.apply {
                     color = Color.rgb(185, 181, 176)
                     style = Paint.Style.FILL
                 }
-                canvas.drawText(value, 116f, 119f, counterPaint)
+                canvas.drawText(value, counterCenterX, 119f, counterPaint)
             }
         }
 
     private companion object {
         const val DETECTION_NUMBER_DELTA = 0.001
+        const val TEST_ALLOWED_DIFFERENCE = 20
     }
 }

@@ -31,8 +31,10 @@ sealed interface DebugLiveEventConditionResult {
 
     /**
      * @param isDetected tells if the image of this condition have been detected or not.
-     * @param confidenceRate the confidence rate of the detection algorithm on this result. Between [0 - 100].
+     * @param confidenceRate the confidence rate of the detection algorithm on this result. Between [0 - 1].
      * @param detectionArea the area of the image that have been detected. Null if not detected.
+     * @param numberDetected the numeric value read by OCR for a number condition. Null otherwise.
+     * @param numberComparisonFulfilled whether the numeric comparison is fulfilled, without the OCR threshold.
      */
     data class Screen(
         override val condition: ScreenCondition,
@@ -40,6 +42,8 @@ sealed interface DebugLiveEventConditionResult {
         val isDetected: Boolean,
         val confidenceRate: Double,
         val detectionArea: Rect?,
+        val numberDetected: Double? = null,
+        val numberComparisonFulfilled: Boolean? = null,
     ) : DebugLiveEventConditionResult
 
     data class Trigger(

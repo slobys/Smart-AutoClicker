@@ -267,6 +267,8 @@ internal class DebugEngine @Inject constructor(
                     isDetected = result.haveBeenDetected,
                     confidenceRate = result.confidenceRate,
                     detectionArea = result.getDetectionArea(),
+                    numberDetected = result.numberDetected,
+                    numberComparisonFulfilled = result.numberComparisonFulfilled,
                 )
             },
         )

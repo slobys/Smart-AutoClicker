@@ -478,10 +478,10 @@ private const val DEFAULT_MIN_PROCESSING_DURATION_NS = ONE_MILLISECOND_IN_NANO
 private const val SCREEN_EVENT_CONFIRMATION_HITS = 2
 private const val SCREEN_EVENT_CONFIRMATION_WINDOW = 3
 /**
- * Confidence points required above each image condition's own acceptance threshold before the
- * match can bypass the multi-frame stability filter.
+ * Normalized confidence margin (0.5 percentage point) required above each image condition's own
+ * acceptance threshold before the match can bypass the multi-frame stability filter.
  */
-private const val SINGLE_FRAME_CONFIDENCE_MARGIN = 0.5
+private const val SINGLE_FRAME_CONFIDENCE_MARGIN = 0.005
 
 /** Tag for logs. */
 private const val TAG = "DetectorEngine"

@@ -81,7 +81,7 @@ class AreaSelectorView(
 
     override val viewComponents: List<ViewComponent> = listOf(selector, hintsIcons)
 
-    fun setSelection(area: Rect, minimalArea: Rect) {
+    fun setSelection(area: Rect, minimalArea: Rect?) {
         if (selector.setDefaultSelectionArea(area, minimalArea)) {
             hintsIcons.showAll()
             animations.startShowSelectorAnimation(

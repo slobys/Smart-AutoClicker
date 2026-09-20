@@ -23,4 +23,5 @@ data class ScreenConditionResultUiState(
     val coordinates: Rect,
     val confidenceRate: Double,
     val resultText: String? = null,
+    val conditionFulfilledWithoutThreshold: Boolean? = null,
 )

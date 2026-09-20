@@ -32,4 +32,5 @@ internal fun DebugLiveEventConditionResult.Screen.toConditionUiState(): ScreenCo
         coordinates = detectionArea ?: Rect(),
         confidenceRate = confidenceRate,
         resultText = confidenceRate.formatDebugConfidenceRate(),
+        conditionFulfilledWithoutThreshold = numberComparisonFulfilled,
     )

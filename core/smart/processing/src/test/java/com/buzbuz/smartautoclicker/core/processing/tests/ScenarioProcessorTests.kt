@@ -167,7 +167,7 @@ class ScenarioProcessorTests {
         events: List<ScreenEvent>,
         triggerEvent: List<TriggerEvent>,
         screenEventConfirmationHits: Int = 1,
-        singleFrameConfidenceMargin: Double = 0.5,
+        singleFrameConfidenceMargin: Double = 0.005,
     ) : ScenarioProcessor {
         val processor = ScenarioProcessor(
             processingTag = "",
@@ -345,7 +345,7 @@ class ScenarioProcessorTests {
             detectionType = EXACT,
             isDetected = true,
             shouldBeOnScreen = true,
-            confidenceRate = 97.0,
+            confidenceRate = 0.97,
         )
         val event = newEvent(
             operator = AND,
@@ -374,7 +374,7 @@ class ScenarioProcessorTests {
             detectionType = EXACT,
             isDetected = true,
             shouldBeOnScreen = true,
-            confidenceRate = 96.2,
+            confidenceRate = 0.962,
         )
         val event = newEvent(
             operator = AND,

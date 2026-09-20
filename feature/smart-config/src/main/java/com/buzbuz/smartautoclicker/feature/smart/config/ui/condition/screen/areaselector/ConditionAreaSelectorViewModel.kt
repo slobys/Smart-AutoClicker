@@ -16,6 +16,7 @@
  */
 package com.buzbuz.smartautoclicker.feature.smart.config.ui.condition.screen.areaselector
 
+import android.graphics.Point
 import android.graphics.Rect
 
 import androidx.lifecycle.ViewModel
@@ -42,59 +43,53 @@ class ConditionAreaSelectorViewModel @Inject constructor(
 
     /** The position at which the selector should be initialized. */
     val initialArea: Flow<SelectorUiState> = configuredCondition
-        .mapNotNull { condition -> condition.toSelectorUiState() }
-
-    private fun ScreenCondition.toSelectorUiState(): SelectorUiState? =
-        when (this) {
-            is ScreenCondition.Color ->
-                SelectorUiState(
-                    initialArea = detectionArea,
-                    minimalArea = Rect(0, 0, 1, 1),
-                )
-
-            is ScreenCondition.Image ->
-                if (detectionType != IN_AREA) null
-                else SelectorUiState(
-                    initialArea = detectionArea ?: area,
-                    minimalArea = area,
-                )
-
-            is ScreenCondition.Number-> {
-                val screenSize = displayConfigManager.displayConfig.sizePx
-                SelectorUiState(
-                    initialArea =
-                        if (!detectionArea.isEmpty) detectionArea
-                        else Rect(
-                            (screenSize.x / 2) - 64,
-                            (screenSize.y / 2) - 64,
-                            (screenSize.x / 2) + 64,
-                            (screenSize.y / 2) + 64,
-                        ),
-                    minimalArea = Rect(0, 0, MIN_TEXT_DETECTION_WIDTH, MIN_TEXT_DETECTION_HEIGHT),
-                )
-            }
-
-            is ScreenCondition.Text -> {
-                val screenSize = displayConfigManager.displayConfig.sizePx
-                SelectorUiState(
-                    initialArea =
-                        if (!detectionArea.isEmpty) detectionArea
-                        else Rect(
-                            (screenSize.x / 2) - 64,
-                            (screenSize.y / 2) - 64,
-                            (screenSize.x / 2) + 64,
-                            (screenSize.y / 2) + 64,
-                        ),
-                    minimalArea = Rect(0, 0, MIN_TEXT_DETECTION_WIDTH, MIN_TEXT_DETECTION_HEIGHT),
-                )
-            }
+        .mapNotNull { condition ->
+            condition.toSelectorUiState(displayConfigManager.displayConfig.sizePx)
         }
 }
 
-data class SelectorUiState(
-    val initialArea: Rect,
-    val minimalArea: Rect,
+internal fun ScreenCondition.toSelectorUiState(screenSize: Point): SelectorUiState? =
+    when (this) {
+        is ScreenCondition.Color ->
+            SelectorUiState(
+                initialArea = detectionArea,
+                minimalArea = Rect(0, 0, 1, 1),
+            )
+
+        is ScreenCondition.Image ->
+            if (detectionType != IN_AREA) null
+            else SelectorUiState(
+                initialArea = detectionArea ?: area,
+                minimalArea = area,
+            )
+
+        is ScreenCondition.Number ->
+            SelectorUiState(
+                initialArea = detectionArea.takeUnless { it.isEmpty }
+                    ?: screenSize.defaultDetectionArea(),
+                minimalArea = null,
+            )
+
+        is ScreenCondition.Text ->
+            SelectorUiState(
+                initialArea = detectionArea.takeUnless { it.isEmpty }
+                    ?: screenSize.defaultDetectionArea(),
+                minimalArea = Rect(0, 0, MIN_TEXT_DETECTION_WIDTH, MIN_TEXT_DETECTION_HEIGHT),
+            )
+    }
+
+private fun Point.defaultDetectionArea(): Rect = Rect(
+    (x / 2) - DEFAULT_DETECTION_HALF_SIZE,
+    (y / 2) - DEFAULT_DETECTION_HALF_SIZE,
+    (x / 2) + DEFAULT_DETECTION_HALF_SIZE,
+    (y / 2) + DEFAULT_DETECTION_HALF_SIZE,
 )
 
+data class SelectorUiState(
+    val initialArea: Rect,
+    val minimalArea: Rect?,
+)
+
+private const val DEFAULT_DETECTION_HALF_SIZE = 64
 private const val MIN_TEXT_DETECTION_WIDTH = 128
 private const val MIN_TEXT_DETECTION_HEIGHT = 64
