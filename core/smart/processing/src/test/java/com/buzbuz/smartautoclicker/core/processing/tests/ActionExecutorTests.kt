@@ -23,6 +23,7 @@ import android.os.Build
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 
+import com.buzbuz.smartautoclicker.code.smart.detectionmodels.text.domain.OCRAlphabet
 import com.buzbuz.smartautoclicker.core.base.identifier.Identifier
 import com.buzbuz.smartautoclicker.core.common.actions.AndroidActionExecutor
 import com.buzbuz.smartautoclicker.core.domain.model.AND
@@ -33,9 +34,12 @@ import com.buzbuz.smartautoclicker.core.domain.model.action.Click
 import com.buzbuz.smartautoclicker.core.domain.model.action.Pause
 import com.buzbuz.smartautoclicker.core.domain.model.action.Swipe
 import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
+import com.buzbuz.smartautoclicker.core.domain.model.counter.ComparisonOperation
+import com.buzbuz.smartautoclicker.core.domain.model.counter.CounterOperationValue
 import com.buzbuz.smartautoclicker.core.domain.model.event.ScreenEvent
 import com.buzbuz.smartautoclicker.core.processing.data.processor.ActionExecutor
 import com.buzbuz.smartautoclicker.core.processing.data.processor.ConditionsResults
+import com.buzbuz.smartautoclicker.core.processing.data.processor.getConditionClickPosition
 import com.buzbuz.smartautoclicker.core.processing.data.processor.state.ProcessingState
 import com.buzbuz.smartautoclicker.core.processing.utils.anyNotNull
 import com.buzbuz.smartautoclicker.core.processing.domain.model.ProcessedConditionResult
@@ -74,7 +78,7 @@ class ActionExecutorTests {
         private const val TEST_Y1 = 88
         private const val TEST_Y2 = 76
 
-        fun getNewDefaultEvent(operator: Int = OR, conditions: List<ScreenCondition.Image> = emptyList(), actions: List<Action> = emptyList()) =
+        fun getNewDefaultEvent(operator: Int = OR, conditions: List<ScreenCondition> = emptyList(), actions: List<Action> = emptyList()) =
             ScreenEvent(TEST_EVENT_ID, Identifier(databaseId = 12L), "Name", operator, actions, conditions, true, 0, cooldownMs = 0, keepDetecting = false)
 
         fun getNewDefaultClickUserPos(id: Long, duration: Long = TEST_DURATION) =
@@ -92,6 +96,25 @@ class ActionExecutorTests {
 
         fun getNewDefaultCondition(id: Long) =
             ScreenCondition.Image(Identifier(databaseId = id), TEST_EVENT_ID, TEST_NAME, 0, true, 10, "path", Rect(), EXACT, null)
+
+        fun getClickableConditions(): List<ScreenCondition> = listOf(
+            ScreenCondition.Color(
+                Identifier(databaseId = 1L), TEST_EVENT_ID, TEST_NAME, 10, true, 0,
+                0xFF0000, Rect(100, 200, 140, 260),
+            ),
+            ScreenCondition.Image(
+                Identifier(databaseId = 2L), TEST_EVENT_ID, TEST_NAME, 10, true, 0,
+                "path", Rect(200, 300, 260, 380), EXACT, null,
+            ),
+            ScreenCondition.Number(
+                Identifier(databaseId = 3L), TEST_EVENT_ID, TEST_NAME, 10, true, 0,
+                Rect(300, 400, 380, 500), ComparisonOperation.EQUALS, CounterOperationValue.Number(42.0),
+            ),
+            ScreenCondition.Text(
+                Identifier(databaseId = 4L), TEST_EVENT_ID, TEST_NAME, 10, true, 0,
+                "target", Rect(400, 500, 500, 620), OCRAlphabet.LATIN,
+            ),
+        )
     }
 
     @Mock private lateinit var mockAndroidExecutor: AndroidActionExecutor
@@ -210,6 +233,88 @@ class ActionExecutorTests {
         val gestureCaptor = argumentCaptor<GestureDescription>()
         verify(mockAndroidExecutor).dispatchGesture(gestureCaptor.capture())
         assertActionGesture(gestureCaptor.lastValue)
+    }
+
+    @Test
+    fun conditionClickPosition_usesDetectedPositionForAllScreenConditionTypes() {
+        val expectedPosition = Point(321, 654)
+
+        getClickableConditions().forEach { condition ->
+            val result = ProcessedConditionResult.Screen(
+                isFulfilled = true,
+                haveBeenDetected = true,
+                condition = condition,
+                position = expectedPosition,
+                size = Point(20, 10),
+                confidenceRate = 100.0,
+            )
+
+            assertEquals(condition::class.simpleName, expectedPosition, result.getConditionClickPosition())
+        }
+    }
+
+    @Test
+    fun conditionClickPosition_fallsBackToDetectionAreaForAllScreenConditionTypes() {
+        getClickableConditions().forEach { condition ->
+            val area = when (condition) {
+                is ScreenCondition.Color -> condition.detectionArea
+                is ScreenCondition.Image -> condition.detectionArea ?: condition.area
+                is ScreenCondition.Number -> condition.detectionArea
+                is ScreenCondition.Text -> condition.detectionArea
+            }
+            val result = ProcessedConditionResult.Screen(
+                isFulfilled = true,
+                haveBeenDetected = true,
+                condition = condition,
+                position = null,
+                size = null,
+                confidenceRate = 100.0,
+            )
+
+            assertEquals(
+                condition::class.simpleName,
+                Point(area.centerX(), area.centerY()),
+                result.getConditionClickPosition(),
+            )
+        }
+    }
+
+    @Test
+    fun conditionClickPosition_rejectsNegativeOrUndetectedConditions() {
+        val condition = getClickableConditions().first()
+        val negativeCondition = (condition as ScreenCondition.Color).copy(shouldBeDetected = false)
+        val conditionWithoutClickableArea = getNewDefaultCondition(5L)
+
+        assertNull(
+            ProcessedConditionResult.Screen(
+                isFulfilled = true,
+                haveBeenDetected = true,
+                condition = negativeCondition,
+                position = Point(10, 20),
+                size = Point(5, 5),
+                confidenceRate = 100.0,
+            ).getConditionClickPosition()
+        )
+        assertNull(
+            ProcessedConditionResult.Screen(
+                isFulfilled = false,
+                haveBeenDetected = false,
+                condition = condition,
+                position = null,
+                size = null,
+                confidenceRate = 0.0,
+            ).getConditionClickPosition()
+        )
+        assertNull(
+            ProcessedConditionResult.Screen(
+                isFulfilled = true,
+                haveBeenDetected = true,
+                condition = conditionWithoutClickableArea,
+                position = null,
+                size = null,
+                confidenceRate = 100.0,
+            ).getConditionClickPosition()
+        )
     }
 
     @Test

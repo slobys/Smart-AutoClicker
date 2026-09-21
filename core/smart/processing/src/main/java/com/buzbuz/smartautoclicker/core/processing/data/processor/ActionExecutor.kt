@@ -44,10 +44,12 @@ import com.buzbuz.smartautoclicker.core.domain.model.action.ChangeCounter
 import com.buzbuz.smartautoclicker.core.domain.model.action.Notification
 import com.buzbuz.smartautoclicker.core.domain.model.action.SetText
 import com.buzbuz.smartautoclicker.core.domain.model.action.SystemAction
+import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
 import com.buzbuz.smartautoclicker.core.domain.model.action.intent.putDomainExtra
 import com.buzbuz.smartautoclicker.core.domain.model.event.Event
 import com.buzbuz.smartautoclicker.core.domain.model.event.ScreenEvent
 import com.buzbuz.smartautoclicker.core.processing.data.processor.state.ProcessingState
+import com.buzbuz.smartautoclicker.core.processing.domain.model.ProcessedConditionResult
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -137,16 +139,17 @@ internal class ActionExecutor(
             else -> null
         }
 
-        if (result == null) {
-            Log.w(TAG, "Click is invalid, can't execute")
+        val detectedPosition = result?.getConditionClickPosition()
+        if (detectedPosition == null) {
+            Log.w(TAG, "Click is invalid, detected condition has no clickable position")
             return null
         }
 
         return Path().apply {
             moveTo(
                 position = Point(
-                    (result.position?.x ?: 0) + (click.clickOffset?.x ?: 0),
-                    (result.position?.y ?: 0) + (click.clickOffset?.y ?: 0),
+                    detectedPosition.x + (click.clickOffset?.x ?: 0),
+                    detectedPosition.y + (click.clickOffset?.y ?: 0),
                 ),
                 random = random,
             )
@@ -304,6 +307,35 @@ internal class ActionExecutor(
             )
         }
     }
+}
+
+/**
+ * Returns the actual detection centre used by a click-on-condition action.
+ *
+ * OCR and color detectors normally provide this point. If a valid positive detection comes from
+ * an older detector or a fallback pass without a bounding box, use the configured detection area
+ * centre instead of silently clicking at (0, 0).
+ */
+internal fun ProcessedConditionResult.Screen.getConditionClickPosition(): Point? {
+    if (!isFulfilled || !haveBeenDetected || !condition.shouldBeDetected) return null
+
+    val detectedPosition = position
+    val detectedSize = size
+    if (detectedPosition != null &&
+        (detectedPosition.x != 0 || detectedPosition.y != 0 ||
+                (detectedSize?.x ?: 0) > 0 || (detectedSize?.y ?: 0) > 0)) {
+        return detectedPosition
+    }
+
+    val detectionArea = when (val screenCondition = condition) {
+        is ScreenCondition.Color -> screenCondition.detectionArea
+        is ScreenCondition.Image -> screenCondition.detectionArea ?: screenCondition.area
+        is ScreenCondition.Number -> screenCondition.detectionArea
+        is ScreenCondition.Text -> screenCondition.detectionArea
+    }
+    if (detectionArea.isEmpty) return null
+
+    return Point(detectionArea.centerX(), detectionArea.centerY())
 }
 
 /** Tag for logs. */

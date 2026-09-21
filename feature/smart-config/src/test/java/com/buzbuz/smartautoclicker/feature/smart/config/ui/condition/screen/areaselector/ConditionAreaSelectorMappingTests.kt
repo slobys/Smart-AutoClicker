@@ -12,6 +12,7 @@ import android.graphics.Point
 import android.graphics.Rect
 import android.os.Build
 
+import com.buzbuz.smartautoclicker.code.smart.detectionmodels.text.domain.OCRAlphabet
 import com.buzbuz.smartautoclicker.core.base.identifier.Identifier
 import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
 import com.buzbuz.smartautoclicker.core.domain.model.counter.ComparisonOperation
@@ -46,6 +47,24 @@ class ConditionAreaSelectorMappingTests {
         assertNull(uiState?.minimalArea)
     }
 
+    @Test
+    fun textCondition_usesAdaptiveMinimumArea() {
+        val detectionArea = Rect(100, 200, 180, 250)
+
+        val uiState = textCondition(detectionArea).toSelectorUiState(SCREEN_SIZE)
+
+        assertEquals(detectionArea, uiState?.initialArea)
+        assertNull(uiState?.minimalArea)
+    }
+
+    @Test
+    fun textConditionWithoutArea_isCenteredAndUsesAdaptiveMinimumArea() {
+        val uiState = textCondition(Rect()).toSelectorUiState(SCREEN_SIZE)
+
+        assertEquals(Rect(896, 476, 1024, 604), uiState?.initialArea)
+        assertNull(uiState?.minimalArea)
+    }
+
     private fun numberCondition(detectionArea: Rect): ScreenCondition.Number = ScreenCondition.Number(
         id = Identifier(databaseId = 1L),
         eventId = Identifier(databaseId = 2L),
@@ -55,6 +74,18 @@ class ConditionAreaSelectorMappingTests {
         detectionArea = detectionArea,
         comparisonOperation = ComparisonOperation.EQUALS,
         counterValue = CounterOperationValue.Number(5.0),
+    )
+
+    private fun textCondition(detectionArea: Rect): ScreenCondition.Text = ScreenCondition.Text(
+        id = Identifier(databaseId = 3L),
+        eventId = Identifier(databaseId = 4L),
+        name = "Text",
+        threshold = 0,
+        shouldBeDetected = true,
+        priority = 0,
+        text = "target",
+        detectionArea = detectionArea,
+        alphabet = OCRAlphabet.LATIN,
     )
 }
 

@@ -74,7 +74,7 @@ internal fun ScreenCondition.toSelectorUiState(screenSize: Point): SelectorUiSta
             SelectorUiState(
                 initialArea = detectionArea.takeUnless { it.isEmpty }
                     ?: screenSize.defaultDetectionArea(),
-                minimalArea = Rect(0, 0, MIN_TEXT_DETECTION_WIDTH, MIN_TEXT_DETECTION_HEIGHT),
+                minimalArea = null,
             )
     }
 
@@ -91,5 +91,3 @@ data class SelectorUiState(
 )
 
 private const val DEFAULT_DETECTION_HALF_SIZE = 64
-private const val MIN_TEXT_DETECTION_WIDTH = 128
-private const val MIN_TEXT_DETECTION_HEIGHT = 64

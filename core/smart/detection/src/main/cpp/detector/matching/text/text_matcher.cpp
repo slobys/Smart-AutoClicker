@@ -372,10 +372,11 @@ bool TextMatcher::updateTextMatchingResult(
     for (const auto& recognizerResult: recognizerResults) {
         if (recognizerResult.confidence < minimumRecognizerConfidence) continue;
 
-        const float score = bestSubstringSimilarity(
+        const auto substringMatch = bestSubstringMatch(
                 recognizerResult.text,
                 conditionText,
-                minimumSimilarity) * 100.0f;
+                minimumSimilarity);
+        const float score = substringMatch.similarity * 100.0f;
         LOGD(
                 "TextMatcher",
                 "Pass=%s; score=%f; ocrConfidence=%f; recognized=%s",
@@ -387,9 +388,39 @@ bool TextMatcher::updateTextMatchingResult(
         const float normalizedScore = score / 100.0f;
         if (normalizedScore <= currentMatchingResult.getResultConfidence()) continue;
 
+        cv::Rect matchedBoundingBox = recognizerResult.boundingBox;
+        const int recognizedLength = static_cast<int>(decodeUtf8(recognizerResult.text).size());
+        if (recognizedLength > 0 &&
+            substringMatch.length > 0 &&
+            substringMatch.length < recognizedLength) {
+            if (matchedBoundingBox.width >= matchedBoundingBox.height) {
+                const double pixelsPerCharacter =
+                        static_cast<double>(matchedBoundingBox.width) / recognizedLength;
+                const int leftOffset = static_cast<int>(std::lround(
+                        substringMatch.start * pixelsPerCharacter));
+                const int matchedWidth = std::max(1, static_cast<int>(std::lround(
+                        substringMatch.length * pixelsPerCharacter)));
+                matchedBoundingBox.x += leftOffset;
+                matchedBoundingBox.width = std::min(
+                        matchedWidth,
+                        recognizerResult.boundingBox.x + recognizerResult.boundingBox.width - matchedBoundingBox.x);
+            } else {
+                const double pixelsPerCharacter =
+                        static_cast<double>(matchedBoundingBox.height) / recognizedLength;
+                const int topOffset = static_cast<int>(std::lround(
+                        substringMatch.start * pixelsPerCharacter));
+                const int matchedHeight = std::max(1, static_cast<int>(std::lround(
+                        substringMatch.length * pixelsPerCharacter)));
+                matchedBoundingBox.y += topOffset;
+                matchedBoundingBox.height = std::min(
+                        matchedHeight,
+                        recognizerResult.boundingBox.y + recognizerResult.boundingBox.height - matchedBoundingBox.y);
+            }
+        }
+
         currentMatchingResult.updateResults(
                 detectionArea,
-                recognizerResult.boundingBox,
+                matchedBoundingBox,
                 normalizedScore);
         if (score >= minimumRequiredScore) {
             currentMatchingResult.markResultAsDetected();
@@ -601,25 +632,45 @@ std::vector<TextRecognizerResult> TextMatcher::recognizeTextInImage(
     return textRecognizer->recognizeText(recognitionModelId, detectorResults);
 }
 
-float TextMatcher::bestSubstringSimilarity(const std::string& recognized, const std::string& target, float minSimilarity) {
-    if (recognized.empty() || target.empty()) return 0.f;
-
-    // Fast exact substring match
-    if (recognized.find(target) != std::string::npos) return 1.f;
+TextMatcher::SubstringMatchResult TextMatcher::bestSubstringMatch(
+        const std::string& recognized,
+        const std::string& target,
+        float minSimilarity
+) {
+    if (recognized.empty() || target.empty()) return {};
 
     const auto recognizedCodePoints = decodeUtf8(recognized);
     const auto targetCodePoints = decodeUtf8(target);
     const int targetLen = static_cast<int>(targetCodePoints.size());
     const int recognizedLen = static_cast<int>(recognizedCodePoints.size());
 
+    // Locate exact substrings using Unicode code points. A byte offset cannot be used for CJK text
+    // because it would place the click several characters away from the matched word.
+    if (recognizedLen >= targetLen) {
+        for (int start = 0; start <= recognizedLen - targetLen; ++start) {
+            bool exact = true;
+            for (int offset = 0; offset < targetLen; ++offset) {
+                if (normalizeCodePoint(recognizedCodePoints[start + offset]) !=
+                    normalizeCodePoint(targetCodePoints[offset])) {
+                    exact = false;
+                    break;
+                }
+            }
+            if (exact) return {1.f, start, targetLen};
+        }
+    }
+
     // Fast path
     if (recognizedLen <= targetLen + 2) {
-        return similarityCodePoints(recognizedCodePoints, targetCodePoints, minSimilarity);
+        return {
+                similarityCodePoints(recognizedCodePoints, targetCodePoints, minSimilarity),
+                0,
+                recognizedLen};
     }
 
     // Allow small OCR insertions/deletions. Window boundaries are Unicode code points, never the
     // continuation bytes inside a Chinese, Japanese, Korean, or other multibyte character.
-    float bestScore = 0.f;
+    SubstringMatchResult bestMatch;
     const int minWindow = std::max(1, targetLen - 2);
     const int maxWindow = std::min(recognizedLen, targetLen + 4);
 
@@ -631,16 +682,16 @@ float TextMatcher::bestSubstringSimilarity(const std::string& recognized, const 
                     recognizedCodePoints.begin() + start + windowSize);
 
             float score = similarityCodePoints(window, targetCodePoints, minSimilarity);
-            if (score > bestScore) {
-                bestScore = score;
+            if (score > bestMatch.similarity) {
+                bestMatch = {score, start, windowSize};
 
                 // Early success exit
-                if (bestScore >= 0.95f) return bestScore;
+                if (bestMatch.similarity >= 0.95f) return bestMatch;
             }
         }
     }
 
-    return bestScore;
+    return bestMatch;
 }
 
 float TextMatcher::similarity(const std::string &recognized, const std::string &target, float minSimilarity) {

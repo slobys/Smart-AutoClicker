@@ -45,6 +45,12 @@ namespace smartautoclicker {
     class TextMatcher {
 
     private:
+        struct SubstringMatchResult {
+            float similarity = 0.f;
+            int start = 0;
+            int length = 0;
+        };
+
         /** Handles the localization of text bounding boxes. */
         std::unique_ptr<TextDetector> textLocator = std::make_unique<TextDetector>();
         /** Handles the conversion of image crops to text. */
@@ -145,9 +151,12 @@ namespace smartautoclicker {
          * @param target The text to search for.
          * @param minSimilarity The threshold for a valid match.
          *
-         * @return The highest similarity score found.
+         * @return The highest similarity score and its Unicode code point range.
          */
-        float bestSubstringSimilarity(const std::string& recognized, const std::string& target, float minSimilarity = 0.80f);
+        SubstringMatchResult bestSubstringMatch(
+                const std::string& recognized,
+                const std::string& target,
+                float minSimilarity = 0.80f);
 
         /**
          * Decodes UTF-8 before fuzzy matching so multilingual thresholds are character based.
