@@ -251,9 +251,6 @@ class MainMenu(
         viewModel.toggleDetection(context)
     }
 
-    override fun canAutoCollapseMenu(): Boolean =
-        !viewBinding.layoutDebug.isVisible
-
     /** Refresh the play menu item according to the scenario state. */
     private fun updatePlayPauseButtonEnabledState(canStartDetection: Boolean) =
         setMenuItemViewEnabled(viewBinding.btnPlay, canStartDetection)
@@ -318,7 +315,6 @@ class MainMenu(
      */
     private fun updateDebugOverlayViewVisibility(isVisible: Boolean) {
         if (isVisible && debugObservableJob == null) {
-            viewBinding.layoutDebug.visibility = View.VISIBLE
             debugObservableJob = observeDebugValues()
 
         } else if (!isVisible && debugObservableJob != null) {
@@ -326,8 +322,12 @@ class MainMenu(
             debugObservableJob = null
 
             updateLiveDebugUiState(null)
-            viewBinding.layoutDebug.visibility = View.GONE
         }
+
+        viewBinding.layoutDebug.isVisible = shouldShowDebugPanel(
+            isDebugging = isVisible,
+            isMenuCollapsed = isMenuCurrentlyCollapsed(),
+        )
     }
 
     /**
@@ -428,3 +428,9 @@ class MainMenu(
     }
 
 }
+
+@Suppress("UNUSED_PARAMETER")
+internal fun shouldShowDebugPanel(
+    isDebugging: Boolean,
+    isMenuCollapsed: Boolean,
+): Boolean = isDebugging

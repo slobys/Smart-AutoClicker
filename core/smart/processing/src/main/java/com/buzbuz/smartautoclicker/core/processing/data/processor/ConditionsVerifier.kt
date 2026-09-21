@@ -17,7 +17,9 @@
 package com.buzbuz.smartautoclicker.core.processing.data.processor
 
 import android.graphics.Bitmap
+import android.graphics.Rect
 
+import com.buzbuz.smartautoclicker.core.detection.DetectionResult
 import com.buzbuz.smartautoclicker.core.detection.ImageDetector
 import com.buzbuz.smartautoclicker.core.detection.NumberFormatType as DetectionNumberFormatType
 import com.buzbuz.smartautoclicker.core.domain.model.condition.NumberFormatType as DomainNumberFormatType
@@ -51,12 +53,22 @@ internal class ConditionsVerifier(
 
     /** List of results for the last call to verifyConditions. */
     private val verificationResults: ConditionsResults = ConditionsResults()
+    /** Raw detector results reusable only while processing the current captured frame. */
+    private val frameDetectionCache: MutableMap<ScreenDetectionKey, DetectionResult> = mutableMapOf()
 
     /**
      * Set only during a [verifyConditions], it contains the system time at verification start.
      * This allows to use the same reference time for all conditions during the same verification loop.
      */
     private var currentVerificationTsMs: Long? = null
+
+    fun onScreenFrameStarted() {
+        frameDetectionCache.clear()
+    }
+
+    fun invalidateScreenFrameCache() {
+        frameDetectionCache.clear()
+    }
 
     suspend fun verifyConditions(@ConditionOperator operator: Int, conditions: List<Condition>): ConditionsResults {
         verificationResults.reset()
@@ -137,11 +149,18 @@ internal class ConditionsVerifier(
             .getScreenConditionScalingInfo(condition) as? ScreenConditionScalingInfo.Color
             ?: return condition.toInvalidConditionResult()
 
-        val detectionResult = imageDetector.detectColor(
-            conditionColor = condition.color,
-            detectionArea = conditionScalingInfo.detectionArea,
+        val cacheKey = ScreenDetectionKey.Color(
+            color = condition.color,
+            detectionArea = Rect(conditionScalingInfo.detectionArea),
             threshold = condition.threshold,
         )
+        val detectionResult = frameDetectionCache.getOrPut(cacheKey) {
+            imageDetector.detectColor(
+                conditionColor = condition.color,
+                detectionArea = conditionScalingInfo.detectionArea,
+                threshold = condition.threshold,
+            )
+        }
 
         val result = ProcessedConditionResult.Screen(
             isFulfilled = detectionResult.isDetected == condition.shouldBeDetected,
@@ -163,28 +182,38 @@ internal class ConditionsVerifier(
             .getScreenConditionScalingInfo(condition) as? ScreenConditionScalingInfo.Image
             ?: return condition.toInvalidConditionResult()
 
-        val bitmap = bitmapSupplier(
-            condition.path,
-            conditionScalingInfo.imageArea.width(),
-            conditionScalingInfo.imageArea.height(),
+        val cacheKey = ScreenDetectionKey.Image(
+            path = condition.path,
+            conditionWidth = conditionScalingInfo.imageArea.width(),
+            conditionHeight = conditionScalingInfo.imageArea.height(),
+            detectionArea = Rect(conditionScalingInfo.detectionArea),
+            threshold = condition.threshold,
         )
-
-        val result = bitmap?.let { conditionBitmap ->
-            val detectionResult = imageDetector.detectImage(
-                conditionBitmap = conditionBitmap,
-                conditionWidth = conditionScalingInfo.imageArea.width(),
-                conditionHeight = conditionScalingInfo.imageArea.height(),
-                detectionArea = conditionScalingInfo.detectionArea,
-                threshold = condition.threshold,
+        val detectionResult = frameDetectionCache[cacheKey] ?: run {
+            val bitmap = bitmapSupplier(
+                condition.path,
+                conditionScalingInfo.imageArea.width(),
+                conditionScalingInfo.imageArea.height(),
             )
+            bitmap?.let { conditionBitmap ->
+                imageDetector.detectImage(
+                    conditionBitmap = conditionBitmap,
+                    conditionWidth = conditionScalingInfo.imageArea.width(),
+                    conditionHeight = conditionScalingInfo.imageArea.height(),
+                    detectionArea = conditionScalingInfo.detectionArea,
+                    threshold = condition.threshold,
+                ).also { frameDetectionCache[cacheKey] = it }
+            }
+        }
 
+        val result = detectionResult?.let {
             ProcessedConditionResult.Screen(
-                isFulfilled = detectionResult.isDetected == condition.shouldBeDetected,
-                haveBeenDetected = detectionResult.isDetected,
+                isFulfilled = it.isDetected == condition.shouldBeDetected,
+                haveBeenDetected = it.isDetected,
                 condition = condition,
-                position = scalingManager.scaleUpDetectionResult(detectionResult.position),
-                confidenceRate = detectionResult.confidenceRate,
-                size = scalingManager.scaleUpDetectionResult(detectionResult.size),
+                position = scalingManager.scaleUpDetectionResult(it.position),
+                confidenceRate = it.confidenceRate,
+                size = scalingManager.scaleUpDetectionResult(it.size),
             )
         } ?: condition.toInvalidConditionResult()
 
@@ -199,11 +228,19 @@ internal class ConditionsVerifier(
             .getScreenConditionScalingInfo(condition) as? ScreenConditionScalingInfo.Number
             ?: return condition.toInvalidConditionResult()
 
-        val detectionResult = imageDetector.detectNumber(
-            detectionArea = conditionScalingInfo.detectionArea,
+        val detectionNumberFormat = condition.numberFormatType.toDetectionNumberFormatType()
+        val cacheKey = ScreenDetectionKey.Number(
+            detectionArea = Rect(conditionScalingInfo.detectionArea),
             threshold = condition.threshold,
-            numberFormatType = condition.numberFormatType.toDetectionNumberFormatType(),
+            numberFormatType = detectionNumberFormat,
         )
+        val detectionResult = frameDetectionCache.getOrPut(cacheKey) {
+            imageDetector.detectNumber(
+                detectionArea = conditionScalingInfo.detectionArea,
+                threshold = condition.threshold,
+                numberFormatType = detectionNumberFormat,
+            )
+        }
 
         val numberDetected: Double? = detectionResult.numberDetected
         val result =
@@ -245,12 +282,20 @@ internal class ConditionsVerifier(
             .getScreenConditionScalingInfo(condition) as? ScreenConditionScalingInfo.Text
             ?: return condition.toInvalidConditionResult()
 
-        val detectionResult = imageDetector.detectText(
-            conditionText = condition.text,
+        val cacheKey = ScreenDetectionKey.Text(
+            text = condition.text,
             recognitionModelId = condition.alphabet.name,
-            detectionArea = conditionScalingInfo.detectionArea,
+            detectionArea = Rect(conditionScalingInfo.detectionArea),
             threshold = condition.threshold,
         )
+        val detectionResult = frameDetectionCache.getOrPut(cacheKey) {
+            imageDetector.detectText(
+                conditionText = condition.text,
+                recognitionModelId = condition.alphabet.name,
+                detectionArea = conditionScalingInfo.detectionArea,
+                threshold = condition.threshold,
+            )
+        }
 
         val result = ProcessedConditionResult.Screen(
             isFulfilled = detectionResult.isDetected == condition.shouldBeDetected,
@@ -280,6 +325,36 @@ internal class ConditionsVerifier(
             isFulfilled = positive,
             condition = this,
         )
+}
+
+private sealed interface ScreenDetectionKey {
+
+    data class Color(
+        val color: Int,
+        val detectionArea: Rect,
+        val threshold: Int,
+    ) : ScreenDetectionKey
+
+    data class Image(
+        val path: String,
+        val conditionWidth: Int,
+        val conditionHeight: Int,
+        val detectionArea: Rect,
+        val threshold: Int,
+    ) : ScreenDetectionKey
+
+    data class Text(
+        val text: String,
+        val recognitionModelId: String,
+        val detectionArea: Rect,
+        val threshold: Int,
+    ) : ScreenDetectionKey
+
+    data class Number(
+        val detectionArea: Rect,
+        val threshold: Int,
+        val numberFormatType: DetectionNumberFormatType,
+    ) : ScreenDetectionKey
 }
 
 private fun DomainNumberFormatType.toDetectionNumberFormatType(): DetectionNumberFormatType =

@@ -651,6 +651,9 @@ abstract class OverlayMenu(
     /** Allows specialised menus to temporarily prevent automatic collapsing, such as while debug details are shown. */
     protected open fun canAutoCollapseMenu(): Boolean = true
 
+    /** Tells specialised menus whether the compact launcher is currently displayed. */
+    protected fun isMenuCurrentlyCollapsed(): Boolean = isMenuCollapsed
+
     private fun toggleMenuCollapsedState() {
         if (resizeController.isAnimating) return
         if (isMenuCollapsed) expandMenu() else collapseMenu(isUserInitiated = true)

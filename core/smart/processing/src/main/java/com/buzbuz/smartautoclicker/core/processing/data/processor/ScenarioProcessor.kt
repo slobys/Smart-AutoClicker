@@ -172,6 +172,7 @@ internal class ScenarioProcessor(
         val frameStartedAt = System.nanoTime()
         // Set the current screen image
         imageDetector.setScreenBitmap(screenFrame, processingTag)
+        conditionsVerifier.onScreenFrameStarted()
 
         try {
             // Check all events
@@ -235,6 +236,10 @@ internal class ScenarioProcessor(
                     progressListener?.onEventActionsExecuted(screenEvent, results.getAllScreenConditionsResults())
 
                     screenEventStabilityTracker.resetAll()
+                    // keepDetecting can continue on the same captured bitmap after an action. Do not
+                    // reuse a result obtained before that action, even though identical conditions
+                    // elsewhere in an untouched frame may share their expensive detector result.
+                    conditionsVerifier.invalidateScreenFrameCache()
                     processingState.startCooldownIfNeeded(screenEvent)
                     if (!screenEvent.keepDetecting) break
                 }

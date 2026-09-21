@@ -76,8 +76,9 @@ TextMatchingResult* TextMatcher::matchText(
         return &currentMatchingResult;
     }
 
-    // Keep the original image as the primary path. Most clear text is recognized here without
-    // paying for extra inference or exposing it to preprocessing artifacts.
+    // Always localize text before accepting the primary OCR result. Reading the complete crop as
+    // one line can merge nearby labels or animated-background details into the expected text and
+    // return a false positive with an imprecise click position.
     auto recognizerResults = recognizeText(screenImage, detectionArea, recognitionModelId);
     if (updateTextMatchingResult(
             recognizerResults,

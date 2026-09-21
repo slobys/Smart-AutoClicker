@@ -63,6 +63,7 @@ import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.Mockito.anyInt
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.MockitoAnnotations
@@ -254,6 +255,90 @@ class ScenarioProcessorTests {
 
         verify(mockImageDetector).setScreenBitmap(mockScreenBitmap, "")
         verifyNoInteractions(mockAndroidExecutor, mockEndListener)
+    }
+
+    @Test
+    fun duplicateDetectionInSameFrame_isComputedOnlyOnce() = runTest {
+        val condition = createTestCondition(
+            TEST_CONDITION_PATH_1,
+            TEST_CONDITION_AREA_1,
+            TEST_CONDITION_THRESHOLD_1,
+            EXACT,
+            isDetected = false,
+            shouldBeOnScreen = true,
+        )
+        val firstEvent = newEvent(id = 1L, conditions = listOf(condition))
+        val secondEvent = newEvent(id = 2L, conditions = listOf(condition))
+
+        scenarioProcessor = createNewScenarioProcessor(listOf(firstEvent, secondEvent), emptyList())
+        scenarioProcessor.process(mockScreenBitmap)
+
+        verify(mockBitmapSupplier, times(1)).getBitmap(
+            TEST_CONDITION_PATH_1,
+            TEST_CONDITION_AREA_1.width(),
+            TEST_CONDITION_AREA_1.height(),
+        )
+    }
+
+    @Test
+    fun duplicateDetectionCache_isResetForEachCapturedFrame() = runTest {
+        val condition = createTestCondition(
+            TEST_CONDITION_PATH_1,
+            TEST_CONDITION_AREA_1,
+            TEST_CONDITION_THRESHOLD_1,
+            EXACT,
+            isDetected = false,
+            shouldBeOnScreen = true,
+        )
+        val firstEvent = newEvent(id = 1L, conditions = listOf(condition))
+        val secondEvent = newEvent(id = 2L, conditions = listOf(condition))
+
+        scenarioProcessor = createNewScenarioProcessor(listOf(firstEvent, secondEvent), emptyList())
+        scenarioProcessor.process(mockScreenBitmap)
+        scenarioProcessor.process(mockScreenBitmap)
+
+        verify(mockBitmapSupplier, times(2)).getBitmap(
+            TEST_CONDITION_PATH_1,
+            TEST_CONDITION_AREA_1.width(),
+            TEST_CONDITION_AREA_1.height(),
+        )
+    }
+
+    @Test
+    fun sameFrameDetectionCache_doesNotMixDifferentThresholds() = runTest {
+        val firstCondition = createTestCondition(
+            TEST_CONDITION_PATH_1,
+            TEST_CONDITION_AREA_1,
+            TEST_CONDITION_THRESHOLD_1,
+            EXACT,
+            isDetected = false,
+            shouldBeOnScreen = true,
+        )
+        val secondCondition = createTestCondition(
+            TEST_CONDITION_PATH_1,
+            TEST_CONDITION_AREA_1,
+            TEST_CONDITION_THRESHOLD_2,
+            EXACT,
+            isDetected = false,
+            shouldBeOnScreen = true,
+        )
+
+        scenarioProcessor = createNewScenarioProcessor(
+            listOf(
+                newEvent(id = 1L, conditions = listOf(firstCondition)),
+                newEvent(id = 2L, conditions = listOf(secondCondition)),
+            ),
+            emptyList(),
+        )
+        scenarioProcessor.process(mockScreenBitmap)
+
+        verify(mockImageDetector, times(2)).detectImage(
+            anyNotNull(),
+            anyInt(),
+            anyInt(),
+            anyNotNull(),
+            anyInt(),
+        )
     }
 
     @Test
