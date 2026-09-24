@@ -40,4 +40,6 @@ data class Scenario(
     val computeRate: Double = 0.0,
     val eventCount: Int = 0,
     val stats: ScenarioStats? = null,
+    val isFavorite: Boolean = false,
+    val groupName: String = "",
 ): Identifiable

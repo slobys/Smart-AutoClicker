@@ -43,6 +43,7 @@ private fun ScreenEvent.toEntity() = EventEntity(
     enabledOnStart = enabledOnStart,
     type = EventType.IMAGE_EVENT,
     detectionCooldownMs = cooldownMs,
+    isBreakpoint = isBreakpoint,
 )
 
 private fun TriggerEvent.toEntity() : EventEntity =
@@ -54,6 +55,7 @@ private fun TriggerEvent.toEntity() : EventEntity =
         enabledOnStart = enabledOnStart,
         priority = -1,
         type = EventType.TRIGGER_EVENT,
+        isBreakpoint = isBreakpoint,
     )
 
 
@@ -77,6 +79,7 @@ internal fun CompleteEventEntity.toDomainScreenEvent(cleanIds: Boolean = false):
         actions = actions.map { it.toDomain(cleanIds) }.sortedByPriority().toMutableList(),
         conditions = conditions.mapNotNull { it.toDomain(cleanIds) as? ScreenCondition }.sortedByPriority().toMutableList(),
         cooldownMs = event.detectionCooldownMs ?: 0L,
+        isBreakpoint = event.isBreakpoint,
     )
 
 /** @return the complete trigger event for this entity. */
@@ -89,4 +92,5 @@ internal fun CompleteEventEntity.toDomainTriggerEvent(cleanIds: Boolean = false)
         enabledOnStart = event.enabledOnStart,
         actions = actions.map { it.toDomain(cleanIds) }.sortedByPriority().toMutableList(),
         conditions = conditions.mapNotNull { it.toDomain(cleanIds) as? TriggerCondition }.toMutableList(),
+        isBreakpoint = event.isBreakpoint,
     )

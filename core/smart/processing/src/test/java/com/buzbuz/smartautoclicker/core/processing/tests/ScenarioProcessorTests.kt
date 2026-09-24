@@ -31,6 +31,7 @@ import com.buzbuz.smartautoclicker.core.domain.model.DetectionType
 import com.buzbuz.smartautoclicker.core.domain.model.EXACT
 import com.buzbuz.smartautoclicker.core.base.identifier.Identifier
 import com.buzbuz.smartautoclicker.core.common.actions.AndroidActionExecutor
+import com.buzbuz.smartautoclicker.core.common.actions.AndroidGestureResult
 import com.buzbuz.smartautoclicker.core.domain.model.OR
 import com.buzbuz.smartautoclicker.core.domain.model.WHOLE_SCREEN
 import com.buzbuz.smartautoclicker.core.domain.model.action.Click
@@ -202,6 +203,10 @@ class ScenarioProcessorTests {
 
         mockWhen(mockScalingManager.scaleUpDetectionResult(anyNotNull()))
             .doAnswer { invocation -> invocation.getArgument(0) }
+        runBlocking {
+            mockWhen(mockAndroidExecutor.dispatchGesture(anyNotNull()))
+                .thenReturn(AndroidGestureResult.COMPLETED)
+        }
     }
 
     @After

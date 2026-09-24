@@ -25,6 +25,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 
 import com.buzbuz.smartautoclicker.core.domain.model.action.Pause
+import com.buzbuz.smartautoclicker.core.domain.model.event.Event
+import com.buzbuz.smartautoclicker.core.domain.model.event.ScreenEvent
 import com.buzbuz.smartautoclicker.core.ui.bindings.dropdown.TimeUnitDropDownItem
 import com.buzbuz.smartautoclicker.core.ui.bindings.dropdown.findAppropriateTimeUnit
 import com.buzbuz.smartautoclicker.core.ui.bindings.dropdown.formatDuration
@@ -98,6 +100,46 @@ class PauseViewModel @Inject constructor(
     /** Tells if the pause duration value is valid or not. */
     val pauseDurationError: Flow<Boolean> = configuredPause.map { (it.pauseDuration ?: -1) <= 0 }
 
+    val waitModeItem: Flow<PauseWaitModeItem> = configuredPause.map { it.waitMode.toDropdownItem() }
+    val timeoutItem: Flow<PauseTimeoutItem> = configuredPause.map { it.timeoutBehavior.toDropdownItem() }
+    val isSmartWait: Flow<Boolean> = configuredPause.map { it.waitMode != Pause.WaitMode.FIXED_DELAY }
+    val showRetries: Flow<Boolean> = configuredPause.map {
+        it.waitMode != Pause.WaitMode.FIXED_DELAY && it.timeoutBehavior == Pause.TimeoutBehavior.RETRY
+    }
+    val showFallback: Flow<Boolean> = configuredPause.map {
+        it.waitMode != Pause.WaitMode.FIXED_DELAY &&
+            it.timeoutBehavior == Pause.TimeoutBehavior.EXECUTE_FALLBACK
+    }
+    val showScreenComparison: Flow<Boolean> = configuredPause.map {
+        it.waitMode == Pause.WaitMode.SCREEN_STABLE || it.waitMode == Pause.WaitMode.SCREEN_CHANGED
+    }
+    val showWaitTarget: Flow<Boolean> = configuredPause.map {
+        it.waitMode == Pause.WaitMode.TARGET_APPEARS || it.waitMode == Pause.WaitMode.TARGET_DISAPPEARS
+    }
+    val maxRetries: Flow<String> = configuredPause.map { it.maxRetries.toString() }
+    val confirmationFrames: Flow<String> = configuredPause.map { it.confirmationFrames.toString() }
+    val changeThreshold: Flow<String> = configuredPause.map { it.changeThresholdPercent.toString() }
+    val fallbackEventName: Flow<String?> = configuredPause.map { pause ->
+        pause.fallbackEventId?.let { id ->
+            editionRepository.editionState.getAllEditedEvents().firstOrNull { it.id == id }?.name
+        }
+    }
+    val waitTargetEventName: Flow<String?> = configuredPause.map { pause ->
+        pause.waitTargetEventId?.let { id ->
+            editionRepository.editionState.getAllEditedEvents().firstOrNull { it.id == id }?.name
+        }
+    }
+
+    fun getWaitTargetEvents(): List<ScreenEvent> =
+        editionRepository.editionState.getAllEditedEvents()
+            .filterIsInstance<ScreenEvent>()
+            .filter { it.conditions.isNotEmpty() }
+
+    fun getFallbackEvents(): List<Event> {
+        val currentEventId = editionRepository.editionState.getEditedEvent()?.id
+        return editionRepository.editionState.getAllEditedEvents().filter { it.id != currentEventId }
+    }
+
     /** Tells if the configured pause is valid and can be saved. */
     val isValidAction: Flow<Boolean> = editionRepository.editionState.editedActionState
         .map { it.canBeSaved }
@@ -132,6 +174,26 @@ class PauseViewModel @Inject constructor(
 
     fun setTimeUnit(unit: TimeUnitDropDownItem) {
         _selectedUnitItem.value = unit
+    }
+
+    fun setWaitMode(item: PauseWaitModeItem) = updatePause { copy(waitMode = item.mode) }
+
+    fun setWaitTargetEvent(event: ScreenEvent) = updatePause { copy(waitTargetEventId = event.id) }
+
+    fun setTimeoutBehavior(item: PauseTimeoutItem) = updatePause { copy(timeoutBehavior = item.behavior) }
+
+    fun setMaxRetries(value: Int?) = updatePause { copy(maxRetries = value ?: -1) }
+
+    fun setConfirmationFrames(value: Int?) = updatePause { copy(confirmationFrames = value ?: 0) }
+
+    fun setChangeThreshold(value: Int?) = updatePause { copy(changeThresholdPercent = value ?: 0) }
+
+    fun setFallbackEvent(event: Event) = updatePause { copy(fallbackEventId = event.id) }
+
+    private fun updatePause(transform: Pause.() -> Pause) {
+        editionRepository.editionState.getEditedAction<Pause>()?.let { pause ->
+            editionRepository.updateEditedAction(pause.transform())
+        }
     }
 
     fun saveLastConfig() {

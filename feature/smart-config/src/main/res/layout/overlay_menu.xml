@@ -30,6 +30,7 @@
         tools:viewBindingIgnore="true">
 
         <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/menu_content"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:animateLayoutChanges="true">
@@ -122,7 +123,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="@dimen/margin_horizontal_mini"
                     android:maxLines="1"
-                    android:ellipsize="marquee"
+                    android:ellipsize="end"
                     android:gravity="center_vertical"
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
@@ -152,6 +153,8 @@
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="@dimen/margin_horizontal_mini"
                     android:gravity="center_vertical"
+                    android:maxLines="1"
+                    android:ellipsize="end"
                     app:layout_constraintTop_toBottomOf="@id/separator_1"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toStartOf="@id/separator_3"
@@ -169,6 +172,7 @@
                     app:layout_constraintBottom_toTopOf="@id/separator_2"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintHorizontal_bias="0.65"
                     android:background="@android:drawable/divider_horizontal_bright"
                     android:backgroundTint="@color/overlayViewPrimary" />
 
@@ -179,6 +183,8 @@
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="@dimen/margin_horizontal_mini"
                     android:gravity="center_vertical"
+                    android:maxLines="1"
+                    android:ellipsize="end"
                     app:layout_constraintTop_toBottomOf="@id/separator_1"
                     app:layout_constraintStart_toEndOf="@id/separator_3"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -205,7 +211,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="@dimen/margin_horizontal_mini"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/separator_debug_controls"
                     app:layout_constraintTop_toBottomOf="@id/separator_2"
                     app:layout_constraintBottom_toBottomOf="parent"
                     android:orientation="horizontal"
@@ -214,7 +220,136 @@
                     tools:listitem="@layout/item_live_debugging_action"
                     tools:itemCount="3"/>
 
+                <View
+                    android:id="@+id/separator_debug_controls"
+                    android:layout_width="2dp"
+                    android:layout_height="0dp"
+                    android:layout_marginVertical="2dp"
+                    android:background="@android:drawable/divider_horizontal_bright"
+                    android:backgroundTint="@color/overlayViewPrimary"
+                    app:layout_constraintTop_toBottomOf="@id/separator_2"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/btn_debug_pause_resume" />
+
+                <ImageButton
+                    android:id="@+id/btn_debug_pause_resume"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_overlay_runtime_button"
+                    android:padding="14dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_debug_pause"
+                    app:tint="@color/overlayQuickActionPause"
+                    android:contentDescription="@string/content_desc_debug_pause_next_event"
+                    app:layout_constraintTop_toBottomOf="@id/separator_2"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/btn_debug_step" />
+
+                <ImageButton
+                    android:id="@+id/btn_debug_step"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_overlay_runtime_button"
+                    android:padding="14dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_debug_step"
+                    app:tint="@color/overlayQuickActionPositive"
+                    android:contentDescription="@string/content_desc_debug_step"
+                    app:layout_constraintTop_toBottomOf="@id/separator_2"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent" />
+
             </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!--
+                Compact runtime controls used when live debugging is disabled.
+                The buttons form a small fan around the edge launcher. MainMenu mirrors this
+                container when the launcher is docked on the right side of the screen.
+            -->
+            <FrameLayout
+                android:id="@+id/layout_quick_controls"
+                android:layout_width="@dimen/overlay_quick_controls_width"
+                android:layout_height="@dimen/overlay_quick_controls_height"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:visibility="gone"
+                app:layout_constraintStart_toEndOf="@id/menu_items"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                tools:visibility="visible">
+
+                <ImageButton
+                    android:id="@+id/btn_quick_step"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginTop="0dp"
+                    android:background="@drawable/bg_overlay_quick_button"
+                    android:elevation="6dp"
+                    android:padding="15dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_debug_step"
+                    app:tint="@color/overlayQuickActionPositive"
+                    android:contentDescription="@string/content_desc_debug_step" />
+
+                <ImageButton
+                    android:id="@+id/btn_quick_switch_scenario"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="44dp"
+                    android:layout_marginTop="28dp"
+                    android:background="@drawable/bg_overlay_quick_button"
+                    android:elevation="6dp"
+                    android:padding="15dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_scenario_switcher"
+                    app:tint="@color/overlayQuickActionSwitch"
+                    android:contentDescription="@string/content_desc_switch_scenario" />
+
+                <ImageButton
+                    android:id="@+id/btn_quick_pause_resume"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="64dp"
+                    android:layout_marginTop="64dp"
+                    android:background="@drawable/bg_overlay_quick_button"
+                    android:elevation="8dp"
+                    android:padding="15dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_debug_pause"
+                    app:tint="@color/overlayQuickActionPause"
+                    android:contentDescription="@string/content_desc_debug_pause_next_event" />
+
+                <ImageButton
+                    android:id="@+id/btn_quick_stop"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="44dp"
+                    android:layout_marginTop="100dp"
+                    android:background="@drawable/bg_overlay_quick_button"
+                    android:elevation="6dp"
+                    android:padding="15dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_stop"
+                    app:tint="@color/overlayQuickActionStop"
+                    android:contentDescription="@string/content_desc_stop_clicker" />
+
+                <ImageButton
+                    android:id="@+id/btn_quick_open_menu"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginTop="128dp"
+                    android:background="@drawable/bg_overlay_quick_button"
+                    android:elevation="6dp"
+                    android:padding="15dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_quick_open_menu"
+                    app:tint="@color/overlayQuickActionMenu"
+                    android:contentDescription="@string/content_desc_quick_open_full_menu" />
+
+            </FrameLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
 
     </androidx.cardview.widget.CardView>

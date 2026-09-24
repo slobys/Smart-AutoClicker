@@ -35,6 +35,7 @@
     <string name="menu_item_title_select_all">全选</string>
     <string name="menu_item_title_cancel">取消</string>
     <string name="menu_item_title_search">搜索</string>
+    <string name="menu_item_title_manage_groups">管理分组</string>
     <string name="menu_item_title_settings">设置</string>
 
     <string name="item_scenario_filter_by_name">名称</string>
@@ -71,6 +72,20 @@
     <string name="button_text_create_scenario">创建场景</string>
 
     <string name="content_desc_add_scenario">新建场景</string>
+    <string name="content_desc_scenario_favorite">收藏或取消收藏场景</string>
+    <string name="item_scenario_group_ungrouped">未分组</string>
+    <string name="dialog_title_scenario_group">场景分组</string>
+    <string name="field_scenario_group_name">分组名称</string>
+    <string name="button_clear_group">移出分组</string>
+    <string name="dialog_title_create_scenario_group">创建分组</string>
+    <string name="dialog_title_edit_scenario_group">编辑分组</string>
+    <string name="message_scenario_group_selection_count">已选择 %1$d 个场景</string>
+    <string name="error_scenario_group_name_required">请输入分组名称</string>
+    <string name="error_scenario_group_selection_required">请至少选择一个场景</string>
+    <string name="button_delete_scenario_group">取消整个分组</string>
+    <string name="content_desc_manage_scenario_group">编辑分组并选择场景</string>
+    <string name="content_desc_collapse_scenario_group">收起分组</string>
+    <string name="content_desc_expand_scenario_group">展开分组</string>
 
     <string name="default_scenario_name">默认名称</string>
     <string name="message_empty_image_events_scenario_list">暂无图像事件</string>

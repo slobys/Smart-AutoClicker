@@ -61,6 +61,9 @@ internal class DebugReportLocalDataSource @Inject constructor(
     private val filesMutex: Mutex = Mutex()
 
     private var messagesOutputStream: OutputStream? = null
+    private var pendingMessagesCount: Int = 0
+    private var estimatedMessagesBytes: Long = 0L
+    private var isSizeLimitWarningLogged: Boolean = false
     private val isWritingReport: Boolean
         get() = messagesOutputStream != null
 
@@ -92,6 +95,9 @@ internal class DebugReportLocalDataSource @Inject constructor(
 
             // Open the file
             messagesOutputStream = messagesFile.safeBufferedOutputStream()
+            pendingMessagesCount = 0
+            estimatedMessagesBytes = 0L
+            isSizeLimitWarningLogged = false
         }
     }
 
@@ -103,7 +109,7 @@ internal class DebugReportLocalDataSource @Inject constructor(
      */
     suspend fun writeMessageToReport(message: ProtoDebugReportMessage) {
         filesMutex.withLock {
-            messagesOutputStream?.safeWriteDelimited(message)
+            messagesOutputStream?.safeWriteReportMessage(message)
         }
     }
 
@@ -115,7 +121,7 @@ internal class DebugReportLocalDataSource @Inject constructor(
      */
     suspend fun writeEventOccurrenceToReport(occurrence: DebugReportEventOccurrence) {
         filesMutex.withLock {
-            messagesOutputStream?.safeWriteDelimited(occurrence.toProtobuf())
+            messagesOutputStream?.safeWriteReportMessage(occurrence.toProtobuf())
         }
     }
 
@@ -137,6 +143,7 @@ internal class DebugReportLocalDataSource @Inject constructor(
             // We no longer will be receiving any messages for this detection session, close the output stream
             messagesOutputStream?.safeClose()
             messagesOutputStream = null
+            pendingMessagesCount = 0
 
             _isReportAvailable.update { true }
         }
@@ -220,6 +227,37 @@ internal class DebugReportLocalDataSource @Inject constructor(
         }
     }
 
+    /**
+     * Write a report message without forcing a disk flush for every processed event.
+     *
+     * Reports are not readable while a session is running, so batching writes is safe and avoids turning
+     * high-frequency detection into high-frequency storage I/O. A hard size cap also prevents an unattended
+     * debugging session from filling the application cache indefinitely.
+     */
+    private fun OutputStream.safeWriteReportMessage(message: MessageLite) {
+        val estimatedMessageBytes = message.serializedSize.toLong() + MAX_DELIMITED_PREFIX_BYTES
+        if (estimatedMessagesBytes + estimatedMessageBytes > MAX_DEBUG_REPORT_MESSAGES_BYTES) {
+            if (!isSizeLimitWarningLogged) {
+                Log.w(LOG_TAG, "Debug report reached its size limit; further events will not be recorded")
+                isSizeLimitWarningLogged = true
+            }
+            return
+        }
+
+        try {
+            message.writeDelimitedTo(this)
+            estimatedMessagesBytes += estimatedMessageBytes
+            pendingMessagesCount++
+
+            if (pendingMessagesCount >= DEBUG_REPORT_FLUSH_BATCH_SIZE) {
+                flush()
+                pendingMessagesCount = 0
+            }
+        } catch (ioEx: IOException) {
+            Log.e(LOG_TAG, "Cannot write to file, IOException", ioEx)
+        }
+    }
+
     private fun OutputStream.safeClose() {
         try {
             close()
@@ -248,5 +286,8 @@ internal class DebugReportLocalDataSource @Inject constructor(
 }
 
 private const val DEBUG_REPORT_MESSAGES_FILE_NAME = "DebugReportMessages.pb"
+private const val DEBUG_REPORT_FLUSH_BATCH_SIZE = 32
+private const val MAX_DELIMITED_PREFIX_BYTES = 5L
+private const val MAX_DEBUG_REPORT_MESSAGES_BYTES = 16L * 1024L * 1024L
 private const val DEBUG_REPORT_OVERVIEW_FILE_NAME = "DebugReportOverview.pb"
 private const val LOG_TAG = "DebugReportFileAccess"

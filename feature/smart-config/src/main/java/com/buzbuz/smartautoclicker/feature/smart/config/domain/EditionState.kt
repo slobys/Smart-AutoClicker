@@ -20,6 +20,7 @@ import com.buzbuz.smartautoclicker.core.base.identifier.Identifier
 import com.buzbuz.smartautoclicker.core.base.interfaces.sortedByPriority
 import com.buzbuz.smartautoclicker.core.domain.model.OR
 import com.buzbuz.smartautoclicker.core.domain.model.action.Action
+import com.buzbuz.smartautoclicker.core.domain.model.action.ChangeCounter
 import com.buzbuz.smartautoclicker.core.domain.model.action.Click
 import com.buzbuz.smartautoclicker.core.domain.model.action.ToggleEvent
 import com.buzbuz.smartautoclicker.core.domain.model.action.toggleevent.EventToggle
@@ -248,7 +249,8 @@ internal class EditionState internal constructor(
         val actions = editor.currentEventEditor.value?.actionsEditor?.editedList?.value ?: return false
 
         return actions.find { action ->
-            action is Click && action.clickOnConditionId == condition.id
+            (action is Click && action.clickOnConditionId == condition.id) ||
+                    (action is ChangeCounter && action.detectedNumberConditionId == condition.id)
         } != null
     }
 }

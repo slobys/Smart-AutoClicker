@@ -50,7 +50,9 @@ data class ToggleEvent(
         /** Disable the event. Has no effect if the event is already disabled. */
         DISABLE,
         /** Enable the event if it is disabled, disable it if it is enabled. */
-        TOGGLE;
+        TOGGLE,
+        /** Execute the target event actions once, then return to the caller. */
+        EXECUTE_ONCE;
 
         fun toEntity(): EventToggleType = EventToggleType.valueOf(name)
     }
@@ -59,7 +61,7 @@ data class ToggleEvent(
         if (!super.isComplete()) return false
 
         return if (toggleAll) {
-            toggleAllType != null
+            toggleAllType != null && toggleAllType != ToggleType.EXECUTE_ONCE
         } else {
             eventToggles.areComplete()
         }

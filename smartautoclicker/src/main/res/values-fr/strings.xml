@@ -45,6 +45,7 @@
     <string name="menu_item_title_select_all">Tout sélectionner</string>
     <string name="menu_item_title_cancel">Annuler</string>
     <string name="menu_item_title_search">Rechercher</string>
+    <string name="menu_item_title_manage_groups">Gérer les groupes</string>
     <string name="menu_item_title_settings">Settings</string>
 
     <string name="item_scenario_filter_by_name">Nom</string>
@@ -173,4 +174,18 @@
     <string name="field_overlay_menu_auto_collapse_desc">Dégagez l’écran en réduisant la barre de commandes à une seule icône après une courte inactivité.</string>
     <string name="field_overlay_menu_auto_collapse_delay_title">Délai de réduction des commandes flottantes</string>
     <string name="field_overlay_menu_auto_collapse_delay_value">%1$d secondes</string>
+    <string name="content_desc_scenario_favorite">Ajouter ou retirer le scénario des favoris</string>
+    <string name="item_scenario_group_ungrouped">Sans groupe</string>
+    <string name="dialog_title_scenario_group">Groupe du scénario</string>
+    <string name="field_scenario_group_name">Nom du groupe</string>
+    <string name="button_clear_group">Retirer du groupe</string>
+    <string name="dialog_title_create_scenario_group">Créer un groupe</string>
+    <string name="dialog_title_edit_scenario_group">Modifier le groupe</string>
+    <string name="message_scenario_group_selection_count">%1$d scénarios sélectionnés</string>
+    <string name="error_scenario_group_name_required">Saisissez un nom de groupe</string>
+    <string name="error_scenario_group_selection_required">Sélectionnez au moins un scénario</string>
+    <string name="button_delete_scenario_group">Tout dissocier</string>
+    <string name="content_desc_manage_scenario_group">Modifier le groupe et choisir les scénarios</string>
+    <string name="content_desc_collapse_scenario_group">Réduire le groupe</string>
+    <string name="content_desc_expand_scenario_group">Développer le groupe</string>
 </resources>

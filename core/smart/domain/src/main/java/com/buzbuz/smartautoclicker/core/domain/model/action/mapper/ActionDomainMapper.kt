@@ -9,6 +9,8 @@ import com.buzbuz.smartautoclicker.core.database.entity.ClickPositionType
 import com.buzbuz.smartautoclicker.core.database.entity.CompleteActionEntity
 import com.buzbuz.smartautoclicker.core.database.entity.EventToggleType
 import com.buzbuz.smartautoclicker.core.database.entity.SystemActionType
+import com.buzbuz.smartautoclicker.core.database.entity.PauseWaitMode
+import com.buzbuz.smartautoclicker.core.database.entity.PauseTimeoutBehavior
 import com.buzbuz.smartautoclicker.core.domain.model.counter.CounterOperationValue
 import com.buzbuz.smartautoclicker.core.domain.model.action.Action
 import com.buzbuz.smartautoclicker.core.domain.model.action.ChangeCounter
@@ -66,7 +68,17 @@ private fun CompleteActionEntity.toDomainPause(cleanIds: Boolean = false) = Paus
     name = action.name,
     priority = action.priority,
     pauseDuration = action.pauseDuration!!,
+    waitMode = action.pauseWaitMode?.toDomain() ?: Pause.WaitMode.FIXED_DELAY,
+    waitTargetEventId = action.pauseWaitTargetEventId?.let { Identifier(id = it, asTemporary = cleanIds) },
+    timeoutBehavior = action.pauseTimeoutBehavior?.toDomain() ?: Pause.TimeoutBehavior.STOP,
+    maxRetries = action.pauseMaxRetries ?: 0,
+    fallbackEventId = action.pauseFallbackEventId?.let { Identifier(id = it, asTemporary = cleanIds) },
+    confirmationFrames = action.pauseConfirmationFrames ?: com.buzbuz.smartautoclicker.core.domain.model.action.DEFAULT_CONFIRMATION_FRAMES,
+    changeThresholdPercent = action.pauseChangeThresholdPercent ?: com.buzbuz.smartautoclicker.core.domain.model.action.DEFAULT_CHANGE_THRESHOLD_PERCENT,
 )
+
+private fun PauseWaitMode.toDomain(): Pause.WaitMode = Pause.WaitMode.valueOf(name)
+private fun PauseTimeoutBehavior.toDomain(): Pause.TimeoutBehavior = Pause.TimeoutBehavior.valueOf(name)
 
 private fun CompleteActionEntity.toDomainIntent(cleanIds: Boolean = false) = Intent(
     id = Identifier(id = action.id, asTemporary = cleanIds),
@@ -103,6 +115,7 @@ private fun CompleteActionEntity.toDomainChangeCounter(cleanIds: Boolean = false
         numberValue = action.counterOperationValue,
         counterName = action.counterOperationCounterName,
     ),
+    detectedNumberConditionId = action.clickOnConditionId?.let { Identifier(id = it, asTemporary = cleanIds) },
 )
 
 private fun CompleteActionEntity.toDomainNotification(cleanIds: Boolean = false) = Notification(

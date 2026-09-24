@@ -37,7 +37,14 @@
     <string name="dialog_title_scenario_config">场景</string>
     <string name="dialog_title_swipe">滑动</string>
     <string name="dialog_title_toggle_event">事件状态</string>
-    <string name="dialog_title_events_toggle">事件切换</string>
+    <string name="dialog_title_events_toggle">事件控制与子流程</string>
+    <string name="dialog_events_toggle_help">每个事件可选择：启用、反转、禁用或作为子流程执行一次。子流程只执行目标事件的动作；输入和输出参数请使用计数器。</string>
+    <string name="content_desc_event_operation_enable">启用事件</string>
+    <string name="content_desc_event_operation_toggle">反转事件状态</string>
+    <string name="content_desc_event_operation_disable">禁用事件</string>
+    <string name="content_desc_event_operation_execute_once">作为子流程执行一次事件动作</string>
+    <string name="item_toggle_event_details_subflows">执行 %1$d 个子流程</string>
+    <string name="item_toggle_event_details_mixed">控制或执行 %1$d 个事件</string>
     <string name="dialog_title_change_counter">修改计数器</string>
     <string name="generic_counters">计数器</string>
     <string name="dialog_title_trigger_condition_type">触发器类型</string>
@@ -87,7 +94,7 @@
     <string name="field_change_all_desc_enable_all">启用此场景中的所有事件</string>
     <string name="field_change_all_desc_invert_all">反转该场景中所有事件的状态</string>
     <string name="field_change_all_desc_disable_all">禁用此情景中的所有事件。禁用所有事件后，情景会自动停止。</string>
-    <string name="field_select_toggle_events_desc_empty">请至少选择一个要更改状态的事件</string>
+    <string name="field_select_toggle_events_desc_empty">请选择要启用、反转、禁用或作为子流程执行一次的事件；计数器可作为共享的输入/输出参数</string>
     <string name="item_toggle_event_details_enable_all">启用所有</string>
     <string name="item_toggle_event_details_disable_all">全部禁用</string>
     <string name="item_toggle_event_details_invert_all">全部反转</string>
@@ -115,8 +122,8 @@
     <string name="item_pause_title">等待</string>
     <string name="item_swipe_title">滑动</string>
     <string name="item_toggle_event_title">更改事件状态</string>
-    <string name="field_select_toggle_events_title_empty">无变化</string>
-    <string name="field_select_toggle_events_title">%1$d 变化</string>
+    <string name="field_select_toggle_events_title_empty">尚未设置事件操作</string>
+    <string name="field_select_toggle_events_title">%1$d 项事件操作</string>
     <string name="item_change_counter_title">更改计数器</string>
     <string name="item_timer_reached_title">达到计时器时</string>
     <string name="item_counter_reached_title">计数器达到时</string>
@@ -222,6 +229,9 @@
     <string name="field_intent_extra_key_label">参数名</string>
     <string name="menu_item_title_state">状态</string>
     <string name="field_event_state_title">初始状态</string>
+    <string name="field_event_breakpoint_title">事件断点</string>
+    <string name="field_event_breakpoint_desc_disabled">未启用。条件满足后立即执行动作。</string>
+    <string name="field_event_breakpoint_desc_enabled">已启用。条件满足后会在第一个动作执行前暂停。</string>
     <string name="field_counter_operation_value_label">数值</string>
     <string name="field_counter_name_label">计数器名称</string>
     <string name="field_counter_comparison_value_label">数值</string>
@@ -437,6 +447,9 @@
     <string name="field_change_counter_effect_title">动作效果</string>
     <string name="field_change_counter_effect_desc_set">%1$s = %2$s</string>
     <string name="field_change_counter_effect_desc_operation">%1$s = %1$s %2$s %3$s</string>
+    <string name="field_detected_number_source_title">数值识别来源</string>
+    <string name="field_detected_number_source_empty">请选择数字条件</string>
+    <string name="operand_detected_number">识别数值</string>
 
     <string name="dialog_title_counters_config">计数器</string>
     <string name="message_empty_counter_name_list_title">未定义计数器</string>
@@ -469,4 +482,34 @@
 
     <string name="warning_dialog_message_delete">您即将删除此项目，确定吗？</string>
 
+    <string name="content_desc_debug_pause_next_event">在下一个命中事件执行动作前暂停</string>
+    <string name="content_desc_debug_cancel_pause">取消等待断点</string>
+    <string name="content_desc_debug_resume">继续执行场景</string>
+    <string name="content_desc_debug_step">执行当前事件并在下一个命中事件前暂停</string>
+    <string name="content_desc_quick_open_full_menu">打开完整悬浮菜单</string>
+    <string name="debug_waiting_for_event">等待下一个事件</string>
+    <string name="debug_breakpoint_armed">断点已启用</string>
+    <string name="debug_paused">已暂停</string>
+    <string name="debug_pause_request_accepted">已接收暂停请求，将在下一个命中事件执行前暂停</string>
+    <string name="debug_pause_request_cancelled">已取消暂停请求</string>
+    <string name="debug_execution_resumed">场景已继续运行</string>
+    <string name="pause_wait_mode_label">等待条件</string>
+    <string name="pause_wait_mode_fixed">固定等待</string>
+    <string name="pause_wait_mode_target_appears">指定目标出现</string>
+    <string name="pause_wait_mode_target_disappears">指定目标消失</string>
+    <string name="pause_wait_mode_screen_stable">画面稳定</string>
+    <string name="pause_wait_mode_screen_changed">画面发生变化</string>
+    <string name="pause_timeout_behavior_label">达到最长等待时间后</string>
+    <string name="pause_timeout_retry">重新等待</string>
+    <string name="pause_timeout_skip">跳过并继续</string>
+    <string name="pause_timeout_stop">停止场景</string>
+    <string name="pause_timeout_fallback">执行备用事件</string>
+    <string name="pause_max_retries_label">最多重试次数（0–20）</string>
+    <string name="pause_confirmation_frames_label">连续确认帧数（1–10）</string>
+    <string name="pause_change_threshold_label">画面变化阈值（1–100%）</string>
+    <string name="pause_select_fallback_event">选择备用事件</string>
+    <string name="pause_select_wait_target_event">选择要观察的目标事件</string>
+    <string name="content_desc_failure_snapshot">查看最近一次失败动作截图</string>
+    <string name="failure_snapshot_title">最近一次动作失败</string>
+    <string name="failure_snapshot_message">事件：%1$s\n动作：%2$s\n结果：%3$s</string>
 </resources>

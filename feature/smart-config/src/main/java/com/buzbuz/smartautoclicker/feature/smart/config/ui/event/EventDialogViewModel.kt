@@ -130,6 +130,12 @@ class EventDialogViewModel @Inject constructor(
         }
     }
 
+    fun toggleBreakpointState() {
+        updateEditedEvent { oldValue ->
+            oldValue.copyBase(isBreakpoint = !oldValue.isBreakpoint)
+        }
+    }
+
     fun toggleKeepDetectingState() {
         updateEditedEvent { oldValue ->
             if (oldValue is ScreenEvent) oldValue.copy(keepDetecting = !oldValue.keepDetecting)
@@ -226,6 +232,7 @@ class EventDialogViewModel @Inject constructor(
         name = name,
         nameError = name.isEmpty(),
         enabledOnStart = enabledOnStart,
+        isBreakpoint = isBreakpoint,
         conditionOperator = conditionOperator,
         keepDetecting = keepDetecting,
         canTryEvent = isComplete(),
@@ -255,6 +262,7 @@ class EventDialogViewModel @Inject constructor(
         name = name,
         nameError = name.isEmpty(),
         enabledOnStart = enabledOnStart,
+        isBreakpoint = isBreakpoint,
         conditionOperator = conditionOperator,
         actionsItems = actions.toActionsChildrenItem(),
         triggerConditionsItems = conditions.toTriggerConditionsChildrenItem(),

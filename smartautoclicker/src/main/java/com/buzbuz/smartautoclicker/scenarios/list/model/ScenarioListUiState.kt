@@ -52,6 +52,7 @@ data class ScenarioListUiState(
         val selectAllItemState: Item = Item(false),
         val cancelItemState: Item = Item(false),
         val importExportItemState: Item = Item(false),
+        val groupsItemState: Item = Item(false),
         val tutorialsItemState: Item = Item(false),
         val settingsItemState: Item = Item(false),
     ) {
@@ -82,6 +83,7 @@ data class ScenarioListUiState(
 
         data class Selection(
             private val searchEnabled: Boolean,
+            private val groupsEnabled: Boolean,
         ) : Menu(
             searchItemState = Item(searchEnabled),
             selectAllItemState = Item(false),
@@ -89,6 +91,10 @@ data class ScenarioListUiState(
             importExportItemState = Item(
                 visible = true,
                 enabled = true,
+            ),
+            groupsItemState = Item(
+                visible = true,
+                enabled = groupsEnabled,
             ),
             tutorialsItemState = Item(
                 visible = true,
@@ -107,11 +113,32 @@ data class ScenarioListUiState(
             val changeOrderChecked: Boolean,
         ): Item()
 
+        data class GroupHeader(
+            val groupName: String,
+            val name: String,
+            val scenarioCount: Int,
+            val isCollapsed: Boolean = false,
+        ) : Item()
+
         sealed class ScenarioItem(val displayName: String): Item() {
 
             abstract val scenario: Any
             abstract val lastStartTimestamp: Long
             abstract val startCount: Long
+
+            val isFavorite: Boolean
+                get() = when (val value = scenario) {
+                    is Scenario -> value.isFavorite
+                    is DumbScenario -> value.isFavorite
+                    else -> false
+                }
+
+            val groupName: String
+                get() = when (val value = scenario) {
+                    is Scenario -> value.groupName
+                    is DumbScenario -> value.groupName
+                    else -> ""
+                }
 
             sealed class Empty(displayName: String) : ScenarioItem(displayName) {
                 data class Dumb(
@@ -176,4 +203,17 @@ data class ScenarioListUiState(
             }
         }
     }
+}
+
+/** Stable reference used by the group editor. Smart and simple scenarios can share database ids. */
+data class GroupableScenario(
+    val reference: Reference,
+    val name: String,
+    val groupName: String,
+    val isFavorite: Boolean,
+) {
+    data class Reference(
+        val databaseId: Long,
+        val isSmart: Boolean,
+    )
 }

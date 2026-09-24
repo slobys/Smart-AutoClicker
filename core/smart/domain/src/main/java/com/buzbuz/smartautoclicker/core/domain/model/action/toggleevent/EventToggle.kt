@@ -28,5 +28,5 @@ data class EventToggle(
     val toggleType: ToggleEvent.ToggleType,
 ): Identifiable, Completable {
 
-    override fun isComplete(): Boolean = true
+    override fun isComplete(): Boolean = targetEventId != null
 }

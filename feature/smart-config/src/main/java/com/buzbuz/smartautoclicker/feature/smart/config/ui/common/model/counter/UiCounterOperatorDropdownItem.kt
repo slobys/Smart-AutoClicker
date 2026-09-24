@@ -36,6 +36,7 @@ sealed class UiCounterOperatorDropdownItem(title: Int) : DropdownItem(title) {
         data object Add : UiCounterOperatorDropdownItem(ChangeCounter.OperationType.ADD.toNameRes())
         data object Set : UiCounterOperatorDropdownItem(ChangeCounter.OperationType.SET.toNameRes())
         data object Minus : UiCounterOperatorDropdownItem(ChangeCounter.OperationType.MINUS.toNameRes())
+        data object AbsoluteDifference : UiCounterOperatorDropdownItem(ChangeCounter.OperationType.ABS_DIFF.toNameRes())
     }
 }
 
@@ -66,7 +67,8 @@ internal fun UiCounterOperatorDropdownItem.toComparisonOperation(): ComparisonOp
 
         UiCounterOperatorDropdownItem.Affectation.Add,
         UiCounterOperatorDropdownItem.Affectation.Minus,
-        UiCounterOperatorDropdownItem.Affectation.Set -> throw UnsupportedOperationException()
+        UiCounterOperatorDropdownItem.Affectation.Set,
+        UiCounterOperatorDropdownItem.Affectation.AbsoluteDifference -> throw UnsupportedOperationException()
     }
 
 
@@ -74,6 +76,7 @@ internal fun allCounterAffectationOperatorDropdownItems(): List<UiCounterOperato
     UiCounterOperatorDropdownItem.Affectation.Add,
     UiCounterOperatorDropdownItem.Affectation.Minus,
     UiCounterOperatorDropdownItem.Affectation.Set,
+    UiCounterOperatorDropdownItem.Affectation.AbsoluteDifference,
 )
 
 internal fun UiCounterOperatorDropdownItem.toAffectationOperation(): ChangeCounter.OperationType =
@@ -81,6 +84,7 @@ internal fun UiCounterOperatorDropdownItem.toAffectationOperation(): ChangeCount
         UiCounterOperatorDropdownItem.Affectation.Add -> ChangeCounter.OperationType.ADD
         UiCounterOperatorDropdownItem.Affectation.Minus -> ChangeCounter.OperationType.MINUS
         UiCounterOperatorDropdownItem.Affectation.Set -> ChangeCounter.OperationType.SET
+        UiCounterOperatorDropdownItem.Affectation.AbsoluteDifference -> ChangeCounter.OperationType.ABS_DIFF
 
         UiCounterOperatorDropdownItem.Comparison.EqualsItem,
         UiCounterOperatorDropdownItem.Comparison.GreaterItem,
@@ -94,4 +98,5 @@ internal fun ChangeCounter.OperationType.toCounterOperatorDropdownItem(): UiCoun
         ChangeCounter.OperationType.ADD -> UiCounterOperatorDropdownItem.Affectation.Add
         ChangeCounter.OperationType.MINUS -> UiCounterOperatorDropdownItem.Affectation.Minus
         ChangeCounter.OperationType.SET -> UiCounterOperatorDropdownItem.Affectation.Set
+        ChangeCounter.OperationType.ABS_DIFF -> UiCounterOperatorDropdownItem.Affectation.AbsoluteDifference
     }

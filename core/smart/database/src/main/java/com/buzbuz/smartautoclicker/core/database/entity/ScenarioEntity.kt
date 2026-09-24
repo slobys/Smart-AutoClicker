@@ -51,6 +51,8 @@ data class ScenarioEntity(
     @ColumnInfo(name = "compute_rate", defaultValue="0.0") val computeRate: Double = 0.0,
     @ColumnInfo(name = "randomize", defaultValue="0") val randomize: Boolean = false,
     @ColumnInfo(name = "keep_screen_on", defaultValue="0") val keepScreenOn: Boolean = false,
+    @ColumnInfo(name = "is_favorite", defaultValue = "0") val isFavorite: Boolean = false,
+    @ColumnInfo(name = "group_name", defaultValue = "''") val groupName: String = "",
 ) : EntityWithId
 
 /**

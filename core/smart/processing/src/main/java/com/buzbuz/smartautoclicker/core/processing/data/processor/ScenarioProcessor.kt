@@ -20,19 +20,26 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import androidx.annotation.VisibleForTesting
+import androidx.core.graphics.get
 
 import com.buzbuz.smartautoclicker.core.common.actions.AndroidActionExecutor
 import com.buzbuz.smartautoclicker.core.detection.ImageDetector
 import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
 import com.buzbuz.smartautoclicker.core.domain.model.counter.Counter
+import com.buzbuz.smartautoclicker.core.domain.model.event.Event
 import com.buzbuz.smartautoclicker.core.domain.model.event.ScreenEvent
 import com.buzbuz.smartautoclicker.core.domain.model.event.TriggerEvent
+import com.buzbuz.smartautoclicker.core.domain.model.action.Pause
+import com.buzbuz.smartautoclicker.core.domain.model.action.Action
 import com.buzbuz.smartautoclicker.core.processing.data.processor.state.ProcessingState
 import com.buzbuz.smartautoclicker.core.processing.data.scaling.ScalingManager
 import com.buzbuz.smartautoclicker.core.processing.domain.EventType
 import com.buzbuz.smartautoclicker.core.processing.domain.SmartProcessingListener
+import com.buzbuz.smartautoclicker.core.processing.domain.model.ActionExecutionResult
 
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.yield
+import kotlin.math.abs
 
 /**
  * Process a screen image and tries to detect the list of [ScreenEvent] on it.
@@ -54,6 +61,7 @@ internal class ScenarioProcessor(
     triggerEvents: List<TriggerEvent>,
     counters: List<Counter>,
     private val bitmapSupplier: suspend (String, Int, Int) -> Bitmap?,
+    private val screenFrameSupplier: suspend () -> Bitmap? = { null },
     androidExecutor: AndroidActionExecutor,
     unblockWorkaroundEnabled: Boolean = false,
     private val onStopRequested: () -> Unit,
@@ -61,6 +69,13 @@ internal class ScenarioProcessor(
     screenEventConfirmationHits: Int = 1,
     screenEventConfirmationWindow: Int = 3,
     private val singleFrameConfidenceMargin: Double = 0.005,
+    private val beforeEventActions: suspend (
+        eventId: Long,
+        eventName: String,
+        conditionDurationMs: Long,
+        isBreakpoint: Boolean,
+    ) -> Unit = { _, _, _, _ -> },
+    private val onActionResult: suspend (Event, Action, ActionExecutionResult) -> Unit = { _, _, _ -> },
 ) {
 
     private companion object {
@@ -68,6 +83,8 @@ internal class ScenarioProcessor(
         private const val NANOS_PER_MILLISECOND = 1_000_000L
         private const val SLOW_EVENT_LOG_THRESHOLD_MS = 100L
         private const val SLOW_FRAME_LOG_THRESHOLD_MS = 250L
+        private const val SMART_WAIT_POLL_INTERVAL_MS = 200L
+        private const val FINGERPRINT_SIZE = 16
     }
 
     /** Handle the processing state of the scenario. */
@@ -91,12 +108,28 @@ internal class ScenarioProcessor(
         processingState = processingState,
         randomize = randomize,
         unblockWorkaroundEnabled = unblockWorkaroundEnabled,
+        subflowResultsProvider = ::resolveSubflowResults,
+        beforeSubflowActions = { event ->
+            beforeEventActions(
+                event.id.databaseId,
+                event.name,
+                0L,
+                event.isBreakpoint,
+            )
+        },
+        smartWaitExecutor = ::executeSmartWait,
+        onActionResult = onActionResult,
+        onStopRequested = onStopRequested,
     )
     /** Filters one-frame visual glitches before actions are executed. */
     private val screenEventStabilityTracker = ScreenEventStabilityTracker(
         requiredHits = screenEventConfirmationHits,
         windowSize = screenEventConfirmationWindow,
     )
+    /** True only while the detector owns a captured frame that subflows can reuse. */
+    private var isScreenFrameActive: Boolean = false
+    /** The frame currently owned by the detector, if any. */
+    private var activeScreenFrame: Bitmap? = null
 
     fun onScenarioStart(context: Context) {
         screenEventStabilityTracker.resetAll()
@@ -162,16 +195,46 @@ internal class ScenarioProcessor(
 
             progressListener?.onEventProcessingCompleted(triggerEvent, results.fulfilled == true, results.getAllTriggerConditionsResults())
             if (results.fulfilled  == true) {
+                beforeEventActions(
+                    triggerEvent.id.databaseId,
+                    triggerEvent.name,
+                    0L,
+                    triggerEvent.isBreakpoint,
+                )
                 actionExecutor.executeActions(triggerEvent, results)
                 progressListener?.onEventActionsExecuted(triggerEvent, results.getAllTriggerConditionsResults())
             }
         }
     }
 
+    /**
+     * Resolve condition-dependent action inputs for a synchronously called event.
+     *
+     * Subflows still execute their action list unconditionally. Verifying their conditions here only
+     * supplies positions/OCR values to actions such as "click detected condition" and "use detected
+     * number". Screen conditions can only be resolved while a captured frame is active.
+     */
+    private suspend fun resolveSubflowResults(event: Event): ConditionsResults? =
+        when (event) {
+            is ScreenEvent -> {
+                if (event.conditions.isEmpty()) null
+                else if (isScreenFrameActive) conditionsVerifier.verifyConditions(event.conditionOperator, event.conditions)
+                else withLatestScreenFrame {
+                    conditionsVerifier.verifyConditions(event.conditionOperator, event.conditions)
+                }
+            }
+            is TriggerEvent -> {
+                if (event.conditions.isEmpty()) null
+                else conditionsVerifier.verifyConditions(event.conditionOperator, event.conditions)
+            }
+        }
+
     private suspend fun processScreenEvents(screenFrame: Bitmap) {
         val frameStartedAt = System.nanoTime()
         // Set the current screen image
         imageDetector.setScreenBitmap(screenFrame, processingTag)
+        isScreenFrameActive = true
+        activeScreenFrame = screenFrame
         conditionsVerifier.onScreenFrameStarted()
 
         try {
@@ -225,6 +288,12 @@ internal class ScenarioProcessor(
 
                 progressListener?.onEventProcessingCompleted(screenEvent, isConfirmed, results.getAllScreenConditionsResults())
                 if (isConfirmed) {
+                    beforeEventActions(
+                        screenEvent.id.databaseId,
+                        screenEvent.name,
+                        elapsedMillisecondsSince(eventStartedAt),
+                        screenEvent.isBreakpoint,
+                    )
                     val actionsStartedAt = System.nanoTime()
                     actionExecutor.executeActions(screenEvent, results)
                     logSlowOperation(
@@ -241,7 +310,10 @@ internal class ScenarioProcessor(
                     // elsewhere in an untouched frame may share their expensive detector result.
                     conditionsVerifier.invalidateScreenFrameCache()
                     processingState.startCooldownIfNeeded(screenEvent)
-                    if (!screenEvent.keepDetecting) break
+                    // A smart wait releases the triggering frame so it can observe fresh captures. In that
+                    // case the remaining events must wait for the next detector frame. Normal actions keep
+                    // the historical keepDetecting behaviour and may continue on this same frame.
+                    if (!screenEvent.keepDetecting || !isScreenFrameActive) break
                 }
 
                 // Stop processing if requested
@@ -249,12 +321,120 @@ internal class ScenarioProcessor(
             }
         } finally {
             // We are done processing this frame, release it
-            imageDetector.releaseScreenBitmap(screenFrame)
+            releaseActiveScreenFrame()
             val frameDurationMs = elapsedMillisecondsSince(frameStartedAt)
             if (frameDurationMs >= SLOW_FRAME_LOG_THRESHOLD_MS) {
                 Log.i(TAG, "Slow scenario frame: ${frameDurationMs}ms")
             }
         }
+    }
+
+    private suspend fun executeSmartWait(event: Event, pause: Pause): ActionExecutionResult {
+        val timeoutMs = pause.pauseDuration ?: return ActionExecutionResult.Failed("Wait timeout is missing")
+        // Never compare against the bitmap that triggered this event. A wait must observe captures
+        // produced after the preceding action, otherwise animated/loading screens can be misread.
+        releaseActiveScreenFrame()
+        val startedAt = System.nanoTime()
+        var confirmedFrames = 0
+        var baseline: IntArray? = null
+
+        while (elapsedMillisecondsSince(startedAt) < timeoutMs) {
+            val matched = when (pause.waitMode) {
+                Pause.WaitMode.FIXED_DELAY -> true
+                Pause.WaitMode.TARGET_APPEARS,
+                Pause.WaitMode.TARGET_DISAPPEARS -> {
+                    val targetEventId = pause.waitTargetEventId?.databaseId
+                        ?: return ActionExecutionResult.Failed("Wait target event is missing")
+                    val screenEvent = processingState.getEvent(targetEventId) as? ScreenEvent
+                        ?: return ActionExecutionResult.Failed("Wait target event is unavailable")
+                    if (screenEvent.conditions.isEmpty()) {
+                        return ActionExecutionResult.Failed("Wait target has no screen conditions")
+                    }
+                    val fulfilled = withLatestScreenFrame {
+                        conditionsVerifier.verifyConditions(
+                            screenEvent.conditionOperator,
+                            screenEvent.conditions,
+                        ).fulfilled == true
+                    } ?: false
+                    if (pause.waitMode == Pause.WaitMode.TARGET_APPEARS) fulfilled else !fulfilled
+                }
+                Pause.WaitMode.SCREEN_STABLE,
+                Pause.WaitMode.SCREEN_CHANGED -> {
+                    val fingerprint = captureScreenFingerprint() ?: run {
+                        delay(SMART_WAIT_POLL_INTERVAL_MS)
+                        continue
+                    }
+                    val reference = baseline
+                    if (reference == null) {
+                        baseline = fingerprint
+                        false
+                    } else {
+                        val difference = frameDifferencePercent(reference, fingerprint)
+                        if (pause.waitMode == Pause.WaitMode.SCREEN_STABLE) {
+                            baseline = fingerprint
+                            difference <= pause.changeThresholdPercent
+                        } else {
+                            difference >= pause.changeThresholdPercent
+                        }
+                    }
+                }
+            }
+
+            confirmedFrames = if (matched) confirmedFrames + 1 else 0
+            if (confirmedFrames >= pause.confirmationFrames) return ActionExecutionResult.Success
+            delay(SMART_WAIT_POLL_INTERVAL_MS)
+        }
+        return ActionExecutionResult.TimedOut(timeoutMs)
+    }
+
+    private suspend fun <T> withLatestScreenFrame(block: suspend (Bitmap) -> T): T? {
+        val frame = screenFrameSupplier() ?: return null
+        imageDetector.setScreenBitmap(frame, processingTag)
+        isScreenFrameActive = true
+        activeScreenFrame = frame
+        conditionsVerifier.onScreenFrameStarted()
+        return try {
+            block(frame)
+        } finally {
+            conditionsVerifier.invalidateScreenFrameCache()
+            releaseActiveScreenFrame()
+        }
+    }
+
+    private fun releaseActiveScreenFrame() {
+        val frame = activeScreenFrame ?: return
+        activeScreenFrame = null
+        isScreenFrameActive = false
+        imageDetector.releaseScreenBitmap(frame)
+    }
+
+    private suspend fun captureScreenFingerprint(): IntArray? = withLatestScreenFrame(::createFrameFingerprint)
+
+    private fun createFrameFingerprint(bitmap: Bitmap): IntArray {
+        val result = IntArray(FINGERPRINT_SIZE * FINGERPRINT_SIZE)
+        val maxX = (bitmap.width - 1).coerceAtLeast(0)
+        val maxY = (bitmap.height - 1).coerceAtLeast(0)
+        for (sampleY in 0 until FINGERPRINT_SIZE) {
+            val y = sampleY * maxY / (FINGERPRINT_SIZE - 1)
+            for (sampleX in 0 until FINGERPRINT_SIZE) {
+                val x = sampleX * maxX / (FINGERPRINT_SIZE - 1)
+                result[sampleY * FINGERPRINT_SIZE + sampleX] = bitmap[x, y]
+            }
+        }
+        return result
+    }
+
+    private fun frameDifferencePercent(first: IntArray, second: IntArray): Int {
+        if (first.size != second.size || first.isEmpty()) return 100
+        var difference = 0L
+        first.indices.forEach { index ->
+            val a = first[index]
+            val b = second[index]
+            difference += abs(((a shr 16) and 0xFF) - ((b shr 16) and 0xFF))
+            difference += abs(((a shr 8) and 0xFF) - ((b shr 8) and 0xFF))
+            difference += abs((a and 0xFF) - (b and 0xFF))
+        }
+        return ((difference * 100L) / (first.size * 3L * 255L)).toInt()
     }
 
     /**

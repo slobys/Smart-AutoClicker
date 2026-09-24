@@ -20,11 +20,13 @@ import android.content.Context
 import android.view.View
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.buzbuz.smartautoclicker.core.base.identifier.Identifier
 import com.buzbuz.smartautoclicker.core.common.tutorial.domain.MonitoredViewsManager
 import com.buzbuz.smartautoclicker.core.common.tutorial.domain.model.monitoring.MonitoredViewType
 import com.buzbuz.smartautoclicker.core.domain.model.counter.CounterOperationValue
 
 import com.buzbuz.smartautoclicker.core.domain.model.action.ChangeCounter
+import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
 import com.buzbuz.smartautoclicker.feature.smart.config.domain.EditionRepository
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.formatters.toEffectDescription
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.model.counter.UiCounterOperatorDropdownItem
@@ -33,6 +35,7 @@ import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.model.counter.
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.model.counter.toAffectationOperation
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.model.counter.toCounterOperatorDropdownItem
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.model.counter.toDisplayValue
+import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.model.condition.toUiScreenCondition
 import dagger.hilt.android.qualifiers.ApplicationContext
 
 import kotlinx.coroutines.FlowPreview
@@ -70,8 +73,16 @@ class ChangeCounterViewModel @Inject constructor(
         configuredChangeCounter,
         editionRepository.editionState.editedActionState.map { it.hasChanged },
         editionRepository.editionState.editedActionState.map { it.canBeSaved },
-    ) { action, hasChanged, canBeSaved ->
-        action.toUiState(context, canBeSaved = canBeSaved, hasChanged = hasChanged)
+        editionRepository.editionState.editedEventScreenConditionsState,
+    ) { action, hasChanged, canBeSaved, conditionsState ->
+        action.toUiState(
+            context,
+            canBeSaved = canBeSaved,
+            hasChanged = hasChanged,
+            availableNumberConditions = conditionsState.value
+                ?.filterIsInstance<ScreenCondition.Number>()
+                ?: emptyList(),
+        )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     fun hasUnsavedModifications(): Boolean =
@@ -94,20 +105,34 @@ class ChangeCounterViewModel @Inject constructor(
         val currentOperand = uiState.value?.operandValue
         if (currentOperand is UiStaticOrCounterSelection.CounterValue && type == UiOperandType.COUNTER) return
         if (currentOperand is UiStaticOrCounterSelection.StaticValue && type == UiOperandType.STATIC) return
+        if (currentOperand is UiStaticOrCounterSelection.DetectedNumberValue && type == UiOperandType.DETECTED_NUMBER) return
 
-        // Change operand and use default value
-        setOperationValue(
+        updateEditedChangeCounter { old ->
             when (type) {
-                UiOperandType.STATIC -> CounterOperationValue.Number(0.0)
-                UiOperandType.COUNTER -> CounterOperationValue.Counter("")
+                UiOperandType.STATIC -> old.copy(
+                    operationValue = CounterOperationValue.Number(0.0),
+                    detectedNumberConditionId = null,
+                )
+                UiOperandType.COUNTER -> old.copy(
+                    operationValue = CounterOperationValue.Counter(""),
+                    detectedNumberConditionId = null,
+                )
+                UiOperandType.DETECTED_NUMBER -> old.copy(
+                    operationValue = CounterOperationValue.Number(0.0),
+                    detectedNumberConditionId = Identifier(id = 0L, asTemporary = true),
+                )
             }
-        )
+        }
     }
 
     fun setOperationValue(value: CounterOperationValue) {
         updateEditedChangeCounter { old ->
-            old.copy(operationValue = value)
+            old.copy(operationValue = value, detectedNumberConditionId = null)
         }
+    }
+
+    fun setDetectedNumberCondition(condition: ScreenCondition.Number) {
+        updateEditedChangeCounter { old -> old.copy(detectedNumberConditionId = condition.id) }
     }
 
     fun monitorSelectCounterView(view: View) {
@@ -129,9 +154,19 @@ class ChangeCounterViewModel @Inject constructor(
         }
     }
 
-    private fun ChangeCounter.toUiState(context: Context, canBeSaved: Boolean, hasChanged: Boolean): ChangeCounterUiState {
+    private fun ChangeCounter.toUiState(
+        context: Context,
+        canBeSaved: Boolean,
+        hasChanged: Boolean,
+        availableNumberConditions: List<ScreenCondition.Number>,
+    ): ChangeCounterUiState {
         val counterToChange = UiStaticOrCounterSelection.CounterValue(editionRepository.editionState.getCounter(counterName))
-        val operand = operationValue.toUiStaticOrCounterSelection()
+        val selectedNumberCondition = detectedNumberConditionId?.let { conditionId ->
+            availableNumberConditions.find { condition -> condition.id == conditionId }
+        }
+        val operand = if (detectedNumberConditionId != null) {
+            UiStaticOrCounterSelection.DetectedNumberValue(selectedNumberCondition)
+        } else operationValue.toUiStaticOrCounterSelection()
 
         return ChangeCounterUiState(
             canBeSaved = canBeSaved,
@@ -141,6 +176,9 @@ class ChangeCounterViewModel @Inject constructor(
             counter = counterToChange,
             operator = operation.toCounterOperatorDropdownItem(),
             operandValue = operand,
+            availableNumberConditions = availableNumberConditions.map { condition ->
+                condition.toUiScreenCondition(context, shortThreshold = true, inError = !condition.isComplete())
+            },
             actionEffectText = operation.toEffectDescription(
                 context = context,
                 counterName = counterName,

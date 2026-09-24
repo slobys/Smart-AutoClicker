@@ -198,6 +198,18 @@
                         android:layout_marginHorizontal="@dimen/margin_horizontal_default" />
 
                     <com.google.android.material.divider.MaterialDivider
+                        style="@style/AppTheme.Widget.Divider.Horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginHorizontal="@dimen/margin_horizontal_default" />
+
+                    <include layout="@layout/include_field_switch"
+                        android:id="@+id/field_is_breakpoint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/margin_horizontal_default" />
+
+                    <com.google.android.material.divider.MaterialDivider
                         android:id="@+id/divider_keep_detecting"
                         style="@style/AppTheme.Widget.Divider.Horizontal"
                         android:layout_width="match_parent"

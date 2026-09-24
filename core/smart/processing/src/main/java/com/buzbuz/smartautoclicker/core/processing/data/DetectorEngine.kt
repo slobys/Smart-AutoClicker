@@ -44,6 +44,7 @@ import com.buzbuz.smartautoclicker.core.processing.data.processor.ScenarioProces
 import com.buzbuz.smartautoclicker.core.processing.data.scaling.ScalingManager
 import com.buzbuz.smartautoclicker.core.settings.domain.SettingsRepository
 import com.buzbuz.smartautoclicker.core.processing.domain.SmartProcessingListener
+import com.buzbuz.smartautoclicker.core.processing.domain.model.DebugExecutionState
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -77,6 +78,7 @@ class DetectorEngine @Inject constructor(
     private val bitmapRepository: BitmapRepository,
     private val scalingManager: ScalingManager,
     private val displayRecorder: DisplayRecorder,
+    private val actionFailureRecorder: ActionFailureRecorder,
     private val actionExecutor: AndroidActionExecutor,
     private val settingsRepository: SettingsRepository,
     private val appComponentsProvider: AppComponentsProvider,
@@ -88,6 +90,11 @@ class DetectorEngine @Inject constructor(
     private var scenarioProcessor: ScenarioProcessor? = null
     /** Detect the condition images on the screen image. */
     private var imageDetector: ImageDetector? = null
+
+    /** Event-level debugger. It suspends the processing coroutine without destroying runtime state. */
+    private val runtimeDebugger = RuntimeDebugger()
+    internal val debugExecutionState: StateFlow<DebugExecutionState> = runtimeDebugger.state
+    internal val lastActionFailure = actionFailureRecorder.lastFailure
 
     /** Coroutine scope for the image processing. */
     private var processingScope: CoroutineScope? = null
@@ -261,6 +268,7 @@ class DetectorEngine @Inject constructor(
                 triggerEvents = triggerEvents,
                 counters = counters,
                 bitmapSupplier = bitmapRepository::getImageConditionBitmap,
+                screenFrameSupplier = displayRecorder::acquireLatestBitmap,
                 androidExecutor = actionExecutor,
                 unblockWorkaroundEnabled = settingsRepository.isInputBlockWorkaroundEnabled(),
                 onStopRequested = { stopDetection() },
@@ -268,6 +276,8 @@ class DetectorEngine @Inject constructor(
                 screenEventConfirmationHits = SCREEN_EVENT_CONFIRMATION_HITS,
                 screenEventConfirmationWindow = SCREEN_EVENT_CONFIRMATION_WINDOW,
                 singleFrameConfidenceMargin = SINGLE_FRAME_CONFIDENCE_MARGIN,
+                beforeEventActions = runtimeDebugger::awaitBeforeActions,
+                onActionResult = actionFailureRecorder::onActionResult,
             )
             scenarioProcessor?.onScenarioStart(context)
 
@@ -290,6 +300,7 @@ class DetectorEngine @Inject constructor(
 
             if (_state.value == DetectorState.DETECTING) {
                 // Signal the loop to exit after the current frame so in-progress actions finish cleanly.
+                runtimeDebugger.reset()
                 orientationChangeRequested = true
                 processingJob?.join()
                 orientationChangeRequested = false
@@ -321,6 +332,7 @@ class DetectorEngine @Inject constructor(
             return
         }
         _state.value = DetectorState.TRANSITIONING
+        runtimeDebugger.reset()
 
         processingShutdownJob = processingScope?.launch {
             Log.i(TAG, "stopDetection")
@@ -341,6 +353,14 @@ class DetectorEngine @Inject constructor(
             minProcessingDurationNs  = DEFAULT_MIN_PROCESSING_DURATION_NS
         }
     }
+
+    internal fun requestDebugPauseAtNextEvent() = runtimeDebugger.requestPauseAtNextEvent()
+
+    internal fun cancelDebugPauseRequest() = runtimeDebugger.cancelPauseRequest()
+
+    internal fun resumeDebugExecution() = runtimeDebugger.resume()
+
+    internal fun stepDebugExecution() = runtimeDebugger.step()
 
     /**
      * Stop the screen recording and the detection, if any.

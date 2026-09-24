@@ -28,13 +28,25 @@ internal object ScenarioTestsData {
     const val SCENARIO_NAME = "ClickScenario"
     const val SCENARIO_DETECTION_QUALITY = 500
     const val SCENARIO_RANDOMIZE = false
+    const val SCENARIO_IS_FAVORITE = true
+    const val SCENARIO_GROUP_NAME = "Daily"
 
     fun getNewScenarioEntity(
         id: Long = SCENARIO_ID,
         name: String = SCENARIO_NAME,
         detectionQuality: Int = SCENARIO_DETECTION_QUALITY,
         randomize: Boolean = SCENARIO_RANDOMIZE,
-    ) = ScenarioEntity(id, name, detectionQuality, 0.0, randomize)
+        isFavorite: Boolean = SCENARIO_IS_FAVORITE,
+        groupName: String = SCENARIO_GROUP_NAME,
+    ) = ScenarioEntity(
+        id = id,
+        name = name,
+        detectionQuality = detectionQuality,
+        computeRate = 0.0,
+        randomize = randomize,
+        isFavorite = isFavorite,
+        groupName = groupName,
+    )
 
     fun getNewScenario(
         id: Long = SCENARIO_ID,
@@ -44,7 +56,20 @@ internal object ScenarioTestsData {
         keepScreenOn: Boolean = false,
         eventCount: Int = 0,
         stats: ScenarioStats? = null,
-    ) = Scenario(id.asIdentifier(), name, detectionQuality, randomize, keepScreenOn, 0.0, eventCount, stats)
+        isFavorite: Boolean = SCENARIO_IS_FAVORITE,
+        groupName: String = SCENARIO_GROUP_NAME,
+    ) = Scenario(
+        id = id.asIdentifier(),
+        name = name,
+        detectionQuality = detectionQuality,
+        randomize = randomize,
+        keepScreenOn = keepScreenOn,
+        computeRate = 0.0,
+        eventCount = eventCount,
+        stats = stats,
+        isFavorite = isFavorite,
+        groupName = groupName,
+    )
 
     fun defaultStats(): ScenarioStats =
         ScenarioStats(lastStartTimestampMs=0, startCount=0)

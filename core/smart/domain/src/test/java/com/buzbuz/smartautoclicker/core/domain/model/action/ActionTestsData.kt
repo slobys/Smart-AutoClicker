@@ -30,6 +30,8 @@ import com.buzbuz.smartautoclicker.core.database.entity.EventToggleEntity
 import com.buzbuz.smartautoclicker.core.database.entity.IntentExtraEntity
 import com.buzbuz.smartautoclicker.core.database.entity.IntentExtraType
 import com.buzbuz.smartautoclicker.core.database.entity.SystemActionType
+import com.buzbuz.smartautoclicker.core.database.entity.PauseWaitMode
+import com.buzbuz.smartautoclicker.core.database.entity.PauseTimeoutBehavior
 import com.buzbuz.smartautoclicker.core.domain.model.counter.CounterOperationValue
 import com.buzbuz.smartautoclicker.core.domain.model.action.intent.IntentExtra
 import com.buzbuz.smartautoclicker.core.domain.model.action.toggleevent.EventToggle
@@ -142,7 +144,15 @@ internal object ActionTestsData {
         pauseDuration: Long = PAUSE_DURATION,
         eventId: Long,
     ) = CompleteActionEntity(
-        action = ActionEntity(id, eventId, priority, name, ActionType.PAUSE, pauseDuration = pauseDuration),
+        action = ActionEntity(
+            id, eventId, priority, name, ActionType.PAUSE,
+            pauseDuration = pauseDuration,
+            pauseWaitMode = PauseWaitMode.FIXED_DELAY,
+            pauseTimeoutBehavior = PauseTimeoutBehavior.STOP,
+            pauseMaxRetries = 0,
+            pauseConfirmationFrames = DEFAULT_CONFIRMATION_FRAMES,
+            pauseChangeThresholdPercent = DEFAULT_CHANGE_THRESHOLD_PERCENT,
+        ),
         intentExtras = emptyList(),
         eventsToggle = emptyList(),
     )
@@ -283,6 +293,7 @@ internal object ActionTestsData {
         counterName: String = CHANGE_COUNTER_COUNTER_NAME,
         operation: ChangeCounter.OperationType = CHANGE_COUNTER_OPERATION,
         operationValue: Double = CHANGE_COUNTER_VALUE,
+        detectedNumberConditionId: Long? = null,
         eventId: Long,
     ) = CompleteActionEntity(
         action = ActionEntity(
@@ -291,6 +302,7 @@ internal object ActionTestsData {
             counterOperation = ChangeCounterOperationType.valueOf(operation.name),
             counterOperationValueType = CounterOperationValueType.NUMBER,
             counterOperationValue = operationValue,
+            clickOnConditionId = detectedNumberConditionId,
         ),
         intentExtras = emptyList(),
         eventsToggle = emptyList(),
@@ -303,8 +315,18 @@ internal object ActionTestsData {
         counterName: String = CHANGE_COUNTER_COUNTER_NAME,
         operation: ChangeCounter.OperationType = CHANGE_COUNTER_OPERATION,
         operationValue: CounterOperationValue = CounterOperationValue.Number(CHANGE_COUNTER_VALUE),
+        detectedNumberConditionId: Long? = null,
         eventId: Long,
-    ) = ChangeCounter(id.asIdentifier(), eventId.asIdentifier(), name, priority, counterName, operation, operationValue)
+    ) = ChangeCounter(
+        id.asIdentifier(),
+        eventId.asIdentifier(),
+        name,
+        priority,
+        counterName,
+        operation,
+        operationValue,
+        detectedNumberConditionId?.asIdentifier(),
+    )
 
 
     /* ------- Notification Action Data ------- */

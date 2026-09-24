@@ -45,6 +45,7 @@
     <string name="menu_item_title_select_all">Выбрать все</string>
     <string name="menu_item_title_cancel">Отмена</string>
     <string name="menu_item_title_search">Найти</string>
+    <string name="menu_item_title_manage_groups">Управление группами</string>
     <string name="menu_item_title_settings">Настройки</string>
 
     <string name="item_scenario_filter_by_name">Имя</string>
@@ -169,4 +170,18 @@
     <string name="field_overlay_menu_auto_collapse_desc">Освобождает экран, сворачивая панель до одного значка после короткого бездействия.</string>
     <string name="field_overlay_menu_auto_collapse_delay_title">Задержка сворачивания плавающих элементов</string>
     <string name="field_overlay_menu_auto_collapse_delay_value">%1$d сек.</string>
+    <string name="content_desc_scenario_favorite">Добавить сценарий в избранное или удалить из него</string>
+    <string name="item_scenario_group_ungrouped">Без группы</string>
+    <string name="dialog_title_scenario_group">Группа сценария</string>
+    <string name="field_scenario_group_name">Название группы</string>
+    <string name="button_clear_group">Удалить из группы</string>
+    <string name="dialog_title_create_scenario_group">Создать группу</string>
+    <string name="dialog_title_edit_scenario_group">Изменить группу</string>
+    <string name="message_scenario_group_selection_count">Выбрано сценариев: %1$d</string>
+    <string name="error_scenario_group_name_required">Введите название группы</string>
+    <string name="error_scenario_group_selection_required">Выберите хотя бы один сценарий</string>
+    <string name="button_delete_scenario_group">Разгруппировать все</string>
+    <string name="content_desc_manage_scenario_group">Изменить группу и выбрать сценарии</string>
+    <string name="content_desc_collapse_scenario_group">Свернуть группу</string>
+    <string name="content_desc_expand_scenario_group">Развернуть группу</string>
 </resources>

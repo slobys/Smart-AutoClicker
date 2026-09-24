@@ -24,8 +24,8 @@ import com.buzbuz.smartautoclicker.feature.backup.data.ext.readAndCopyEntryFile
 import com.buzbuz.smartautoclicker.feature.backup.data.ext.writeEntryFile
 
 import java.io.File
+import java.io.InputStream
 import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
 internal abstract class ScenarioBackupDataSource<Backup, BackupScenario>(private val appDataDir: File) {
@@ -113,7 +113,7 @@ internal abstract class ScenarioBackupDataSource<Backup, BackupScenario>(private
         }
     }
 
-    fun extractFromZip(zipStream: ZipInputStream, fileName: String): Boolean {
+    fun extractFromZip(zipStream: InputStream, fileName: String): Boolean {
         if (isScenarioBackupFileZipEntry(fileName)) {
             val backup = serializer.deserialize(zipStream)
 
@@ -141,7 +141,7 @@ internal abstract class ScenarioBackupDataSource<Backup, BackupScenario>(private
      * @param zipStream the input stream the get the file from.
      * @param fileName the additional file name.
      */
-    private fun extractAdditionalFileFromZip(zipStream: ZipInputStream, fileName: String): Boolean {
+    private fun extractAdditionalFileFromZip(zipStream: InputStream, fileName: String): Boolean {
         val startIndex = fileName.lastIndexOf('/') + 1
         if (startIndex <= 0) {
             Log.w(TAG, "Invalid additional file path.")

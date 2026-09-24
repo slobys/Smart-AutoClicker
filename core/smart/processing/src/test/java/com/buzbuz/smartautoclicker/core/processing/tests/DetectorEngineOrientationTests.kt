@@ -30,6 +30,7 @@ import com.buzbuz.smartautoclicker.core.common.actions.AndroidActionExecutor
 import com.buzbuz.smartautoclicker.core.display.config.DisplayConfig
 import com.buzbuz.smartautoclicker.core.display.config.DisplayConfigManager
 import com.buzbuz.smartautoclicker.core.display.recorder.DisplayRecorder
+import com.buzbuz.smartautoclicker.core.processing.data.ActionFailureRecorder
 import com.buzbuz.smartautoclicker.core.processing.data.DetectorEngine
 import com.buzbuz.smartautoclicker.core.processing.data.scaling.ScalingManager
 import com.buzbuz.smartautoclicker.core.processing.domain.SmartProcessingListener
@@ -158,6 +159,7 @@ class DetectorEngineOrientationTests {
             scalingManager = mockScalingManager,
             displayRecorder = mockDisplayRecorder,
             actionExecutor = mockActionExecutor,
+            actionFailureRecorder = mock<ActionFailureRecorder>(),
             settingsRepository = mockSettingsRepository,
             appComponentsProvider = mockAppComponentsProvider,
             debuggingListener = mockDebuggingListener,

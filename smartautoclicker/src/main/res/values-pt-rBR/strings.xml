@@ -45,6 +45,7 @@
     <string name="menu_item_title_select_all">Selecionar tudo</string>
     <string name="menu_item_title_cancel">Cancelar</string>
     <string name="menu_item_title_search">Pesquisar</string>
+    <string name="menu_item_title_manage_groups">Gerenciar grupos</string>
     <string name="menu_item_title_settings">Configurações</string>
 
 
@@ -171,4 +172,18 @@
     <string name="field_overlay_menu_auto_collapse_desc">Mantenha a tela livre reduzindo a barra de controles a um único ícone após um curto período sem uso.</string>
     <string name="field_overlay_menu_auto_collapse_delay_title">Espera para recolher os controles flutuantes</string>
     <string name="field_overlay_menu_auto_collapse_delay_value">%1$d segundos</string>
+    <string name="content_desc_scenario_favorite">Adicionar ou remover o cenário dos favoritos</string>
+    <string name="item_scenario_group_ungrouped">Sem grupo</string>
+    <string name="dialog_title_scenario_group">Grupo do cenário</string>
+    <string name="field_scenario_group_name">Nome do grupo</string>
+    <string name="button_clear_group">Remover do grupo</string>
+    <string name="dialog_title_create_scenario_group">Criar grupo</string>
+    <string name="dialog_title_edit_scenario_group">Editar grupo</string>
+    <string name="message_scenario_group_selection_count">%1$d cenários selecionados</string>
+    <string name="error_scenario_group_name_required">Digite um nome para o grupo</string>
+    <string name="error_scenario_group_selection_required">Selecione pelo menos um cenário</string>
+    <string name="button_delete_scenario_group">Desagrupar tudo</string>
+    <string name="content_desc_manage_scenario_group">Editar grupo e escolher cenários</string>
+    <string name="content_desc_collapse_scenario_group">Recolher grupo</string>
+    <string name="content_desc_expand_scenario_group">Expandir grupo</string>
 </resources>

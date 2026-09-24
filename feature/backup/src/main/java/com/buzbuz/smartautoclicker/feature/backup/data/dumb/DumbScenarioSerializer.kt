@@ -145,6 +145,8 @@ internal class DumbScenarioSerializer : ScenarioBackupSerializer<DumbScenarioBac
                 ?: DEFAULT_DUMB_MAX_DURATION_MINUTES,
             isDurationInfinite = getBoolean("isDurationInfinite") ?: DEFAULT_DUMB_DURATION_IS_INFINITE,
             randomize = getBoolean("randomize") ?: DEFAULT_DUMB_RANDOMIZE,
+            isFavorite = getBoolean("isFavorite") ?: false,
+            groupName = getString("groupName") ?: "",
         )
     }
 

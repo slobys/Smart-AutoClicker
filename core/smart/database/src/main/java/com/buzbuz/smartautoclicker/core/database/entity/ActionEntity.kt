@@ -43,8 +43,9 @@ import kotlinx.serialization.Serializable
  *  [x] and [y] will be used. If ON_DETECTED_CONDITION, the [clickOnConditionId] will be used.
  * @param x [ActionType.CLICK] only: the x position of the click. Null for others [ActionType].
  * @param y [ActionType.CLICK] only: the y position of the click. Null for others [ActionType].
- * @param clickOnConditionId [ActionType.CLICK] only: if defined, the condition to click on. If null, the x and y
- *  coordinates will be used.
+ * @param clickOnConditionId [ActionType.CLICK]: if defined, the condition to click on. If null, the x and y
+ *  coordinates will be used. [ActionType.CHANGE_COUNTER]: if defined, the referenced number condition OCR result
+ *  is used as the operation operand.
  * @param pressDuration [ActionType.CLICK] only: the duration of the click press in milliseconds.
  *  Null for others [ActionType].
  * @param clickOffsetX [ActionType.CLICK] & [ClickPositionType.ON_DETECTED_CONDITION] only: the offset to apply in the X
@@ -133,6 +134,13 @@ data class ActionEntity(
 
     // ActionType.PAUSE
     @ColumnInfo(name = "pauseDuration") val pauseDuration: Long? = null,
+    @ColumnInfo(name = "pause_wait_mode") val pauseWaitMode: PauseWaitMode? = null,
+    @ColumnInfo(name = "pause_wait_target_event_id") val pauseWaitTargetEventId: Long? = null,
+    @ColumnInfo(name = "pause_timeout_behavior") val pauseTimeoutBehavior: PauseTimeoutBehavior? = null,
+    @ColumnInfo(name = "pause_max_retries") val pauseMaxRetries: Int? = null,
+    @ColumnInfo(name = "pause_fallback_event_id") val pauseFallbackEventId: Long? = null,
+    @ColumnInfo(name = "pause_confirmation_frames") val pauseConfirmationFrames: Int? = null,
+    @ColumnInfo(name = "pause_change_threshold_percent") val pauseChangeThresholdPercent: Int? = null,
 
     // ActionType.INTENT
     @ColumnInfo(name = "isAdvanced") val isAdvanced: Boolean? = null,

@@ -21,7 +21,7 @@ import com.buzbuz.smartautoclicker.core.ui.databinding.IncludeChildrenContainerB
 
 
 fun IncludeChildrenContainerBinding.setIcons(iconIds: List<Int>) {
-    if (iconIds.size !in 1..3) throw IllegalArgumentException("Container Children should have 1 to 3 entries")
+    if (iconIds.size !in 1..4) throw IllegalArgumentException("Container Children should have 1 to 4 entries")
 
     iconLeft.setImageResource(iconIds[0])
 
@@ -42,12 +42,22 @@ fun IncludeChildrenContainerBinding.setIcons(iconIds: List<Int>) {
         iconRight.visibility = View.GONE
         textRight.visibility = View.GONE
     }
+
+    if (iconIds.size > 3) {
+        iconEnd.visibility = View.VISIBLE
+        textEnd.visibility = View.VISIBLE
+        iconEnd.setImageResource(iconIds[3])
+    } else {
+        iconEnd.visibility = View.GONE
+        textEnd.visibility = View.GONE
+    }
 }
 
 fun IncludeChildrenContainerBinding.setTexts(texts: List<String>) {
-    if (texts.size !in 1..3) throw IllegalArgumentException("Container Children should have 1 to 3 entries")
+    if (texts.size !in 1..4) throw IllegalArgumentException("Container Children should have 1 to 4 entries")
 
     textLeft.text = texts[0]
-    textMiddle.text = texts[1]
-    textRight.text = texts[2]
+    if (texts.size > 1) textMiddle.text = texts[1]
+    if (texts.size > 2) textRight.text = texts[2]
+    if (texts.size > 3) textEnd.text = texts[3]
 }

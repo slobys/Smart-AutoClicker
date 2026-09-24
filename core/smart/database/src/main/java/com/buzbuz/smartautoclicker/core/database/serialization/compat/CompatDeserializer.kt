@@ -217,6 +217,8 @@ internal open class CompatDeserializer : Deserializer {
             detectionQuality = detectionQuality,
             randomize = jsonScenario.getBoolean("randomize") ?: false,
             keepScreenOn = jsonScenario.getBoolean("keepScreenOn") ?: false,
+            isFavorite = jsonScenario.getBoolean("isFavorite") ?: false,
+            groupName = jsonScenario.getString("groupName") ?: "",
         )
     }
 

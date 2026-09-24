@@ -35,6 +35,7 @@
     <string name="menu_item_title_select_all">全選</string>
     <string name="menu_item_title_cancel">取消</string>
     <string name="menu_item_title_search">搜尋</string>
+    <string name="menu_item_title_manage_groups">管理分組</string>
     <string name="menu_item_title_settings">設定</string>
 
     <string name="item_scenario_filter_by_name">名稱</string>
@@ -117,4 +118,18 @@
     <string name="field_overlay_menu_auto_collapse_desc">閒置一段時間後將控制列縮成一個控制中心圖示，減少遮擋畫面。</string>
     <string name="field_overlay_menu_auto_collapse_delay_title">懸浮控制項收起延遲</string>
     <string name="field_overlay_menu_auto_collapse_delay_value">%1$d 秒</string>
+    <string name="content_desc_scenario_favorite">將腳本加入或移出收藏</string>
+    <string name="item_scenario_group_ungrouped">未分組</string>
+    <string name="dialog_title_scenario_group">腳本分組</string>
+    <string name="field_scenario_group_name">分組名稱</string>
+    <string name="button_clear_group">移出分組</string>
+    <string name="dialog_title_create_scenario_group">建立分組</string>
+    <string name="dialog_title_edit_scenario_group">編輯分組</string>
+    <string name="message_scenario_group_selection_count">已選擇 %1$d 個腳本</string>
+    <string name="error_scenario_group_name_required">請輸入分組名稱</string>
+    <string name="error_scenario_group_selection_required">請至少選擇一個腳本</string>
+    <string name="button_delete_scenario_group">取消整個分組</string>
+    <string name="content_desc_manage_scenario_group">編輯分組並選擇腳本</string>
+    <string name="content_desc_collapse_scenario_group">收合分組</string>
+    <string name="content_desc_expand_scenario_group">展開分組</string>
 </resources>

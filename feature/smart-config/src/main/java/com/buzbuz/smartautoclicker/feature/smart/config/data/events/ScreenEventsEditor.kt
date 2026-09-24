@@ -19,6 +19,7 @@ package com.buzbuz.smartautoclicker.feature.smart.config.data.events
 import com.buzbuz.smartautoclicker.core.domain.model.AND
 import com.buzbuz.smartautoclicker.core.domain.model.OR
 import com.buzbuz.smartautoclicker.core.domain.model.action.Action
+import com.buzbuz.smartautoclicker.core.domain.model.action.ChangeCounter
 import com.buzbuz.smartautoclicker.core.domain.model.action.Click
 import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
 import com.buzbuz.smartautoclicker.core.domain.model.event.ScreenEvent
@@ -37,20 +38,23 @@ internal class ScreenEventsEditor(
         actionsEditor.editedList.value?.let { actions ->
             val newActions = actions.toMutableList()
             actions.forEach { action ->
-                when {
-                    // Skip all actions but clicks
-                    action !is Click -> return@forEach
+                when (action) {
+                    is Click -> when {
+                        action.positionType == Click.PositionType.USER_SELECTED -> Unit
+                        editedEvent.conditionOperator == AND && conditions.none { action.clickOnConditionId == it.id } ->
+                            newActions.remove(action)
+                        editedEvent.conditionOperator == OR && action.clickOnConditionId != null ->
+                            newActions[newActions.indexOf(action)] = action.copy(clickOnConditionId = null)
+                    }
 
-                    // Nothing to do on user selected position
-                    action.positionType == Click.PositionType.USER_SELECTED -> return@forEach
-
-                    // Condition was referenced and used by an action, delete it
-                    editedEvent.conditionOperator == AND && conditions.find { action.clickOnConditionId == it.id } == null ->
+                    is ChangeCounter -> if (
+                        action.detectedNumberConditionId != null &&
+                        conditions.none { action.detectedNumberConditionId == it.id }
+                    ) {
                         newActions.remove(action)
+                    }
 
-                    // Condition was referenced but not used by an action, delete the reference
-                    editedEvent.conditionOperator == OR && action.clickOnConditionId != null ->
-                        newActions[newActions.indexOf(action)] = action.copy(clickOnConditionId = null)
+                    else -> Unit
                 }
             }
 

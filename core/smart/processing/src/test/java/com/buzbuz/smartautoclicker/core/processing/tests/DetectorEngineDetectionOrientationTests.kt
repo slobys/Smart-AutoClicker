@@ -33,6 +33,7 @@ import com.buzbuz.smartautoclicker.core.common.actions.AndroidActionExecutor
 import com.buzbuz.smartautoclicker.core.detection.ImageDetector
 import com.buzbuz.smartautoclicker.core.display.config.DisplayConfig
 import com.buzbuz.smartautoclicker.core.display.config.DisplayConfigManager
+import com.buzbuz.smartautoclicker.core.processing.data.ActionFailureRecorder
 import com.buzbuz.smartautoclicker.core.display.recorder.DisplayRecorder
 import com.buzbuz.smartautoclicker.core.domain.model.scenario.Scenario
 import com.buzbuz.smartautoclicker.core.processing.data.DetectorEngine
@@ -46,6 +47,7 @@ import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
+import io.mockk.mockk
 import io.mockk.verify
 
 import kotlinx.coroutines.channels.Channel
@@ -242,6 +244,7 @@ class DetectorEngineDetectionOrientationTests {
             scalingManager = mockScalingManager,
             displayRecorder = mockDisplayRecorder,
             actionExecutor = mockActionExecutor,
+            actionFailureRecorder = mockk<ActionFailureRecorder>(relaxed = true),
             settingsRepository = mockSettingsRepository,
             appComponentsProvider = mockAppComponentsProvider,
             debuggingListener = mockDebuggingListener,

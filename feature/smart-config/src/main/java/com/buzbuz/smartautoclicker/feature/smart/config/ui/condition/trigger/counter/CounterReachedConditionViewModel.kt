@@ -101,6 +101,7 @@ class CounterReachedConditionViewModel @Inject constructor(
             when (type) {
                 UiOperandType.STATIC -> CounterOperationValue.Number(0.0)
                 UiOperandType.COUNTER -> CounterOperationValue.Counter("")
+                UiOperandType.DETECTED_NUMBER -> return
             }
         )
     }

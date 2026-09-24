@@ -34,10 +34,11 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import javax.inject.Inject
+import java.util.Locale
 import kotlin.time.Duration.Companion.minutes
 
 class FilteredScenarioListUseCase @Inject constructor(
-    @ApplicationContext context: Context,
+    @param:ApplicationContext private val context: Context,
     dumbRepository: IDumbRepository,
     private val settingsRepository: SettingsRepository,
     private val smartRepository: IRepository,
@@ -62,7 +63,9 @@ class FilteredScenarioListUseCase @Inject constructor(
         ) { scenarios, searchQuery, sortConfig, filtersEnabled ->
             if (searchQuery == null) {
                 if (filtersEnabled) {
-                    val filteredAndSortedItems = scenarios.sortAndFilter(sortConfig)
+                    val filteredAndSortedItems = scenarios
+                        .sortAndFilter(sortConfig)
+                        .withGroupHeaders(context.getString(R.string.item_scenario_group_ungrouped))
                     val sortItem = ScenarioListUiState.Item.SortItem(
                         sortType = sortConfig.type,
                         smartVisible = sortConfig.showSmartScenario,
@@ -76,6 +79,8 @@ class FilteredScenarioListUseCase @Inject constructor(
                     }
                 } else {
                     scenarios
+                        .sortedByDescending { it.isFavorite }
+                        .withGroupHeaders(context.getString(R.string.item_scenario_group_ungrouped))
                 }
             } else {
                 scenarios.filterByName(searchQuery)
@@ -128,7 +133,7 @@ private fun List<ScenarioListUiState.Item.ScenarioItem>.filterByName(
     filter: String
 ): List<ScenarioListUiState.Item.ScenarioItem> =
     mapNotNull { scenario ->
-        if (scenario.displayName.contains(filter, true)) scenario else null
+        if (scenario.displayName.contains(filter, true) || scenario.groupName.contains(filter, true)) scenario else null
     }
 
 private fun Repeatable.getRepeatDisplayText(context: Context): String =
@@ -144,14 +149,14 @@ private fun DumbScenario.getMaxDurationDisplayText(context: Context): String =
 
 private fun Collection<ScenarioListUiState.Item.ScenarioItem>.sortAndFilter(
     sortConfig: ScenarioSortSettings,
-): Collection<ScenarioListUiState.Item.ScenarioItem> {
+): List<ScenarioListUiState.Item.ScenarioItem> {
 
     val filteredList = filter { item ->
         (sortConfig.showSmartScenario && item.scenario is Scenario) ||
                 (sortConfig.showDumbScenario && item.scenario is DumbScenario)
     }
 
-    return when (sortConfig.type) {
+    val sorted = when (sortConfig.type) {
         ScenarioSortType.NAME ->
             if (sortConfig.inverted) filteredList.sortedByDescending { it.displayName }
             else filteredList.sortedBy { it.displayName }
@@ -163,5 +168,36 @@ private fun Collection<ScenarioListUiState.Item.ScenarioItem>.sortAndFilter(
         ScenarioSortType.MOST_USED ->
             if (sortConfig.inverted) filteredList.sortedBy { it.startCount }
             else filteredList.sortedByDescending { it.startCount }
+    }
+
+    return sorted.sortedByDescending { it.isFavorite }
+}
+
+private fun List<ScenarioListUiState.Item.ScenarioItem>.withGroupHeaders(
+    ungroupedName: String,
+): List<ScenarioListUiState.Item> {
+    if (none { it.groupName.isNotBlank() }) return this
+
+    val groupedItems = groupBy { it.groupName.trim().lowercase(Locale.ROOT) }
+    val groupNames = groupedItems.keys
+        .filter { it.isNotEmpty() }
+        .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { key ->
+            groupedItems.getValue(key).first().groupName.trim()
+        })
+        .let { names -> if (groupedItems.containsKey("")) names + "" else names }
+
+    return buildList {
+        groupNames.forEach { groupKey ->
+            val groupItems = groupedItems.getValue(groupKey)
+            val groupName = groupItems.first().groupName.trim()
+            add(
+                ScenarioListUiState.Item.GroupHeader(
+                    groupName = groupName,
+                    name = groupName.ifEmpty { ungroupedName },
+                    scenarioCount = groupItems.size,
+                )
+            )
+            addAll(groupItems)
+        }
     }
 }

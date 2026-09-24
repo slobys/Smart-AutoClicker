@@ -17,6 +17,7 @@
 package com.buzbuz.smartautoclicker.scenarios.list
 
 import android.content.Context
+import com.buzbuz.smartautoclicker.R
 import com.buzbuz.smartautoclicker.core.base.ScenarioStats
 import com.buzbuz.smartautoclicker.core.base.identifier.Identifier
 import com.buzbuz.smartautoclicker.core.domain.IRepository
@@ -63,6 +64,7 @@ class FilteredScenarioListUseCaseTest {
         every { mockSmartRepository.scenarios } returns smartScenariosFlow
         every { mockSettingsRepository.scenarioSortSettings } returns sortSettingsFlow
         every { mockSettingsRepository.isFilterScenarioUiEnabledFlow } returns filterUiEnabledFlow
+        every { mockContext.getString(R.string.item_scenario_group_ungrouped) } returns "Ungrouped"
         useCase = FilteredScenarioListUseCase(
             context = mockContext,
             dumbRepository = mockDumbRepository,
@@ -358,6 +360,83 @@ class FilteredScenarioListUseCaseTest {
         assertTrue(result.any { it is ScenarioListUiState.Item.SortItem })
     }
 
+    @Test
+    fun `search query also matches group name without group headers`() = runTest {
+        smartScenariosFlow.value = listOf(
+            smartScenario(id = 1, name = "Alpha", groupName = "Daily farming"),
+            smartScenario(id = 2, name = "Beta", groupName = "Combat"),
+        )
+
+        searchQueryFlow.value = "FARM"
+        val result = useCase(searchQueryFlow).first()
+
+        assertEquals(listOf("Alpha"), scenarioItems(result).map { it.displayName })
+        assertTrue(result.none { it is ScenarioListUiState.Item.GroupHeader })
+    }
+
+    // endregion
+
+    // region favorites and groups
+
+    @Test
+    fun `favorite scenarios are pinned before other scenarios`() = runTest {
+        filterUiEnabledFlow.value = true
+        smartScenariosFlow.value = listOf(
+            smartScenario(id = 1, name = "Alpha"),
+            smartScenario(id = 2, name = "Zulu", isFavorite = true),
+            smartScenario(id = 3, name = "Bravo"),
+        )
+
+        val names = scenarioItems(useCase(searchQueryFlow).first()).map { it.displayName }
+
+        assertEquals(listOf("Zulu", "Alpha", "Bravo"), names)
+    }
+
+    @Test
+    fun `named groups are alphabetical and ungrouped scenarios are last`() = runTest {
+        smartScenariosFlow.value = listOf(
+            smartScenario(id = 1, name = "Loose"),
+            smartScenario(id = 2, name = "Boss", groupName = "Combat"),
+            smartScenario(id = 3, name = "Daily", groupName = "Daily"),
+        )
+
+        val result = useCase(searchQueryFlow).first()
+        val headers = result.filterIsInstance<ScenarioListUiState.Item.GroupHeader>()
+
+        assertEquals(listOf("Combat", "Daily", "Ungrouped"), headers.map { it.name })
+        assertEquals(listOf("Combat", "Daily", ""), headers.map { it.groupName })
+        assertEquals(listOf(1, 1, 1), headers.map { it.scenarioCount })
+        assertEquals(listOf("Boss", "Daily", "Loose"), scenarioItems(result).map { it.displayName })
+    }
+
+    @Test
+    fun `group names differing only by case share one header`() = runTest {
+        smartScenariosFlow.value = listOf(
+            smartScenario(id = 1, name = "Boss", groupName = "Combat"),
+            smartScenario(id = 2, name = "Arena", groupName = "combat"),
+        )
+
+        val headers = useCase(searchQueryFlow).first()
+            .filterIsInstance<ScenarioListUiState.Item.GroupHeader>()
+
+        assertEquals(1, headers.size)
+        assertEquals("Combat", headers.single().name)
+        assertEquals(2, headers.single().scenarioCount)
+    }
+
+    @Test
+    fun `favorite pinning is scoped to its group`() = runTest {
+        smartScenariosFlow.value = listOf(
+            smartScenario(id = 1, name = "A normal", groupName = "A"),
+            smartScenario(id = 2, name = "Z favorite", groupName = "B", isFavorite = true),
+            smartScenario(id = 3, name = "B normal", groupName = "B"),
+        )
+
+        val names = scenarioItems(useCase(searchQueryFlow).first()).map { it.displayName }
+
+        assertEquals(listOf("A normal", "Z favorite", "B normal"), names)
+    }
+
     // endregion
 
     // region helpers
@@ -370,11 +449,15 @@ class FilteredScenarioListUseCaseTest {
         name: String,
         lastStart: Long = 0L,
         startCount: Long = 0L,
+        isFavorite: Boolean = false,
+        groupName: String = "",
     ): Scenario = mockk(relaxed = true) {
         every { this@mockk.id } returns Identifier(databaseId = id)
         every { this@mockk.name } returns name
         every { eventCount } returns 0
         every { stats } returns ScenarioStats(lastStartTimestampMs = lastStart, startCount = startCount)
+        every { this@mockk.isFavorite } returns isFavorite
+        every { this@mockk.groupName } returns groupName
     }
 
     private fun dumbScenario(
@@ -382,11 +465,15 @@ class FilteredScenarioListUseCaseTest {
         name: String,
         lastStart: Long = 0L,
         startCount: Long = 0L,
+        isFavorite: Boolean = false,
+        groupName: String = "",
     ): DumbScenario = mockk(relaxed = true) {
         every { this@mockk.id } returns Identifier(databaseId = id)
         every { this@mockk.name } returns name
         every { dumbActions } returns emptyList()
         every { stats } returns ScenarioStats(lastStartTimestampMs = lastStart, startCount = startCount)
+        every { this@mockk.isFavorite } returns isFavorite
+        every { this@mockk.groupName } returns groupName
     }
 
     // endregion

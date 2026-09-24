@@ -24,6 +24,8 @@ import com.buzbuz.smartautoclicker.core.domain.model.action.Action
 import com.buzbuz.smartautoclicker.core.domain.model.event.Event
 import com.buzbuz.smartautoclicker.core.domain.model.event.ScreenEvent
 import com.buzbuz.smartautoclicker.core.domain.model.event.TriggerEvent
+import com.buzbuz.smartautoclicker.core.processing.domain.SmartProcessingRepository
+import com.buzbuz.smartautoclicker.core.processing.domain.model.DebugExecutionState
 import com.buzbuz.smartautoclicker.core.smart.debugging.domain.DebuggingRepository
 import com.buzbuz.smartautoclicker.core.smart.debugging.domain.model.live.DebugLiveEventOccurrence
 import com.buzbuz.smartautoclicker.core.smart.debugging.domain.usecase.GetDebugLiveDetectionResultUseCase
@@ -42,16 +44,36 @@ class LiveDebuggingViewModel @Inject constructor(
     @ApplicationContext context: Context,
     debuggingRepository: DebuggingRepository,
     debugDetectionResultUseCase: GetDebugLiveDetectionResultUseCase,
+    private val smartProcessingRepository: SmartProcessingRepository,
 ) : ViewModel() {
 
     /** Tells if the current detection is running in debug mode. */
     val isDebugging = debuggingRepository.isLiveDebugging
+
+    /** State of the non-destructive event-level debugger. */
+    val debugExecutionState = smartProcessingRepository.debugExecutionState
+
+    val lastActionFailure = smartProcessingRepository.lastActionFailure
 
     /** The info on the last positive detection. */
     val debugLastPositive: Flow<LiveDebuggingUiState?> = debugDetectionResultUseCase
         .invoke(minDisplayDuration = POSITIVE_VALUE_DISPLAY_TIMEOUT_MS)
         .combine(isDebugging) { results, isDebugging -> if (isDebugging) results else null }
         .map { result -> result?.toLastPositiveDebugInfo(context) }
+
+    fun togglePauseAtNextEvent() {
+        when (debugExecutionState.value) {
+            DebugExecutionState.Running -> smartProcessingRepository.requestDebugPauseAtNextEvent()
+            DebugExecutionState.WaitingForEvent -> smartProcessingRepository.cancelDebugPauseRequest()
+            is DebugExecutionState.Paused -> smartProcessingRepository.resumeDebugExecution()
+        }
+    }
+
+    fun stepToNextEvent() {
+        if (debugExecutionState.value is DebugExecutionState.Paused) {
+            smartProcessingRepository.stepDebugExecution()
+        }
+    }
 
 }
 

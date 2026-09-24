@@ -17,21 +17,25 @@
 package com.buzbuz.smartautoclicker.feature.smart.config.ui.common.model.counter
 
 import com.buzbuz.smartautoclicker.core.domain.model.counter.Counter
+import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.formatters.toNaturalDisplayString
 
 sealed class UiStaticOrCounterSelection {
     data class StaticValue(val value: Double): UiStaticOrCounterSelection()
     data class CounterValue(val counter: Counter?): UiStaticOrCounterSelection()
+    data class DetectedNumberValue(val condition: ScreenCondition.Number?): UiStaticOrCounterSelection()
 }
 
 enum class UiOperandType {
     STATIC,
     COUNTER,
+    DETECTED_NUMBER,
 }
 
 fun UiStaticOrCounterSelection.toDisplayValue(): String =
     when (this) {
         is UiStaticOrCounterSelection.CounterValue -> counter?.counterName ?: "?"
+        is UiStaticOrCounterSelection.DetectedNumberValue -> condition?.name ?: "?"
         is UiStaticOrCounterSelection.StaticValue -> value.toNaturalDisplayString()
     }
 

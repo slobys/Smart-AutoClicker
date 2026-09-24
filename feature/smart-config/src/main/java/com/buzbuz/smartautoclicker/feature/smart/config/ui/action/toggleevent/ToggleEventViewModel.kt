@@ -92,12 +92,14 @@ class ToggleEventViewModel @Inject constructor(
             var enableCount = 0
             var toggleCount = 0
             var disableCount = 0
+            var executeOnceCount = 0
 
             toggleEventAction.eventToggles.forEach {
                 when (it.toggleType) {
                     ToggleEvent.ToggleType.ENABLE -> enableCount++
                     ToggleEvent.ToggleType.TOGGLE -> toggleCount++
                     ToggleEvent.ToggleType.DISABLE -> disableCount++
+                    ToggleEvent.ToggleType.EXECUTE_ONCE -> executeOnceCount++
                 }
             }
 
@@ -108,6 +110,7 @@ class ToggleEventViewModel @Inject constructor(
                 enableCount = enableCount,
                 toggleCount = toggleCount,
                 disableCount = disableCount,
+                executeOnceCount = executeOnceCount,
             )
         }
 
@@ -191,6 +194,7 @@ data class EventToggleSelectorState(
     val enableCount: Int,
     val toggleCount: Int,
     val disableCount: Int,
+    val executeOnceCount: Int,
     @field:StringRes val emptyText: Int?,
 )
 

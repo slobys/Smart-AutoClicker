@@ -87,7 +87,7 @@ object ItemEventToggleDiffUtilCallback: DiffUtil.ItemCallback<EventTogglesListIt
           }
 
     override fun areContentsTheSame(oldItem: EventTogglesListItem, newItem: EventTogglesListItem): Boolean =
-        true
+        oldItem == newItem
 }
 
 
@@ -117,9 +117,15 @@ class ItemViewHolder(
         private const val BUTTON_ENABLE_EVENT = 0
         private const val BUTTON_TOGGLE_EVENT = 1
         private const val BUTTON_DISABLE_EVENT = 2
+        private const val BUTTON_EXECUTE_ONCE = 3
 
         private val BUTTONS_CONFIG = MultiStateButtonConfig(
-            icons = listOf(R.drawable.ic_confirm, R.drawable.ic_invert, R.drawable.ic_cancel),
+            icons = listOf(
+                R.drawable.ic_confirm,
+                R.drawable.ic_invert,
+                R.drawable.ic_cancel,
+                R.drawable.ic_play_arrow,
+            ),
             selectionRequired = false,
             singleSelection = true,
         )
@@ -135,11 +141,24 @@ class ItemViewHolder(
             textActionsCount.text = String.format(Locale.getDefault(), "%d", item.actionsCount)
             textConditionCount.text = String.format(Locale.getDefault(), "%d", item.conditionsCount)
 
+            toggleTypeButton.buttonLeft.contentDescription =
+                root.context.getString(R.string.content_desc_event_operation_enable)
+            toggleTypeButton.buttonMiddle.contentDescription =
+                root.context.getString(R.string.content_desc_event_operation_toggle)
+            toggleTypeButton.buttonRight.contentDescription =
+                root.context.getString(R.string.content_desc_event_operation_disable)
+            toggleTypeButton.buttonEnd.apply {
+                contentDescription = root.context.getString(R.string.content_desc_event_operation_execute_once)
+                isEnabled = item.canExecuteOnce
+                alpha = if (item.canExecuteOnce) 1f else 0.38f
+            }
+
             toggleTypeButton.setChecked(
                 when (item.toggleState) {
                     ToggleEvent.ToggleType.ENABLE -> BUTTON_ENABLE_EVENT
                     ToggleEvent.ToggleType.TOGGLE -> BUTTON_TOGGLE_EVENT
                     ToggleEvent.ToggleType.DISABLE -> BUTTON_DISABLE_EVENT
+                    ToggleEvent.ToggleType.EXECUTE_ONCE -> BUTTON_EXECUTE_ONCE
                     else -> null
                 }
             )
@@ -149,6 +168,7 @@ class ItemViewHolder(
                     BUTTON_ENABLE_EVENT -> ToggleEvent.ToggleType.ENABLE
                     BUTTON_TOGGLE_EVENT -> ToggleEvent.ToggleType.TOGGLE
                     BUTTON_DISABLE_EVENT -> ToggleEvent.ToggleType.DISABLE
+                    BUTTON_EXECUTE_ONCE -> ToggleEvent.ToggleType.EXECUTE_ONCE
                     else -> null
                 }
 

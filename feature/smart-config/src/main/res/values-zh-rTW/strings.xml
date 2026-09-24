@@ -221,6 +221,9 @@
     <string name="field_intent_extra_key_label">參數名</string>
     <string name="menu_item_title_state">狀態</string>
     <string name="field_event_state_title">初始狀態</string>
+    <string name="field_event_breakpoint_title">事件中斷點</string>
+    <string name="field_event_breakpoint_desc_disabled">未啟用。條件符合後立即執行動作。</string>
+    <string name="field_event_breakpoint_desc_enabled">已啟用。條件符合後會在第一個動作執行前暫停。</string>
     <string name="field_counter_operation_value_label">數值</string>
     <string name="field_counter_name_label">計數器名稱</string>
     <string name="field_counter_comparison_value_label">數值</string>
@@ -468,4 +471,23 @@
 
     <string name="warning_dialog_message_delete">您即將刪除此項目，確定嗎？</string>
 
+    <string name="pause_wait_mode_label">等待條件</string>
+    <string name="pause_wait_mode_fixed">固定等待</string>
+    <string name="pause_wait_mode_target_appears">指定目標出現</string>
+    <string name="pause_wait_mode_target_disappears">指定目標消失</string>
+    <string name="pause_wait_mode_screen_stable">畫面穩定</string>
+    <string name="pause_wait_mode_screen_changed">畫面發生變化</string>
+    <string name="pause_timeout_behavior_label">達到最長等待時間後</string>
+    <string name="pause_timeout_retry">重新等待</string>
+    <string name="pause_timeout_skip">略過並繼續</string>
+    <string name="pause_timeout_stop">停止場景</string>
+    <string name="pause_timeout_fallback">執行備用事件</string>
+    <string name="pause_max_retries_label">最多重試次數（0–20）</string>
+    <string name="pause_confirmation_frames_label">連續確認幀數（1–10）</string>
+    <string name="pause_change_threshold_label">畫面變化閾值（1–100%）</string>
+    <string name="pause_select_fallback_event">選擇備用事件</string>
+    <string name="pause_select_wait_target_event">選擇要觀察的目標事件</string>
+    <string name="content_desc_failure_snapshot">檢視最近一次失敗動作截圖</string>
+    <string name="failure_snapshot_title">最近一次動作失敗</string>
+    <string name="failure_snapshot_message">事件：%1$s\n動作：%2$s\n結果：%3$s</string>
 </resources>

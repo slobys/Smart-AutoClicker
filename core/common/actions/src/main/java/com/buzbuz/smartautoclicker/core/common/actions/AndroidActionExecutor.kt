@@ -59,7 +59,7 @@ interface AndroidActionExecutor: Dumpable {
      *
      * @param gestureDescription The gesture to dispatch
      */
-    suspend fun dispatchGesture(gestureDescription: GestureDescription)
+    suspend fun dispatchGesture(gestureDescription: GestureDescription): AndroidGestureResult
 
     /**
      * Performs a global action.
@@ -110,6 +110,14 @@ interface AndroidActionExecutor: Dumpable {
      * due to the queuing system).
      */
     fun postNotification(notificationRequest: ActionNotificationRequest)
+}
+
+/** Observable result of a gesture request, used by the scenario reliability layer. */
+enum class AndroidGestureResult {
+    COMPLETED,
+    CANCELLED,
+    REJECTED,
+    SERVICE_UNAVAILABLE,
 }
 
 /** The maximum supported duration for a gesture. This limitation comes from Android GestureStroke API.  */

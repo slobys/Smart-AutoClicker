@@ -57,8 +57,8 @@ android {
     defaultConfig {
         applicationId = getExtraActualApplicationId()
 
-        versionCode = 119
-        versionName = "4.0.5.19"
+        versionCode = 120
+        versionName = "4.0.5.20"
     }
 
     if (project.isBuildForVariant(KlickrFlavour.F_DROID, KlickrBuildType.DEBUG)) {
@@ -147,7 +147,6 @@ dependencies {
     implementation(libs.androidx.recyclerView)
     implementation(libs.androidx.fragment.ktx)
 
-    implementation(libs.androidx.lifecycle.extensions)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

@@ -45,6 +45,7 @@
     <string name="menu_item_title_select_all">Seleziona tutto</string>
     <string name="menu_item_title_cancel">Annulla</string>
     <string name="menu_item_title_search">Cerca</string>
+    <string name="menu_item_title_manage_groups">Gestisci gruppi</string>
     <string name="menu_item_title_settings">Impostazioni</string>
 
 
@@ -171,4 +172,18 @@
     <string name="field_overlay_menu_auto_collapse_desc">Mantieni libero lo schermo riducendo la barra dei controlli a una sola icona dopo un breve periodo di inattività.</string>
     <string name="field_overlay_menu_auto_collapse_delay_title">Ritardo compressione controlli mobili</string>
     <string name="field_overlay_menu_auto_collapse_delay_value">%1$d secondi</string>
+    <string name="content_desc_scenario_favorite">Aggiungi o rimuovi lo scenario dai preferiti</string>
+    <string name="item_scenario_group_ungrouped">Senza gruppo</string>
+    <string name="dialog_title_scenario_group">Gruppo dello scenario</string>
+    <string name="field_scenario_group_name">Nome del gruppo</string>
+    <string name="button_clear_group">Rimuovi dal gruppo</string>
+    <string name="dialog_title_create_scenario_group">Crea gruppo</string>
+    <string name="dialog_title_edit_scenario_group">Modifica gruppo</string>
+    <string name="message_scenario_group_selection_count">%1$d scenari selezionati</string>
+    <string name="error_scenario_group_name_required">Inserisci un nome per il gruppo</string>
+    <string name="error_scenario_group_selection_required">Seleziona almeno uno scenario</string>
+    <string name="button_delete_scenario_group">Separa tutti</string>
+    <string name="content_desc_manage_scenario_group">Modifica gruppo e scegli scenari</string>
+    <string name="content_desc_collapse_scenario_group">Comprimi gruppo</string>
+    <string name="content_desc_expand_scenario_group">Espandi gruppo</string>
 </resources>

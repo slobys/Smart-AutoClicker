@@ -22,6 +22,7 @@ import androidx.lifecycle.viewModelScope
 
 import com.buzbuz.smartautoclicker.core.bitmaps.BitmapRepository
 import com.buzbuz.smartautoclicker.scenarios.list.model.ScenarioBackupSelection
+import com.buzbuz.smartautoclicker.scenarios.list.model.GroupableScenario
 import com.buzbuz.smartautoclicker.scenarios.list.model.ScenarioListUiState
 import com.buzbuz.smartautoclicker.scenarios.list.model.isEmpty
 import com.buzbuz.smartautoclicker.scenarios.list.model.toggleAllScenarioSelectionForBackup
@@ -50,6 +51,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 import javax.inject.Inject
+import java.util.Locale
 
 @HiltViewModel
 class ScenarioListViewModel @Inject constructor(
@@ -67,22 +69,66 @@ class ScenarioListViewModel @Inject constructor(
     private val expandedItems = MutableStateFlow(ScenarioExpandedSelection())
     /** Set of scenario identifier selected for a backup. */
     private val selectedForBackup = MutableStateFlow(ScenarioBackupSelection())
+    /** Group headers collapsed for the current screen session. */
+    private val collapsedGroups = MutableStateFlow<Set<String>>(emptySet())
 
     /** The currently searched action name. Null if no is. */
     private val searchQuery = MutableStateFlow<String?>(null)
+
+    /** All scenarios, independently from current search/filter/collapse state, for bulk group editing. */
+    val groupableScenarios: StateFlow<List<GroupableScenario>> = combine(
+        dumbRepository.dumbScenarios,
+        smartRepository.scenarios,
+    ) { dumbScenarios, smartScenarios ->
+        buildList {
+            addAll(dumbScenarios.map { scenario ->
+                GroupableScenario(
+                    reference = GroupableScenario.Reference(
+                        databaseId = scenario.id.databaseId,
+                        isSmart = false,
+                    ),
+                    name = scenario.name,
+                    groupName = scenario.groupName,
+                    isFavorite = scenario.isFavorite,
+                )
+            })
+            addAll(smartScenarios.map { scenario ->
+                GroupableScenario(
+                    reference = GroupableScenario.Reference(
+                        databaseId = scenario.id.databaseId,
+                        isSmart = true,
+                    ),
+                    name = scenario.name,
+                    groupName = scenario.groupName,
+                    isFavorite = scenario.isFavorite,
+                )
+            })
+        }.sortedWith(
+            compareBy<GroupableScenario> { !it.reference.isSmart }
+                .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
+        )
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.Eagerly,
+        emptyList(),
+    )
 
     val uiState: StateFlow<ScenarioListUiState?> = combine(
         uiStateType,
         filteredScenarioListUseCase(searchQuery),
         selectedForBackup,
         expandedItems,
-    ) { stateType, items, backupSelection, expanded,  ->
+        collapsedGroups,
+    ) { stateType, items, backupSelection, expanded, collapsed ->
         ScenarioListUiState(
             type = stateType,
             menuUiState = stateType.toMenuUiState(items, backupSelection),
-            listContent =
-                if (stateType != ScenarioListUiState.Type.EXPORT) items.updateExpanded(expanded)
-                else items.filterForBackupSelection(backupSelection),
+            listContent = when (stateType) {
+                ScenarioListUiState.Type.SELECTION ->
+                    items.updateExpanded(expanded).applyGroupCollapse(collapsed)
+                ScenarioListUiState.Type.SEARCH -> items.updateExpanded(expanded)
+                ScenarioListUiState.Type.EXPORT -> items.filterForBackupSelection(backupSelection)
+            },
         )
     }.stateIn(
         viewModelScope,
@@ -200,6 +246,104 @@ class ScenarioListViewModel @Inject constructor(
         }
     }
 
+    fun toggleFavorite(item: ScenarioListUiState.Item.ScenarioItem) {
+        updateOrganization(item, isFavorite = !item.isFavorite, groupName = item.groupName)
+    }
+
+    fun updateGroup(item: ScenarioListUiState.Item.ScenarioItem, groupName: String) {
+        updateOrganization(
+            item = item,
+            isFavorite = item.isFavorite,
+            groupName = groupName.trim().take(MAX_GROUP_NAME_LENGTH),
+        )
+    }
+
+    fun toggleGroupCollapsed(header: ScenarioListUiState.Item.GroupHeader) {
+        val key = header.groupName.normalizedGroupName()
+        collapsedGroups.update { current ->
+            if (key in current) current - key else current + key
+        }
+    }
+
+    /**
+     * Create or edit a group in one operation. Selected scenarios are moved to [groupName].
+     * When editing, scenarios removed from the selection become ungrouped.
+     */
+    fun saveGroup(
+        originalGroupName: String?,
+        groupName: String,
+        selectedScenarios: Set<GroupableScenario.Reference>,
+    ) {
+        val targetGroupName = groupName.trim().take(MAX_GROUP_NAME_LENGTH)
+        if (targetGroupName.isEmpty() || selectedScenarios.isEmpty()) return
+
+        val originalKey = originalGroupName?.normalizedGroupName()
+        val scenarios = groupableScenarios.value
+        viewModelScope.launch(Dispatchers.IO) {
+            scenarios.forEach { scenario ->
+                val currentlyInEditedGroup = originalKey != null &&
+                    scenario.groupName.normalizedGroupName() == originalKey
+                val newGroupName = when {
+                    scenario.reference in selectedScenarios -> targetGroupName
+                    currentlyInEditedGroup -> ""
+                    else -> scenario.groupName
+                }
+
+                if (newGroupName != scenario.groupName) {
+                    updateScenarioGroup(scenario, newGroupName)
+                }
+            }
+        }
+    }
+
+    fun deleteGroup(groupName: String) {
+        val groupKey = groupName.normalizedGroupName()
+        val scenarios = groupableScenarios.value
+        viewModelScope.launch(Dispatchers.IO) {
+            scenarios
+                .filter { it.groupName.normalizedGroupName() == groupKey }
+                .forEach { updateScenarioGroup(it, "") }
+            collapsedGroups.update { it - groupKey }
+        }
+    }
+
+    private suspend fun updateScenarioGroup(scenario: GroupableScenario, groupName: String) {
+        if (scenario.reference.isSmart) {
+            smartRepository.updateScenarioOrganization(
+                scenarioId = scenario.reference.databaseId,
+                isFavorite = scenario.isFavorite,
+                groupName = groupName,
+            )
+        } else {
+            dumbRepository.updateScenarioOrganization(
+                scenarioId = scenario.reference.databaseId,
+                isFavorite = scenario.isFavorite,
+                groupName = groupName,
+            )
+        }
+    }
+
+    private fun updateOrganization(
+        item: ScenarioListUiState.Item.ScenarioItem,
+        isFavorite: Boolean,
+        groupName: String,
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            when (val scenario = item.scenario) {
+                is DumbScenario -> dumbRepository.updateScenarioOrganization(
+                    scenarioId = scenario.id.databaseId,
+                    isFavorite = isFavorite,
+                    groupName = groupName,
+                )
+                is Scenario -> smartRepository.updateScenarioOrganization(
+                    scenarioId = scenario.id.databaseId,
+                    isFavorite = isFavorite,
+                    groupName = groupName,
+                )
+            }
+        }
+    }
+
     /**
      * Get the bitmap corresponding to a condition.
      * Loading is async and the result notified via the onBitmapLoaded argument.
@@ -220,6 +364,7 @@ class ScenarioListViewModel @Inject constructor(
         )
         ScenarioListUiState.Type.SELECTION -> ScenarioListUiState.Menu.Selection(
             searchEnabled = scenarioItems.isNotEmpty(),
+            groupsEnabled = scenarioItems.any { it is ScenarioListUiState.Item.ScenarioItem },
         )
     }
 
@@ -252,6 +397,26 @@ class ScenarioListViewModel @Inject constructor(
         }
     }
 
+    private fun List<ScenarioListUiState.Item>.applyGroupCollapse(
+        collapsed: Set<String>,
+    ): List<ScenarioListUiState.Item> = buildList {
+        var hideScenarios = false
+        this@applyGroupCollapse.forEach { item ->
+            when (item) {
+                is ScenarioListUiState.Item.GroupHeader -> {
+                    val isCollapsed = item.groupName.normalizedGroupName() in collapsed
+                    hideScenarios = isCollapsed
+                    add(item.copy(isCollapsed = isCollapsed))
+                }
+                is ScenarioListUiState.Item.SortItem -> {
+                    hideScenarios = false
+                    add(item)
+                }
+                is ScenarioListUiState.Item.ScenarioItem -> if (!hideScenarios) add(item)
+            }
+        }
+    }
+
     private fun MutableSet<Long>.toggleExpandedSelection(id: Long): MutableSet<Long> {
         if (!contains(id)) add(id)
         else remove(id)
@@ -264,3 +429,7 @@ data class ScenarioExpandedSelection(
     val dumbSelection: Set<Long> = mutableSetOf(),
     val smartSelection: Set<Long> = mutableSetOf(),
 )
+
+private const val MAX_GROUP_NAME_LENGTH = 40
+
+private fun String.normalizedGroupName(): String = trim().lowercase(Locale.ROOT)

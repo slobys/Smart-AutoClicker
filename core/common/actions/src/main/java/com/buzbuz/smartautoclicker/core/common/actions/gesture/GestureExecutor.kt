@@ -48,21 +48,33 @@ internal class GestureExecutor @Inject constructor() : Dumpable {
         errorGestures = 0L
     }
 
-    suspend fun dispatchGesture(service: AccessibilityService, gesture: GestureDescription): Boolean {
+    suspend fun dispatchGesture(service: AccessibilityService, gesture: GestureDescription): Boolean =
+        dispatchGestureWithResult(service, gesture) == GestureDispatchResult.COMPLETED
+
+    suspend fun dispatchGestureWithResult(
+        service: AccessibilityService,
+        gesture: GestureDescription,
+    ): GestureDispatchResult {
         val result = withTimeoutOrNull(gesture.timeoutDurationMs().milliseconds) {
             suspendCancellableCoroutine { continuation ->
                 try {
-                    service.dispatchGesture(
+                    val isAccepted = service.dispatchGesture(
                         /* gesture = */ gesture,
                         /* callback = */ object : GestureResultCallback() {
-                            override fun onCompleted(g: GestureDescription?) = continuation.safeResume(true)
-                            override fun onCancelled(g: GestureDescription?) = continuation.safeResume(false)
+                            override fun onCompleted(g: GestureDescription?) =
+                                continuation.safeResume(GestureDispatchResult.COMPLETED)
+
+                            override fun onCancelled(g: GestureDescription?) =
+                                continuation.safeResume(GestureDispatchResult.CANCELLED)
                         },
                         /* handler = */ null,
                     )
+                    if (!isAccepted) {
+                        continuation.safeResume(GestureDispatchResult.ERROR)
+                    }
                 } catch (rEx: RuntimeException) {
                     Log.w(TAG, "System is not responsive, the user might be spamming gesture too quickly", rEx)
-                    continuation.safeResume(false)
+                    continuation.safeResume(GestureDispatchResult.ERROR)
                 }
             }
         }
@@ -70,17 +82,22 @@ internal class GestureExecutor @Inject constructor() : Dumpable {
         if (result == null) {
             Log.w(TAG, "Gesture error, timeout or system error occurred.")
             errorGestures++
-            return false
+            return GestureDispatchResult.ERROR
         }
 
-        if (!result) {
-            Log.w(TAG, "Gesture has been cancelled.")
-            cancelledGestures ++
-            return false
+        when (result) {
+            GestureDispatchResult.COMPLETED -> completedGestures++
+            GestureDispatchResult.CANCELLED -> {
+                Log.w(TAG, "Gesture has been cancelled.")
+                cancelledGestures++
+            }
+            GestureDispatchResult.ERROR -> {
+                Log.w(TAG, "Gesture was rejected by the system.")
+                errorGestures++
+            }
         }
 
-        completedGestures++
-        return true
+        return result
     }
 
     override fun dump(writer: PrintWriter, prefix: CharSequence) {
@@ -93,6 +110,12 @@ internal class GestureExecutor @Inject constructor() : Dumpable {
             append(contentPrefix).append("Error=$errorGestures").println()
         }
     }
+}
+
+internal enum class GestureDispatchResult {
+    COMPLETED,
+    CANCELLED,
+    ERROR,
 }
 
 private fun <T> Continuation<T>.safeResume(value: T): Unit =

@@ -27,6 +27,7 @@ import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
 import com.buzbuz.smartautoclicker.core.dumb.domain.model.DumbScenario
 import com.buzbuz.smartautoclicker.databinding.ItemDumbScenarioBinding
 import com.buzbuz.smartautoclicker.databinding.ItemEmptyScenarioBinding
+import com.buzbuz.smartautoclicker.databinding.ItemScenarioGroupHeaderBinding
 import com.buzbuz.smartautoclicker.databinding.ItemSmartScenarioBinding
 import com.buzbuz.smartautoclicker.scenarios.list.model.getTimeSinceString
 import kotlinx.coroutines.Job
@@ -37,6 +38,8 @@ class EmptyScenarioHolder(
     private val viewBinding: ItemEmptyScenarioBinding,
     private val startScenarioListener: ((ScenarioListUiState.Item.ScenarioItem.Empty) -> Unit),
     private val deleteScenarioListener: ((ScenarioListUiState.Item.ScenarioItem.Empty) -> Unit),
+    private val favoriteClickedListener: ((ScenarioListUiState.Item.ScenarioItem.Empty) -> Unit),
+    private val groupClickedListener: ((ScenarioListUiState.Item.ScenarioItem.Empty) -> Unit),
 ): RecyclerView.ViewHolder(viewBinding.root) {
 
     fun onBind(scenarioItem: ScenarioListUiState.Item.ScenarioItem.Empty) = viewBinding.apply {
@@ -48,6 +51,14 @@ class EmptyScenarioHolder(
 
         buttonStart.setOnClickListener { startScenarioListener(scenarioItem) }
         buttonDelete.setOnClickListener { deleteScenarioListener(scenarioItem) }
+        buttonFavorite.setIconResource(
+            if (scenarioItem.isFavorite) R.drawable.ic_star_filled else R.drawable.ic_star
+        )
+        buttonFavorite.setOnClickListener { favoriteClickedListener(scenarioItem) }
+        scenarioGroup.text = scenarioItem.groupName.ifEmpty {
+            root.context.getString(R.string.item_scenario_group_ungrouped)
+        }
+        scenarioGroup.setOnClickListener { groupClickedListener(scenarioItem) }
     }
 }
 
@@ -59,12 +70,22 @@ class DumbScenarioViewHolder(
     private val exportClickListener: ((ScenarioListUiState.Item.ScenarioItem.Valid) -> Unit),
     private val copyClickedListener: ((ScenarioListUiState.Item.ScenarioItem.Valid) -> Unit),
     private val deleteScenarioListener: ((ScenarioListUiState.Item.ScenarioItem.Valid) -> Unit),
+    private val favoriteClickedListener: ((ScenarioListUiState.Item.ScenarioItem.Valid) -> Unit),
+    private val groupClickedListener: ((ScenarioListUiState.Item.ScenarioItem.Valid) -> Unit),
 ) : RecyclerView.ViewHolder(viewBinding.root) {
 
     fun onBind(scenarioItem: ScenarioListUiState.Item.ScenarioItem.Valid.Dumb) = viewBinding.apply {
         scenarioName.text = scenarioItem.displayName
+        bindOrganization(
+            isFavorite = scenarioItem.isFavorite,
+            groupName = scenarioItem.groupName,
+            onFavoriteClicked = { favoriteClickedListener(scenarioItem) },
+            onGroupClicked = { groupClickedListener(scenarioItem) },
+        )
 
         if (scenarioItem.showExportCheckbox) {
+            buttonFavorite.visibility = View.GONE
+            scenarioGroup.isEnabled = false
             buttonExpandCollapse.visibility = View.INVISIBLE
             buttonExpandCollapse.isEnabled = false
             buttonExport.apply {
@@ -75,6 +96,8 @@ class DumbScenarioViewHolder(
             root.setOnClickListener { exportClickListener(scenarioItem) }
 
         } else {
+            buttonFavorite.visibility = View.VISIBLE
+            scenarioGroup.isEnabled = true
             buttonExpandCollapse.visibility = View.VISIBLE
             buttonExpandCollapse.isEnabled = true
             buttonExport.visibility = View.GONE
@@ -115,6 +138,8 @@ class SmartScenarioViewHolder(
     private val exportClickListener: ((ScenarioListUiState.Item.ScenarioItem.Valid) -> Unit),
     private val copyClickedListener: ((ScenarioListUiState.Item.ScenarioItem.Valid) -> Unit),
     private val deleteScenarioListener: ((ScenarioListUiState.Item.ScenarioItem.Valid) -> Unit),
+    private val favoriteClickedListener: ((ScenarioListUiState.Item.ScenarioItem.Valid) -> Unit),
+    private val groupClickedListener: ((ScenarioListUiState.Item.ScenarioItem.Valid) -> Unit),
 ) : RecyclerView.ViewHolder(viewBinding.root) {
 
     private val eventsAdapter = ScenarioEventsAdapter(bitmapProvider)
@@ -125,8 +150,16 @@ class SmartScenarioViewHolder(
 
     fun onBind(scenarioItem: ScenarioListUiState.Item.ScenarioItem.Valid.Smart) = viewBinding.apply {
         scenarioName.text = scenarioItem.displayName
+        bindOrganization(
+            isFavorite = scenarioItem.isFavorite,
+            groupName = scenarioItem.groupName,
+            onFavoriteClicked = { favoriteClickedListener(scenarioItem) },
+            onGroupClicked = { groupClickedListener(scenarioItem) },
+        )
 
         if (scenarioItem.showExportCheckbox) {
+            buttonFavorite.visibility = View.GONE
+            scenarioGroup.isEnabled = false
             buttonExpandCollapse.visibility = View.INVISIBLE
             buttonExpandCollapse.isEnabled = false
             buttonExport.apply {
@@ -136,6 +169,8 @@ class SmartScenarioViewHolder(
             topDivider.visibility = View.GONE
             root.setOnClickListener { exportClickListener(scenarioItem) }
         } else {
+            buttonFavorite.visibility = View.VISIBLE
+            scenarioGroup.isEnabled = true
             buttonExpandCollapse.visibility = View.VISIBLE
             buttonExpandCollapse.isEnabled = true
             buttonExport.visibility = View.GONE
@@ -170,4 +205,50 @@ class SmartScenarioViewHolder(
         buttonDelete.setOnClickListener { deleteScenarioListener(scenarioItem) }
         buttonExport.setOnClickListener { exportClickListener(scenarioItem) }
     }
+}
+
+class ScenarioGroupHeaderViewHolder(
+    private val viewBinding: ItemScenarioGroupHeaderBinding,
+    private val collapseClickedListener: (ScenarioListUiState.Item.GroupHeader) -> Unit,
+    private val manageClickedListener: (ScenarioListUiState.Item.GroupHeader) -> Unit,
+) : RecyclerView.ViewHolder(viewBinding.root) {
+
+    fun onBind(item: ScenarioListUiState.Item.GroupHeader) = viewBinding.apply {
+        groupName.text = item.name
+        groupCount.text = String.format(Locale.getDefault(), "%d", item.scenarioCount)
+        buttonCollapseGroup.setIconResource(
+            if (item.isCollapsed) R.drawable.ic_chevron_down else R.drawable.ic_chevron_up
+        )
+        buttonCollapseGroup.contentDescription = root.context.getString(
+            if (item.isCollapsed) R.string.content_desc_expand_scenario_group
+            else R.string.content_desc_collapse_scenario_group
+        )
+        root.setOnClickListener { collapseClickedListener(item) }
+        buttonCollapseGroup.setOnClickListener { collapseClickedListener(item) }
+        buttonManageGroup.setOnClickListener { manageClickedListener(item) }
+    }
+}
+
+private fun ItemDumbScenarioBinding.bindOrganization(
+    isFavorite: Boolean,
+    groupName: String,
+    onFavoriteClicked: () -> Unit,
+    onGroupClicked: () -> Unit,
+) {
+    buttonFavorite.setIconResource(if (isFavorite) R.drawable.ic_star_filled else R.drawable.ic_star)
+    buttonFavorite.setOnClickListener { onFavoriteClicked() }
+    scenarioGroup.text = groupName.ifEmpty { root.context.getString(R.string.item_scenario_group_ungrouped) }
+    scenarioGroup.setOnClickListener { onGroupClicked() }
+}
+
+private fun ItemSmartScenarioBinding.bindOrganization(
+    isFavorite: Boolean,
+    groupName: String,
+    onFavoriteClicked: () -> Unit,
+    onGroupClicked: () -> Unit,
+) {
+    buttonFavorite.setIconResource(if (isFavorite) R.drawable.ic_star_filled else R.drawable.ic_star)
+    buttonFavorite.setOnClickListener { onFavoriteClicked() }
+    scenarioGroup.text = groupName.ifEmpty { root.context.getString(R.string.item_scenario_group_ungrouped) }
+    scenarioGroup.setOnClickListener { onGroupClicked() }
 }

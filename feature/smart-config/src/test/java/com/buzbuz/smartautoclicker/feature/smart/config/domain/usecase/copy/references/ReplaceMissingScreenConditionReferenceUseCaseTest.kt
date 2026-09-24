@@ -18,9 +18,11 @@ package com.buzbuz.smartautoclicker.feature.smart.config.domain.usecase.copy.ref
 
 import com.buzbuz.smartautoclicker.core.base.identifier.Identifier
 import com.buzbuz.smartautoclicker.core.domain.model.AND
+import com.buzbuz.smartautoclicker.core.domain.model.action.ChangeCounter
 import com.buzbuz.smartautoclicker.core.domain.model.action.Click
 import com.buzbuz.smartautoclicker.core.domain.model.action.Pause
 import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
+import com.buzbuz.smartautoclicker.core.domain.model.counter.CounterOperationValue
 import com.buzbuz.smartautoclicker.core.domain.model.event.TriggerEvent
 import com.buzbuz.smartautoclicker.feature.smart.config.domain.usecase.copy.model.ItemWithMissingReferences
 import com.buzbuz.smartautoclicker.feature.smart.config.domain.usecase.copy.model.MissingCopyReference
@@ -124,6 +126,37 @@ class ReplaceMissingScreenConditionReferenceUseCaseTest {
         assertEquals(replacementConditionId, updatedClick.clickOnConditionId)
     }
 
+    @Test
+    fun `replace change counter number source with replacement number condition`() {
+        val oldConditionId = Identifier(databaseId = 100L)
+        val replacementConditionId = Identifier(databaseId = 200L)
+        val action = changeCounter(detectedNumberConditionId = oldConditionId)
+        val event = triggerEventWithActions(listOf(action))
+        val item = ItemWithMissingReferences.ActionItem(item = action, missingReferences = emptyList())
+        val missingRef = MissingCopyReference.ScreenConditionReference("Old Number", oldConditionId)
+        val replacement = mockk<ScreenCondition.Number>(relaxed = true) {
+            every { id } returns replacementConditionId
+        }
+
+        val result = useCase(event, item, missingRef, replacement) as TriggerEvent
+        val updatedAction = result.actions[0] as ChangeCounter
+        assertEquals(replacementConditionId, updatedAction.detectedNumberConditionId)
+    }
+
+    @Test
+    fun `change counter number source rejects non-number replacement`() {
+        val oldConditionId = Identifier(databaseId = 100L)
+        val action = changeCounter(detectedNumberConditionId = oldConditionId)
+        val event = triggerEventWithActions(listOf(action))
+        val item = ItemWithMissingReferences.ActionItem(item = action, missingReferences = emptyList())
+        val missingRef = MissingCopyReference.ScreenConditionReference("Old Number", oldConditionId)
+        val replacement = mockk<ScreenCondition.Image>(relaxed = true)
+
+        val result = useCase(event, item, missingRef, replacement)
+
+        assertEquals(event, result)
+    }
+
     private fun triggerEventWithActions(actions: List<com.buzbuz.smartautoclicker.core.domain.model.action.Action>) = TriggerEvent(
         id = EVENT_ID,
         scenarioId = SCENARIO_ID,
@@ -140,6 +173,16 @@ class ReplaceMissingScreenConditionReferenceUseCaseTest {
         positionType = Click.PositionType.ON_DETECTED_CONDITION,
         clickOnConditionId = clickOnConditionId,
         pressDuration = 100L,
+    )
+
+    private fun changeCounter(detectedNumberConditionId: Identifier?) = ChangeCounter(
+        id = ACTION_ID,
+        eventId = EVENT_ID,
+        priority = 0,
+        counterName = "growthDifference",
+        operation = ChangeCounter.OperationType.ABS_DIFF,
+        operationValue = CounterOperationValue.Number(0.0),
+        detectedNumberConditionId = detectedNumberConditionId,
     )
 
     private companion object {

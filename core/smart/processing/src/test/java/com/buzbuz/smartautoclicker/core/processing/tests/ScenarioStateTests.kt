@@ -35,6 +35,15 @@ import org.robolectric.annotation.Config
 class ScenarioStateTests {
 
     @Test
+    fun getEvent_returnsDisabledEventForSubflowExecution() {
+        val disabledEvent = ProcessingData.newEvent(id = 42L, enableOnStart = false)
+        val scenarioState = EventsState(listOf(disabledEvent), emptyList())
+
+        Assert.assertEquals(disabledEvent, scenarioState.getEvent(disabledEvent.getDatabaseId()))
+        Assert.assertFalse(scenarioState.isEventEnabled(disabledEvent.getDatabaseId()))
+    }
+
+    @Test
     fun all_events_enabled_on_start() {
         val eventList = listOf(
             ProcessingData.newEvent(id = 1L, enableOnStart = true),

@@ -129,6 +129,33 @@ class ActionMapperTests {
     }
 
     @Test
+    fun changeCounter_detectedNumberAndAbsoluteDifference_roundTrip() {
+        val conditionId = 987L
+        val domain = ActionTestsData.getNewChangeCounter(
+            eventId = ActionTestsData.ACTION_EVENT_ID,
+            operation = ChangeCounter.OperationType.ABS_DIFF,
+            detectedNumberConditionId = conditionId,
+        )
+
+        assertEquals(
+            ActionTestsData.getNewChangeCounterEntity(
+                eventId = ActionTestsData.ACTION_EVENT_ID,
+                operation = ChangeCounter.OperationType.ABS_DIFF,
+                detectedNumberConditionId = conditionId,
+            ).action,
+            domain.toEntity(),
+        )
+        assertEquals(
+            domain,
+            ActionTestsData.getNewChangeCounterEntity(
+                eventId = ActionTestsData.ACTION_EVENT_ID,
+                operation = ChangeCounter.OperationType.ABS_DIFF,
+                detectedNumberConditionId = conditionId,
+            ).toDomain(),
+        )
+    }
+
+    @Test
     fun notification_toEntity() {
         assertEquals(
             ActionTestsData.getNewNotificationEntity(eventId = ActionTestsData.ACTION_EVENT_ID).action,

@@ -129,6 +129,76 @@ class GetActionMissingReferencesUseCaseTest {
         assertTrue(result.missingReferences.contains(MissingCopyReference.CounterReference(COUNTER_VALUE_NAME)))
     }
 
+    @Test
+    fun `change counter with number condition in its own event has no missing references`() = runTest {
+        val conditionId = Identifier(databaseId = 100L)
+        val condition = mockk<ScreenCondition.Number>(relaxed = true) {
+            every { id } returns conditionId
+        }
+        val event = mockk<ScreenEvent>(relaxed = true) {
+            every { id } returns EVENT_ID
+            every { conditions } returns listOf(condition)
+        }
+        every { mockEditionState.getCounter(COUNTER_NAME) } returns mockk<Counter>()
+        every { mockEditionState.getAllEditedEvents() } returns listOf(event)
+
+        val result = useCase(
+            changeCounter(
+                counterName = COUNTER_NAME,
+                operationValue = CounterOperationValue.Number(0.0),
+                detectedNumberConditionId = conditionId,
+            )
+        )
+
+        assertActionItem(result, expectedMissingCount = 0)
+    }
+
+    @Test
+    fun `change counter with missing number condition has one screen condition reference`() = runTest {
+        val conditionId = Identifier(databaseId = 100L)
+        every { mockEditionState.getCounter(COUNTER_NAME) } returns mockk<Counter>()
+        coEvery { mockSmartRepository.getConditionName(conditionId) } returns CONDITION_NAME
+
+        val result = useCase(
+            changeCounter(
+                counterName = COUNTER_NAME,
+                operationValue = CounterOperationValue.Number(0.0),
+                detectedNumberConditionId = conditionId,
+            )
+        )
+
+        assertActionItem(result, expectedMissingCount = 1)
+        assertEquals(
+            MissingCopyReference.ScreenConditionReference(CONDITION_NAME, conditionId),
+            result.missingReferences[0],
+        )
+    }
+
+    @Test
+    fun `change counter only accepts a number condition as detected value source`() = runTest {
+        val conditionId = Identifier(databaseId = 100L)
+        val imageCondition = mockk<ScreenCondition.Image>(relaxed = true) {
+            every { id } returns conditionId
+        }
+        val event = mockk<ScreenEvent>(relaxed = true) {
+            every { id } returns EVENT_ID
+            every { conditions } returns listOf(imageCondition)
+        }
+        every { mockEditionState.getCounter(COUNTER_NAME) } returns mockk<Counter>()
+        every { mockEditionState.getAllEditedEvents() } returns listOf(event)
+        coEvery { mockSmartRepository.getConditionName(conditionId) } returns CONDITION_NAME
+
+        val result = useCase(
+            changeCounter(
+                counterName = COUNTER_NAME,
+                operationValue = CounterOperationValue.Number(0.0),
+                detectedNumberConditionId = conditionId,
+            )
+        )
+
+        assertActionItem(result, expectedMissingCount = 1)
+    }
+
     // endregion
 
     // region Click
@@ -388,13 +458,18 @@ class GetActionMissingReferencesUseCaseTest {
         assertEquals(expectedMissingCount, result.missingReferences.size)
     }
 
-    private fun changeCounter(counterName: String, operationValue: CounterOperationValue) = ChangeCounter(
+    private fun changeCounter(
+        counterName: String,
+        operationValue: CounterOperationValue,
+        detectedNumberConditionId: Identifier? = null,
+    ) = ChangeCounter(
         id = ACTION_ID,
         eventId = EVENT_ID,
         priority = 0,
         counterName = counterName,
         operation = ChangeCounter.OperationType.SET,
         operationValue = operationValue,
+        detectedNumberConditionId = detectedNumberConditionId,
     )
 
     private fun notification(messageText: String) = Notification(

@@ -32,11 +32,15 @@ internal fun ToggleEvent.getDescription(context: Context, inError: Boolean): Str
         ToggleEvent.ToggleType.ENABLE -> context.getString(R.string.item_toggle_event_details_enable_all)
         ToggleEvent.ToggleType.TOGGLE -> context.getString(R.string.item_toggle_event_details_invert_all)
         ToggleEvent.ToggleType.DISABLE -> context.getString(R.string.item_toggle_event_details_disable_all)
+        ToggleEvent.ToggleType.EXECUTE_ONCE -> throw IllegalArgumentException("Execute once can't target all events")
         null -> throw IllegalArgumentException("Invalid toggle event type")
     }
 
-    else -> context.getString(
-        R.string.item_toggle_event_details_manual,
-        eventToggles.size,
-    )
+    eventToggles.isNotEmpty() && eventToggles.all { it.toggleType == ToggleEvent.ToggleType.EXECUTE_ONCE } ->
+        context.getString(R.string.item_toggle_event_details_subflows, eventToggles.size)
+
+    eventToggles.any { it.toggleType == ToggleEvent.ToggleType.EXECUTE_ONCE } ->
+        context.getString(R.string.item_toggle_event_details_mixed, eventToggles.size)
+
+    else -> context.getString(R.string.item_toggle_event_details_manual, eventToggles.size)
 }

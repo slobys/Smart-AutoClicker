@@ -41,6 +41,13 @@
         tools:ignore="AlwaysShowAction"/>
 
     <item
+        android:id="@+id/action_groups"
+        android:icon="@drawable/ic_folder_add"
+        app:showAsAction="ifRoom"
+        android:title="@string/menu_item_title_manage_groups"
+        android:visible="false" />
+
+    <item
         android:id="@+id/action_search"
         android:icon="@drawable/abc_ic_search_api_material"
         app:showAsAction="always|collapseActionView"

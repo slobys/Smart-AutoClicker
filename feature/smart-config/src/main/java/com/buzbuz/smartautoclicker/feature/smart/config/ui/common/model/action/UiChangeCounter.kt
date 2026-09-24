@@ -36,6 +36,8 @@ internal fun ChangeCounter.getDescription(context: Context, inError: Boolean): S
             ChangeCounter.OperationType.ADD -> "+"
             ChangeCounter.OperationType.MINUS -> "-"
             ChangeCounter.OperationType.SET -> "="
+            ChangeCounter.OperationType.ABS_DIFF -> "|−|"
         },
-        operationValue.toNaturalDisplayString(),
+        if (detectedNumberConditionId != null) context.getString(R.string.operand_detected_number)
+        else operationValue.toNaturalDisplayString(),
     )

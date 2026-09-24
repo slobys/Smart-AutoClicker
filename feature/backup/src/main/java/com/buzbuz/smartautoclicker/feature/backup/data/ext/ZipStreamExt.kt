@@ -17,7 +17,8 @@
 package com.buzbuz.smartautoclicker.feature.backup.data.ext
 
 import java.io.File
-import java.util.zip.ZipInputStream
+import java.io.IOException
+import java.io.InputStream
 import java.util.zip.ZipOutputStream
 
 /**
@@ -34,8 +35,13 @@ internal fun ZipOutputStream.writeEntryFile(entry: File) {
  * Read a file into from this zip stream.
  * @param output the file to put the content into.
  */
-internal fun ZipInputStream.readAndCopyEntryFile(output: File) =
-    output.outputStream().use { outputStream ->
-        copyTo(outputStream)
+internal fun InputStream.readAndCopyEntryFile(output: File) {
+    try {
+        output.outputStream().use { outputStream ->
+            copyTo(outputStream)
+        }
+    } catch (ioEx: IOException) {
+        output.delete()
+        throw ioEx
     }
-    
+}

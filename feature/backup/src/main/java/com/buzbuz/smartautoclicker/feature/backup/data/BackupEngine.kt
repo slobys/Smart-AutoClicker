@@ -24,6 +24,8 @@ import android.util.Log
 import com.buzbuz.smartautoclicker.core.database.entity.CompleteScenario
 import com.buzbuz.smartautoclicker.core.dumb.data.database.DumbScenarioWithActions
 import com.buzbuz.smartautoclicker.feature.backup.data.dumb.DumbBackupDataSource
+import com.buzbuz.smartautoclicker.feature.backup.data.ext.BackupSizeLimitExceededException
+import com.buzbuz.smartautoclicker.feature.backup.data.ext.SizeLimitedInputStream
 import com.buzbuz.smartautoclicker.feature.backup.data.smart.SmartBackupDataSource
 
 import kotlinx.coroutines.Dispatchers
@@ -113,6 +115,8 @@ internal class BackupEngine(appDataDir: File, private val contentResolver: Conte
         smartBackupDataSource.reset()
 
         var currentProgress = 0
+        var entryCount = 0
+        var totalUncompressedBytes = 0L
         progress.onProgressChanged(currentProgress, null)
 
         withContext(Dispatchers.IO) {
@@ -122,16 +126,35 @@ internal class BackupEngine(appDataDir: File, private val contentResolver: Conte
                         .forEach { zipEntry ->
                             if (zipEntry.isDirectory) return@forEach
 
+                            entryCount++
+                            if (entryCount > MAX_BACKUP_ENTRY_COUNT) {
+                                throw BackupSizeLimitExceededException("Backup contains too many entries")
+                            }
+                            if (zipEntry.size > MAX_BACKUP_ENTRY_UNCOMPRESSED_BYTES) {
+                                throw BackupSizeLimitExceededException("Backup entry is too large: ${zipEntry.name}")
+                            }
+
+                            val limitedEntryStream = SizeLimitedInputStream(
+                                source = zipStream,
+                                maxBytes = MAX_BACKUP_ENTRY_UNCOMPRESSED_BYTES,
+                                onBytesRead = { count ->
+                                    totalUncompressedBytes += count
+                                    if (totalUncompressedBytes > MAX_BACKUP_TOTAL_UNCOMPRESSED_BYTES) {
+                                        throw BackupSizeLimitExceededException("Backup uncompressed content is too large")
+                                    }
+                                },
+                            )
+
                             Log.d(TAG, "Extracting file ${zipEntry.name}")
                             when {
-                                dumbBackupDataSource.extractFromZip(zipStream, zipEntry.name) -> {
+                                dumbBackupDataSource.extractFromZip(limitedEntryStream, zipEntry.name) -> {
                                     Log.d(TAG, "Dumb scenario file ${zipEntry.name} extracted.")
 
                                     currentProgress++
                                     progress.onProgressChanged(currentProgress, null)
                                 }
 
-                                smartBackupDataSource.extractFromZip(zipStream, zipEntry.name) -> {
+                                smartBackupDataSource.extractFromZip(limitedEntryStream, zipEntry.name) -> {
                                     if (smartBackupDataSource.isScenarioBackupFileZipEntry(zipEntry.name)) {
                                         Log.d(TAG, "Smart scenario file ${zipEntry.name} extracted")
 
@@ -142,6 +165,11 @@ internal class BackupEngine(appDataDir: File, private val contentResolver: Conte
 
                                 else -> Log.w(TAG, "Nothing found to handle zip entry ${zipEntry.name}")
                             }
+
+                            // Always consume the complete entry through the limiter. Some entries can be skipped
+                            // because their local file already exists, and unknown future entries must still count
+                            // toward the archive limits instead of bypassing zip-bomb protection.
+                            limitedEntryStream.consumeRemaining()
                         }
                 }
 
@@ -177,3 +205,13 @@ internal class BackupEngine(appDataDir: File, private val contentResolver: Conte
 
 /** Tag for logs. */
 private const val TAG = "BackupEngine"
+private const val MAX_BACKUP_ENTRY_COUNT = 4096
+private const val MAX_BACKUP_ENTRY_UNCOMPRESSED_BYTES = 16L * 1024L * 1024L
+private const val MAX_BACKUP_TOTAL_UNCOMPRESSED_BYTES = 128L * 1024L * 1024L
+
+private fun SizeLimitedInputStream.consumeRemaining() {
+    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+    while (read(buffer) >= 0) {
+        // Reading through the size-limited stream is the required work here.
+    }
+}

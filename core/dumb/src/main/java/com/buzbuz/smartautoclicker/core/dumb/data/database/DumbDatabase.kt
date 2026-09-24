@@ -34,6 +34,7 @@ import javax.inject.Singleton
     exportSchema = true,
     autoMigrations = [
         AutoMigration (from = 1, to = 2),
+        AutoMigration (from = 2, to = 3),
     ]
 )
 @TypeConverters(
@@ -47,4 +48,4 @@ abstract class DumbDatabase : RoomDatabase() {
 }
 
 /** Current version of the database. */
-const val DUMB_DATABASE_VERSION = 2
+const val DUMB_DATABASE_VERSION = 3

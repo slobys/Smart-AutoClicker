@@ -492,12 +492,16 @@ class EditedItemsBuilder internal constructor(
 
     private fun createNewChangeCounterFrom(from: ChangeCounter, eventId: Identifier): ChangeCounter {
         val actionId = actionsIdCreator.generateNewIdentifier()
+        val detectedNumberConditionId = from.detectedNumberConditionId?.let { conditionId ->
+            eventCopyConditionIdMap[conditionId] ?: conditionId
+        }
 
         return from.copy(
             id = actionId,
             eventId = eventId,
             name = "" + from.name,
             counterName = "" + from.counterName,
+            detectedNumberConditionId = detectedNumberConditionId,
         )
     }
 

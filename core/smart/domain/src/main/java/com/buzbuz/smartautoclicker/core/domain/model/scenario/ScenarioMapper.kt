@@ -35,6 +35,8 @@ internal fun Scenario.toEntity() = ScenarioEntity(
     randomize = randomize,
     keepScreenOn = keepScreenOn,
     computeRate = computeRate,
+    isFavorite = isFavorite,
+    groupName = groupName,
 )
 
 /** @return the scenario for this entity. */
@@ -47,6 +49,8 @@ internal fun ScenarioWithEvents.toDomain(asDomain: Boolean = false) = Scenario(
     keepScreenOn = scenario.keepScreenOn,
     eventCount = events.size,
     stats = stats.toDomain(),
+    isFavorite = scenario.isFavorite,
+    groupName = scenario.groupName,
 )
 
 /** @return the scenario for this entity. */
@@ -65,6 +69,8 @@ private fun ScenarioEntity.toDomain(cleanIds: Boolean = false) = Scenario(
     randomize = randomize,
     keepScreenOn = keepScreenOn,
     computeRate = computeRate,
+    isFavorite = isFavorite,
+    groupName = groupName,
 )
 
 private fun ScenarioStatsEntity?.toDomain() =

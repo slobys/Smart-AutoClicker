@@ -37,6 +37,7 @@ import com.buzbuz.smartautoclicker.core.ui.bindings.fields.setOnTextChangedListe
 import com.buzbuz.smartautoclicker.core.ui.bindings.fields.setText
 import com.buzbuz.smartautoclicker.core.common.overlays.base.viewModels
 import com.buzbuz.smartautoclicker.core.common.overlays.dialog.OverlayDialog
+import com.buzbuz.smartautoclicker.core.common.overlays.manager.OverlayManager.Companion.showAsOverlay
 import com.buzbuz.smartautoclicker.core.ui.bindings.dialogs.DialogNavigationButton
 import com.buzbuz.smartautoclicker.core.ui.utils.MinMaxInputFilter
 import com.buzbuz.smartautoclicker.feature.smart.config.R
@@ -46,6 +47,7 @@ import com.buzbuz.smartautoclicker.feature.smart.config.ui.action.OnActionConfig
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.dialogs.showCloseWithoutSavingDialog
 
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 import kotlinx.coroutines.launch
 import com.buzbuz.smartautoclicker.core.common.tutorial.domain.model.monitoring.MonitoredOverlayType
@@ -104,6 +106,34 @@ class PauseDialog(
                 items = timeUnitDropdownItems,
                 onItemSelected = viewModel::setTimeUnit,
             )
+
+            waitModeField.setItems(
+                label = context.getString(R.string.pause_wait_mode_label),
+                items = pauseWaitModeItems,
+                onItemSelected = viewModel::setWaitMode,
+            )
+            timeoutBehaviorField.setItems(
+                label = context.getString(R.string.pause_timeout_behavior_label),
+                items = pauseTimeoutItems,
+                onItemSelected = viewModel::setTimeoutBehavior,
+            )
+            maxRetriesField.apply {
+                setLabel(R.string.pause_max_retries_label)
+                textField.filters = arrayOf(MinMaxInputFilter(min = 0, max = 20))
+                setOnTextChangedListener { viewModel.setMaxRetries(it.toString().toIntOrNull()) }
+            }
+            confirmationFramesField.apply {
+                setLabel(R.string.pause_confirmation_frames_label)
+                textField.filters = arrayOf(MinMaxInputFilter(min = 1, max = 10))
+                setOnTextChangedListener { viewModel.setConfirmationFrames(it.toString().toIntOrNull()) }
+            }
+            changeThresholdField.apply {
+                setLabel(R.string.pause_change_threshold_label)
+                textField.filters = arrayOf(MinMaxInputFilter(min = 1, max = 100))
+                setOnTextChangedListener { viewModel.setChangeThreshold(it.toString().toIntOrNull()) }
+            }
+            buttonWaitTargetEvent.setOnClickListener { showWaitTargetEventPicker() }
+            buttonFallbackEvent.setOnClickListener { showFallbackEventPicker() }
         }
 
         return viewBinding.root
@@ -122,6 +152,18 @@ class PauseDialog(
                 launch { viewModel.pauseDuration.collect(::updatePauseDuration) }
                 launch { viewModel.pauseDurationError.collect(viewBinding.editPauseDurationLayout::setError)}
                 launch { viewModel.selectedUnitItem.collect(viewBinding.timeUnitField::setSelectedItem) }
+                launch { viewModel.waitModeItem.collect(viewBinding.waitModeField::setSelectedItem) }
+                launch { viewModel.timeoutItem.collect(viewBinding.timeoutBehaviorField::setSelectedItem) }
+                launch { viewModel.isSmartWait.collect(::updateSmartWaitVisibility) }
+                launch { viewModel.showRetries.collect { viewBinding.maxRetriesField.root.visibility = if (it) View.VISIBLE else View.GONE } }
+                launch { viewModel.showFallback.collect { viewBinding.buttonFallbackEvent.visibility = if (it) View.VISIBLE else View.GONE } }
+                launch { viewModel.showScreenComparison.collect { viewBinding.changeThresholdField.root.visibility = if (it) View.VISIBLE else View.GONE } }
+                launch { viewModel.showWaitTarget.collect { viewBinding.buttonWaitTargetEvent.visibility = if (it) View.VISIBLE else View.GONE } }
+                launch { viewModel.maxRetries.collect { viewBinding.maxRetriesField.setText(it, InputType.TYPE_CLASS_NUMBER) } }
+                launch { viewModel.confirmationFrames.collect { viewBinding.confirmationFramesField.setText(it, InputType.TYPE_CLASS_NUMBER) } }
+                launch { viewModel.changeThreshold.collect { viewBinding.changeThresholdField.setText(it, InputType.TYPE_CLASS_NUMBER) } }
+                launch { viewModel.fallbackEventName.collect { viewBinding.buttonFallbackEvent.text = it ?: context.getString(R.string.pause_select_fallback_event) } }
+                launch { viewModel.waitTargetEventName.collect { viewBinding.buttonWaitTargetEvent.text = it ?: context.getString(R.string.pause_select_wait_target_event) } }
                 launch { viewModel.isValidAction.collect(::updateSaveButton) }
             }
         }
@@ -161,6 +203,38 @@ class PauseDialog(
 
     private fun updateSaveButton(isValidCondition: Boolean) {
         viewBinding.layoutTopBar.setButtonEnabledState(DialogNavigationButton.SAVE, isValidCondition)
+    }
+
+    private fun updateSmartWaitVisibility(isSmartWait: Boolean) {
+        val visibility = if (isSmartWait) View.VISIBLE else View.GONE
+        viewBinding.timeoutBehaviorField.root.visibility = visibility
+        viewBinding.confirmationFramesField.root.visibility = visibility
+    }
+
+    private fun showFallbackEventPicker() {
+        val events = viewModel.getFallbackEvents()
+        if (events.isEmpty()) return
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.pause_select_fallback_event)
+            .setItems(events.map { it.name }.toTypedArray()) { _, index ->
+                viewModel.setFallbackEvent(events[index])
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .create()
+            .showAsOverlay()
+    }
+
+    private fun showWaitTargetEventPicker() {
+        val events = viewModel.getWaitTargetEvents()
+        if (events.isEmpty()) return
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.pause_select_wait_target_event)
+            .setItems(events.map { it.name }.toTypedArray()) { _, index ->
+                viewModel.setWaitTargetEvent(events[index])
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .create()
+            .showAsOverlay()
     }
 
     private fun onActionEditingStateChanged(isEditingAction: Boolean) {

@@ -43,6 +43,7 @@
     <string name="menu_item_title_select_all">تحديد الكل</string>
     <string name="menu_item_title_cancel">إلغاء</string>
     <string name="menu_item_title_search">بحث</string>
+    <string name="menu_item_title_manage_groups">إدارة المجموعات</string>
     <string name="menu_item_title_settings">الإعدادات</string>
 
     <string name="item_scenario_filter_by_name">الاسم</string>
@@ -179,4 +180,18 @@
     <string name="field_overlay_menu_auto_collapse_desc">حافظ على وضوح الشاشة بتصغير شريط التحكم إلى أيقونة واحدة بعد فترة خمول قصيرة.</string>
     <string name="field_overlay_menu_auto_collapse_delay_title">مهلة طي عناصر التحكم العائمة</string>
     <string name="field_overlay_menu_auto_collapse_delay_value">%1$d ثوانٍ</string>
+    <string name="content_desc_scenario_favorite">إضافة السيناريو إلى المفضلة أو إزالته منها</string>
+    <string name="item_scenario_group_ungrouped">غير مصنف</string>
+    <string name="dialog_title_scenario_group">مجموعة السيناريو</string>
+    <string name="field_scenario_group_name">اسم المجموعة</string>
+    <string name="button_clear_group">إزالة من المجموعة</string>
+    <string name="dialog_title_create_scenario_group">إنشاء مجموعة</string>
+    <string name="dialog_title_edit_scenario_group">تحرير المجموعة</string>
+    <string name="message_scenario_group_selection_count">تم تحديد %1$d من السيناريوهات</string>
+    <string name="error_scenario_group_name_required">أدخل اسم المجموعة</string>
+    <string name="error_scenario_group_selection_required">حدد سيناريو واحدًا على الأقل</string>
+    <string name="button_delete_scenario_group">إلغاء تجميع الكل</string>
+    <string name="content_desc_manage_scenario_group">تحرير المجموعة واختيار السيناريوهات</string>
+    <string name="content_desc_collapse_scenario_group">طي المجموعة</string>
+    <string name="content_desc_expand_scenario_group">توسيع المجموعة</string>
 </resources>

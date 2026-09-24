@@ -24,4 +24,7 @@
     <dimen name="overlay_brief_item_height_land">256dp</dimen>
 
     <dimen name="item_brief_height">80dp</dimen>
+
+    <!-- Only this thin handle remains visible when the floating menu is tucked into a screen edge. -->
+    <dimen name="overlay_menu_collapsed_handle_visible_width">24dp</dimen>
 </resources>

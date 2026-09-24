@@ -18,6 +18,7 @@ package com.buzbuz.smartautoclicker.feature.smart.config.ui.action.changecounter
 
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.model.counter.UiCounterOperatorDropdownItem
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.model.counter.UiStaticOrCounterSelection
+import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.model.condition.UiScreenCondition
 
 data class ChangeCounterUiState(
     val canBeSaved: Boolean,
@@ -27,5 +28,6 @@ data class ChangeCounterUiState(
     val counter: UiStaticOrCounterSelection.CounterValue,
     val operator: UiCounterOperatorDropdownItem,
     val operandValue: UiStaticOrCounterSelection,
+    val availableNumberConditions: List<UiScreenCondition>,
     val actionEffectText: String,
 )

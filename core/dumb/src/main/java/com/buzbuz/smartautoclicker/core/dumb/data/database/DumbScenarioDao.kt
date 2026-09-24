@@ -81,6 +81,13 @@ interface DumbScenarioDao {
     @Update
     suspend fun updateDumbScenario(dumbScenario: DumbScenarioEntity)
 
+    /** Update list organization metadata without rewriting the scenario actions. */
+    @Query(
+        "UPDATE dumb_scenario_table SET is_favorite = :isFavorite, group_name = :groupName " +
+            "WHERE id = :scenarioId"
+    )
+    suspend fun updateOrganization(scenarioId: Long, isFavorite: Boolean, groupName: String)
+
     /**
      * Delete the provided click scenario from the database.
      *

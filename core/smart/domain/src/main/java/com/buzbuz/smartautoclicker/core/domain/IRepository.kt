@@ -95,6 +95,9 @@ interface IRepository {
      */
     suspend fun updateScenario(scenario: Scenario, events: List<Event>, counters: List<Counter>): Boolean
 
+    /** Update the favorite and group metadata shown by the scenario library. */
+    suspend fun updateScenarioOrganization(scenarioId: Long, isFavorite: Boolean, groupName: String)
+
     /**
      * Delete a scenario.
      * This will delete all of its actions and conditions as well. All associated bitmaps will be removed in unused.

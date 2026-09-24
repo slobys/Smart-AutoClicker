@@ -85,6 +85,7 @@ class DumbScenarioDataSource @Inject constructor(
                 scenarioWithActions.scenario.copy(
                     id = DATABASE_ID_INSERTION,
                     name = copyName ?: scenarioWithActions.scenario.name,
+                    isFavorite = false,
                 )
             )
 
@@ -131,6 +132,10 @@ class DumbScenarioDataSource @Inject constructor(
 
         dumbScenarioDao.updateDumbScenario(scenarioEntity)
         updateDumbScenarioActions(scenarioEntity.id, scenario.dumbActions)
+    }
+
+    suspend fun updateScenarioOrganization(scenarioId: Long, isFavorite: Boolean, groupName: String) {
+        dumbScenarioDao.updateOrganization(scenarioId, isFavorite, groupName)
     }
 
     private suspend fun updateDumbScenarioActions(scenarioDbId: Long, actions: List<DumbAction>) {

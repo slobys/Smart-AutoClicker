@@ -64,6 +64,7 @@ class EventTogglesViewModel @Inject constructor(
                     .forEach { event ->
                         val item = event.toEventTogglesListItems(
                             toggleState = modifications[event]?.second,
+                            callerEvent = editionRepository.editionState.getEditedEvent(),
                         )
 
                         when (event) {
@@ -123,12 +124,16 @@ class EventTogglesViewModel @Inject constructor(
             }
         }
 
-    private fun Event.toEventTogglesListItems(toggleState: ToggleEvent.ToggleType?) =
+    private fun Event.toEventTogglesListItems(
+        toggleState: ToggleEvent.ToggleType?,
+        callerEvent: Event?,
+    ) =
         EventTogglesListItem.Item(
             event = this,
             actionsCount = actions.size,
             conditionsCount = conditions.size,
             toggleState = toggleState,
+            canExecuteOnce = id != callerEvent?.id,
         )
 
     private fun MutableMap<Event, Pair<Identifier?, ToggleEvent.ToggleType?>>.findAndPutToggleState(
@@ -151,5 +156,6 @@ sealed class EventTogglesListItem {
         val actionsCount: Int,
         val conditionsCount: Int,
         val toggleState: ToggleEvent.ToggleType?,
+        val canExecuteOnce: Boolean,
     ) : EventTogglesListItem()
 }

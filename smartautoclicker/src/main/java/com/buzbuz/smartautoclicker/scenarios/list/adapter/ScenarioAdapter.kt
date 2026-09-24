@@ -27,6 +27,7 @@ import com.buzbuz.smartautoclicker.R
 import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
 import com.buzbuz.smartautoclicker.databinding.ItemDumbScenarioBinding
 import com.buzbuz.smartautoclicker.databinding.ItemEmptyScenarioBinding
+import com.buzbuz.smartautoclicker.databinding.ItemScenarioGroupHeaderBinding
 import com.buzbuz.smartautoclicker.databinding.ItemOrderingAndFilteringBinding
 import com.buzbuz.smartautoclicker.databinding.ItemSmartScenarioBinding
 import com.buzbuz.smartautoclicker.scenarios.list.model.ScenarioListUiState
@@ -48,6 +49,10 @@ class ScenarioAdapter(
     private val exportClickListener: ((ScenarioListUiState.Item.ScenarioItem) -> Unit),
     private val copyClickedListener: ((ScenarioListUiState.Item.ScenarioItem.Valid) -> Unit),
     private val deleteScenarioListener: ((ScenarioListUiState.Item.ScenarioItem) -> Unit),
+    private val favoriteClickedListener: ((ScenarioListUiState.Item.ScenarioItem) -> Unit),
+    private val groupClickedListener: ((ScenarioListUiState.Item.ScenarioItem) -> Unit),
+    private val groupHeaderClickedListener: ((ScenarioListUiState.Item.GroupHeader) -> Unit),
+    private val groupManageClickedListener: ((ScenarioListUiState.Item.GroupHeader) -> Unit),
     private val onSortTypeClicked: (ScenarioSortType) -> Unit,
     private val onSmartChipClicked: (Boolean) -> Unit,
     private val onDumbChipClicked: (Boolean) -> Unit,
@@ -60,6 +65,7 @@ class ScenarioAdapter(
             is ScenarioListUiState.Item.ScenarioItem.Valid.Dumb -> R.layout.item_dumb_scenario
             is ScenarioListUiState.Item.ScenarioItem.Valid.Smart -> R.layout.item_smart_scenario
             is ScenarioListUiState.Item.SortItem -> R.layout.item_ordering_and_filtering
+            is ScenarioListUiState.Item.GroupHeader -> R.layout.item_scenario_group_header
         }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
@@ -68,6 +74,8 @@ class ScenarioAdapter(
                 viewBinding = ItemEmptyScenarioBinding.inflate(LayoutInflater.from(parent.context), parent, false),
                 startScenarioListener = startScenarioListener,
                 deleteScenarioListener = deleteScenarioListener,
+                favoriteClickedListener = favoriteClickedListener,
+                groupClickedListener = groupClickedListener,
             )
 
             R.layout.item_dumb_scenario -> DumbScenarioViewHolder(
@@ -77,6 +85,8 @@ class ScenarioAdapter(
                 exportClickListener = exportClickListener,
                 copyClickedListener = copyClickedListener,
                 deleteScenarioListener = deleteScenarioListener,
+                favoriteClickedListener = favoriteClickedListener,
+                groupClickedListener = groupClickedListener,
             )
 
             R.layout.item_smart_scenario -> SmartScenarioViewHolder(
@@ -87,6 +97,8 @@ class ScenarioAdapter(
                 exportClickListener = exportClickListener,
                 copyClickedListener = copyClickedListener,
                 deleteScenarioListener = deleteScenarioListener,
+                favoriteClickedListener = favoriteClickedListener,
+                groupClickedListener = groupClickedListener,
             )
 
             R.layout.item_ordering_and_filtering -> SortViewHolder(
@@ -97,13 +109,21 @@ class ScenarioAdapter(
                 onSortOrderClicked = onSortOrderClicked,
             )
 
+            R.layout.item_scenario_group_header -> ScenarioGroupHeaderViewHolder(
+                viewBinding = ItemScenarioGroupHeaderBinding.inflate(LayoutInflater.from(parent.context), parent, false),
+                collapseClickedListener = groupHeaderClickedListener,
+                manageClickedListener = groupManageClickedListener,
+            )
+
             else -> throw IllegalArgumentException("Unsupported view type !")
         }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val layoutParams = holder.itemView.layoutParams
         if (layoutParams is androidx.recyclerview.widget.StaggeredGridLayoutManager.LayoutParams) {
-            layoutParams.isFullSpan = holder is SortViewHolder || holder is EmptyScenarioHolder
+            layoutParams.isFullSpan = holder is SortViewHolder ||
+                holder is EmptyScenarioHolder ||
+                holder is ScenarioGroupHeaderViewHolder
         }
 
         when (holder) {
@@ -111,6 +131,8 @@ class ScenarioAdapter(
             is DumbScenarioViewHolder -> holder.onBind(getItem(position) as ScenarioListUiState.Item.ScenarioItem.Valid.Dumb)
             is SmartScenarioViewHolder -> holder.onBind(getItem(position) as ScenarioListUiState.Item.ScenarioItem.Valid.Smart)
             is SortViewHolder -> holder.onBind(getItem(position) as ScenarioListUiState.Item.SortItem)
+            is ScenarioGroupHeaderViewHolder ->
+                holder.onBind(getItem(position) as ScenarioListUiState.Item.GroupHeader)
         }
     }
 
@@ -133,6 +155,8 @@ object ScenarioDiffUtilCallback: DiffUtil.ItemCallback<ScenarioListUiState.Item>
             oldItem is ScenarioListUiState.Item.ScenarioItem.Valid.Smart && newItem is ScenarioListUiState.Item.ScenarioItem.Valid.Smart ->
                 oldItem.scenario.id == newItem.scenario.id
             oldItem is ScenarioListUiState.Item.SortItem && newItem is ScenarioListUiState.Item.SortItem -> true
+            oldItem is ScenarioListUiState.Item.GroupHeader && newItem is ScenarioListUiState.Item.GroupHeader ->
+                oldItem.groupName == newItem.groupName
             else -> false
         }
 

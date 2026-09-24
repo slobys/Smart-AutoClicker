@@ -38,6 +38,7 @@ import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
+import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import kotlin.time.Duration.Companion.milliseconds
@@ -52,6 +53,7 @@ class GestureExecutorTests {
         val service = mock(AccessibilityService::class.java)
         val executor = GestureExecutor()
         val callbackCaptor = ArgumentCaptor.forClass(GestureResultCallback::class.java)
+        `when`(service.dispatchGesture(any(), any(), any())).thenReturn(true)
 
         val result = async { executor.dispatchGesture(service, gesture()) }
         runCurrent()
@@ -66,6 +68,7 @@ class GestureExecutorTests {
     fun dispatchGesture_missingCallback_timesOut_andReturnsFalse() = runTest {
         val service = mock(AccessibilityService::class.java)
         val executor = GestureExecutor()
+        `when`(service.dispatchGesture(any(), any(), any())).thenReturn(true)
 
         val result = async { executor.dispatchGesture(service, gesture()) }
         runCurrent()
@@ -85,10 +88,22 @@ class GestureExecutorTests {
     }
 
     @Test
+    fun dispatchGesture_systemRejectsRequest_returnsFalseWithoutWaitingForCallbackTimeout() = runTest {
+        val service = mock(AccessibilityService::class.java)
+        `when`(service.dispatchGesture(any(), any(), any())).thenReturn(false)
+
+        val result = GestureExecutor().dispatchGesture(service, gesture())
+
+        assertFalse(result)
+        verify(service).dispatchGesture(any(), any(), any())
+    }
+
+    @Test
     fun dispatchGesture_lateCallbackAfterTimeout_doesNotCompleteNextGesture() = runTest {
         val service = mock(AccessibilityService::class.java)
         val executor = GestureExecutor()
         val callbackCaptor = ArgumentCaptor.forClass(GestureResultCallback::class.java)
+        `when`(service.dispatchGesture(any(), any(), any())).thenReturn(true)
 
         val timedOutResult = async { executor.dispatchGesture(service, gesture()) }
         runCurrent()

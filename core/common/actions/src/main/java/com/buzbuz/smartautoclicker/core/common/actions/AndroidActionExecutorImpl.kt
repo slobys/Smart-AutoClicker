@@ -24,6 +24,7 @@ import android.util.AndroidRuntimeException
 import android.util.Log
 
 import com.buzbuz.smartautoclicker.core.common.actions.gesture.GestureExecutor
+import com.buzbuz.smartautoclicker.core.common.actions.gesture.GestureDispatchResult
 import com.buzbuz.smartautoclicker.core.common.actions.model.ActionNotificationRequest
 import com.buzbuz.smartautoclicker.core.common.actions.notification.NotificationRequestExecutor
 import com.buzbuz.smartautoclicker.core.common.actions.text.TextExecutor
@@ -71,13 +72,30 @@ internal class AndroidActionExecutorImpl @Inject constructor(
         accessibilityServiceRef = null
     }
 
-    override suspend fun dispatchGesture(gestureDescription: GestureDescription) {
-        val service = accessibilityService ?: return
+    override suspend fun dispatchGesture(gestureDescription: GestureDescription): AndroidGestureResult {
+        val service = accessibilityService ?: return AndroidGestureResult.SERVICE_UNAVAILABLE
 
-        if (!gestureExecutor.dispatchGesture(service, gestureDescription)) {
-            Log.w(TAG, "System did not execute the gesture properly, delaying processing to avoid spamming slow system")
-            delay(500)
+        repeat(GESTURE_DISPATCH_MAX_ATTEMPTS) { attempt ->
+            when (gestureExecutor.dispatchGestureWithResult(service, gestureDescription)) {
+                GestureDispatchResult.COMPLETED -> return AndroidGestureResult.COMPLETED
+                GestureDispatchResult.CANCELLED -> {
+                    // A cancellation is commonly caused by a competing user/system gesture. Do not replay a
+                    // potentially destructive click or swipe after the screen state may have changed.
+                    delay(GESTURE_DISPATCH_CANCELLED_BACKOFF_MS)
+                    return AndroidGestureResult.CANCELLED
+                }
+                GestureDispatchResult.ERROR -> Unit
+            }
+
+            if (attempt < GESTURE_DISPATCH_MAX_ATTEMPTS - 1) {
+                Log.w(TAG, "System rejected gesture, retrying (${attempt + 1}/$GESTURE_DISPATCH_MAX_ATTEMPTS)")
+                delay(GESTURE_DISPATCH_RETRY_DELAY_MS)
+            }
         }
+
+        Log.w(TAG, "System did not execute the gesture after retries, backing off to avoid spamming a slow system")
+        delay(GESTURE_DISPATCH_FAILURE_BACKOFF_MS)
+        return AndroidGestureResult.REJECTED
     }
 
     override fun performGlobalAction(globalAction: Int) {
@@ -135,3 +153,7 @@ internal class AndroidActionExecutorImpl @Inject constructor(
 }
 
 private const val TAG = "ServiceActionExecutor"
+private const val GESTURE_DISPATCH_MAX_ATTEMPTS = 2
+private const val GESTURE_DISPATCH_RETRY_DELAY_MS = 120L
+private const val GESTURE_DISPATCH_CANCELLED_BACKOFF_MS = 120L
+private const val GESTURE_DISPATCH_FAILURE_BACKOFF_MS = 500L

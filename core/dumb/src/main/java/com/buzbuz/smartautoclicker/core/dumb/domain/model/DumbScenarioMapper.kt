@@ -35,6 +35,8 @@ internal fun DumbScenarioWithActions.toDomain(asDomain: Boolean = false): DumbSc
             .sortedBy { it.priority }
             .map { dumbAction -> dumbAction.toDomain(asDomain) },
         stats = stats.toDomain(),
+        isFavorite = scenario.isFavorite,
+        groupName = scenario.groupName,
     )
 
 internal fun DumbScenario.toEntity(): DumbScenarioEntity =
@@ -46,6 +48,8 @@ internal fun DumbScenario.toEntity(): DumbScenarioEntity =
         maxDurationMin = maxDurationMin,
         isDurationInfinite = isDurationInfinite,
         randomize = randomize,
+        isFavorite = isFavorite,
+        groupName = groupName,
     )
 
 

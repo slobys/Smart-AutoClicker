@@ -117,7 +117,14 @@ class ToggleEventDialog(
             }
 
             fieldSelectionToggles.apply {
-                setChildrenIcons(listOf(R.drawable.ic_confirm, R.drawable.ic_invert, R.drawable.ic_cancel))
+                setChildrenIcons(
+                    listOf(
+                        R.drawable.ic_confirm,
+                        R.drawable.ic_invert,
+                        R.drawable.ic_cancel,
+                        R.drawable.ic_play_arrow,
+                    )
+                )
                 setOnClickListener { debounceUserInteraction { showEventTogglesDialog() } }
             }
         }
@@ -205,7 +212,12 @@ class ToggleEventDialog(
             }
 
             setChildrenTexts(
-                listOf(state.enableCount.toString(), state.toggleCount.toString(), state.disableCount.toString())
+                listOf(
+                    state.enableCount.toString(),
+                    state.toggleCount.toString(),
+                    state.disableCount.toString(),
+                    state.executeOnceCount.toString(),
+                )
             )
         }
     }

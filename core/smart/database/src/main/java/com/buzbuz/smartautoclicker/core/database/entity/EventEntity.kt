@@ -56,6 +56,7 @@ import kotlinx.serialization.Serializable
  *                      the current screen frame. If false, stops and start over the event list with the next frame.
  * @param detectionCooldownMs only for [EventType.IMAGE_EVENT]. If >= 0 or null, cooldown is disabled. If > 0, event will be
  * ignored for the next detectionCooldownMs after being fulfilled.
+ * @param isBreakpoint if true, scenario execution pauses before this event executes its actions.
  */
 @Entity(
     tableName = EVENT_TABLE,
@@ -78,6 +79,7 @@ data class EventEntity(
     @ColumnInfo(name = "type") val type: EventType,
     @ColumnInfo(name = "keep_detecting") val keepDetecting: Boolean? = null,
     @ColumnInfo(name = "detecetion_cooldown_ms") val detectionCooldownMs: Long? = null,
+    @ColumnInfo(name = "is_breakpoint", defaultValue = "0") val isBreakpoint: Boolean = false,
 ) : EntityWithId
 
 /**

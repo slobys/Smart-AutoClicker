@@ -75,7 +75,15 @@ class ReplaceMissingScreenConditionReferenceUseCase @Inject constructor() {
                 return null
             }
 
-            is ChangeCounter,
+            is ChangeCounter -> {
+                if (detectedNumberConditionId == missingReference.conditionId && replacement is ScreenCondition.Number) {
+                    return copy(detectedNumberConditionId = replacement.id)
+                }
+
+                Log.e(TAG, "Can't replace missing number condition reference")
+                return null
+            }
+
             is Intent,
             is Notification,
             is Pause,

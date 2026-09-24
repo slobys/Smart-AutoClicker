@@ -19,6 +19,8 @@ package com.buzbuz.smartautoclicker.core.domain.model.action.mapper
 import com.buzbuz.smartautoclicker.core.database.entity.ActionEntity
 import com.buzbuz.smartautoclicker.core.database.entity.ActionType
 import com.buzbuz.smartautoclicker.core.database.entity.CounterOperationValueType
+import com.buzbuz.smartautoclicker.core.database.entity.PauseWaitMode
+import com.buzbuz.smartautoclicker.core.database.entity.PauseTimeoutBehavior
 import com.buzbuz.smartautoclicker.core.domain.model.counter.CounterOperationValue
 import com.buzbuz.smartautoclicker.core.domain.model.action.Action
 import com.buzbuz.smartautoclicker.core.domain.model.action.ChangeCounter
@@ -86,6 +88,13 @@ private fun Pause.toPauseEntity(): ActionEntity =
         name = name!!,
         type = ActionType.PAUSE,
         pauseDuration = pauseDuration,
+        pauseWaitMode = PauseWaitMode.valueOf(waitMode.name),
+        pauseWaitTargetEventId = waitTargetEventId?.databaseId,
+        pauseTimeoutBehavior = PauseTimeoutBehavior.valueOf(timeoutBehavior.name),
+        pauseMaxRetries = maxRetries,
+        pauseFallbackEventId = fallbackEventId?.databaseId,
+        pauseConfirmationFrames = confirmationFrames,
+        pauseChangeThresholdPercent = changeThresholdPercent,
     )
 
 private fun Intent.toIntentEntity(): ActionEntity =
@@ -127,6 +136,7 @@ private fun ChangeCounter.toChangeCounterEntity(): ActionEntity {
         counterOperationValueType = if (isNumberValue) CounterOperationValueType.NUMBER else CounterOperationValueType.COUNTER,
         counterOperationValue = if (isNumberValue) operationValue.value else null,
         counterOperationCounterName = if (isNumberValue) null else operationValue.value as String,
+        clickOnConditionId = detectedNumberConditionId?.databaseId,
     )
 }
 

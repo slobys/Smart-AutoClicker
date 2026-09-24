@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Stable semantic colours make compact runtime actions recognisable at a glance. -->
+    <color name="overlayQuickActionPause">#FFC857</color>
+    <color name="overlayQuickActionPositive">#69E58C</color>
+    <color name="overlayQuickActionWarning">#FFD166</color>
+    <color name="overlayQuickActionSwitch">#64B5F6</color>
+    <color name="overlayQuickActionStop">#FF6B6B</color>
+    <color name="overlayQuickActionMenu">#5CE1E6</color>
+</resources>

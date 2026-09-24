@@ -25,16 +25,20 @@ import android.view.ViewGroup
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.core.view.isVisible
 
 import com.buzbuz.smartautoclicker.core.ui.bindings.dialogs.DialogNavigationButton
 import com.buzbuz.smartautoclicker.core.ui.bindings.dialogs.setButtonEnabledState
 import com.buzbuz.smartautoclicker.core.ui.bindings.fields.setError
+import com.buzbuz.smartautoclicker.core.ui.bindings.fields.setDescription
 import com.buzbuz.smartautoclicker.core.ui.bindings.fields.setLabel
+import com.buzbuz.smartautoclicker.core.ui.bindings.fields.setTitle
 import com.buzbuz.smartautoclicker.core.ui.bindings.fields.setOnTextChangedListener
 import com.buzbuz.smartautoclicker.core.ui.bindings.fields.setText
 import com.buzbuz.smartautoclicker.core.common.overlays.base.viewModels
 import com.buzbuz.smartautoclicker.core.common.overlays.dialog.OverlayDialog
 import com.buzbuz.smartautoclicker.core.domain.model.counter.CounterOperationValue
+import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
 import com.buzbuz.smartautoclicker.feature.smart.config.R
 import com.buzbuz.smartautoclicker.feature.smart.config.databinding.DialogConfigActionChangeCounterBinding
 import com.buzbuz.smartautoclicker.feature.smart.config.di.ScenarioConfigViewModelsEntryPoint
@@ -46,7 +50,9 @@ import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.bindings.count
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.bindings.counter.setup
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.dialogs.showCloseWithoutSavingDialog
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.model.counter.allCounterAffectationOperatorDropdownItems
+import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.model.counter.UiStaticOrCounterSelection
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.counter.selection.CounterSelectionDialog
+import com.buzbuz.smartautoclicker.feature.smart.config.ui.condition.screen.selection.ScreenConditionSelectionDialog
 
 import com.google.android.material.bottomsheet.BottomSheetDialog
 
@@ -111,8 +117,14 @@ class ChangeCounterDialog(
                             viewModel.setOperationValue(CounterOperationValue.Counter(counterSelected))
                         }
                     },
+                    allowDetectedNumber = true,
                 )
                 hideSoftInputOnFocusLoss(staticValueLayout.textField)
+            }
+
+            detectedNumberSource.apply {
+                setTitle(context.getString(R.string.field_detected_number_source_title))
+                root.setDebouncedOnClickListener { showNumberConditionSelectionDialog() }
             }
         }
 
@@ -180,8 +192,29 @@ class ChangeCounterDialog(
             editValueLayout.setSelectedOperator(state.operator)
             editValueLayout.setValueInfo(state.operandValue)
 
+            val detectedNumberOperand = state.operandValue as? UiStaticOrCounterSelection.DetectedNumberValue
+            detectedNumberSourceCard.isVisible = detectedNumberOperand != null
+            detectedNumberSource.apply {
+                setDescription(
+                    detectedNumberOperand?.condition?.name
+                        ?: context.getString(R.string.field_detected_number_source_empty)
+                )
+                setError(detectedNumberOperand != null && detectedNumberOperand.condition == null)
+            }
+
             effectDesc.text = state.actionEffectText
         }
+    }
+
+    private fun showNumberConditionSelectionDialog() {
+        val conditions = viewModel.uiState.value?.availableNumberConditions ?: return
+        overlayManager.navigateTo(
+            context = context,
+            newOverlay = ScreenConditionSelectionDialog(conditions) { condition ->
+                (condition as? ScreenCondition.Number)?.let(viewModel::setDetectedNumberCondition)
+            },
+            hideCurrent = true,
+        )
     }
 
     private fun showCounterSelectionDialog(onCounterSelected: (String) -> Unit) {

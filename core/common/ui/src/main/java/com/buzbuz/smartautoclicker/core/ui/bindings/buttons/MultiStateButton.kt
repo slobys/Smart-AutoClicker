@@ -24,7 +24,7 @@ import com.google.android.material.button.MaterialButtonToggleGroup
 /**
  * Configuration for the button represented by [IncludeButtonMultiStateBinding].
  *
- * @param icons the icons in the buttons. Must contains 2 or 3 elements.
+ * @param icons the icons in the buttons. Must contains 2 to 4 elements.
  * @param selectionRequired true to force a button to be selected, false to allow null selection.
  * @param singleSelection true to allow multiple buttons selections, false to allow only one.
  */
@@ -36,7 +36,7 @@ data class MultiStateButtonConfig(
 
 
 fun IncludeButtonMultiStateBinding.setup(state: MultiStateButtonConfig) {
-    if (state.icons.size !in 2..3) throw IllegalArgumentException("Button should have 2 or 3 entries")
+    if (state.icons.size !in 2..4) throw IllegalArgumentException("Button should have 2 to 4 entries")
 
     buttonLeft.icon = ContextCompat.getDrawable(root.context, state.icons[0])
     buttonMiddle.icon = ContextCompat.getDrawable(root.context, state.icons[1])
@@ -46,6 +46,13 @@ fun IncludeButtonMultiStateBinding.setup(state: MultiStateButtonConfig) {
         buttonRight.visibility = View.VISIBLE
     } else {
         buttonRight.visibility = View.GONE
+    }
+
+    if (state.icons.size > 3) {
+        buttonEnd.icon = ContextCompat.getDrawable(root.context, state.icons[3])
+        buttonEnd.visibility = View.VISIBLE
+    } else {
+        buttonEnd.visibility = View.GONE
     }
 
     root.isSingleSelection = state.singleSelection
@@ -80,6 +87,7 @@ fun IncludeButtonMultiStateBinding.setOnCheckedListener(listener: ((Int?) -> Uni
             buttonLeft.id -> listener(0)
             buttonMiddle.id -> listener(1)
             buttonRight.id -> listener(2)
+            buttonEnd.id -> listener(3)
         }
     }
 
@@ -92,5 +100,6 @@ private fun IncludeButtonMultiStateBinding.getButtonViewIdFromCheckedId(checkedI
         0 -> buttonLeft.id
         1 -> buttonMiddle.id
         2 -> buttonRight.id
+        3 -> buttonEnd.id
         else -> null
     }

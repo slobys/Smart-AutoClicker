@@ -30,6 +30,7 @@ import com.buzbuz.smartautoclicker.core.domain.model.action.Swipe
 import com.buzbuz.smartautoclicker.core.domain.model.action.SystemAction
 import com.buzbuz.smartautoclicker.core.domain.model.action.ToggleEvent
 import com.buzbuz.smartautoclicker.core.domain.model.counter.CounterOperationValue
+import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
 import com.buzbuz.smartautoclicker.core.domain.model.event.Event
 import com.buzbuz.smartautoclicker.feature.smart.config.domain.EditionRepository
 import com.buzbuz.smartautoclicker.feature.smart.config.domain.usecase.copy.model.ItemWithMissingReferences
@@ -58,7 +59,7 @@ class GetActionMissingReferencesUseCase @Inject constructor(
         }
 
         val missingReferences = when (action) {
-            is ChangeCounter -> action.getMissingReferences()
+            is ChangeCounter -> action.getMissingReferences(copyResultEvents)
             is Click -> action.getMissingReferences(copyResultEvents)
             is Notification -> action.getMissingReferences()
             is SetText -> action.getMissingReferences()
@@ -77,7 +78,9 @@ class GetActionMissingReferencesUseCase @Inject constructor(
         )
     }
 
-    private fun ChangeCounter.getMissingReferences(): List<MissingCopyReference> =
+    private suspend fun ChangeCounter.getMissingReferences(
+        copyResultEvents: Map<Identifier, Event>,
+    ): List<MissingCopyReference> =
         buildList {
             if (editionRepository.editionState.getCounter(counterName) == null) {
                 add(MissingCopyReference.CounterReference(counterName))
@@ -87,6 +90,16 @@ class GetActionMissingReferencesUseCase @Inject constructor(
                 val valueCounterName = (operationValue as CounterOperationValue.Counter).value
                 if (editionRepository.editionState.getCounter(valueCounterName) == null) {
                     add(MissingCopyReference.CounterReference(valueCounterName))
+                }
+            }
+
+            detectedNumberConditionId?.let { conditionId ->
+                val conditionExists = copyResultEvents[eventId]?.conditions
+                    ?.any { condition -> condition.id == conditionId && condition is ScreenCondition.Number } == true
+                if (!conditionExists) {
+                    smartRepository.getConditionName(conditionId)?.let { conditionName ->
+                        add(MissingCopyReference.ScreenConditionReference(conditionName, conditionId))
+                    }
                 }
             }
         }

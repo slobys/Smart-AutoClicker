@@ -42,13 +42,37 @@
             android:layout_marginBottom="0dp"
             android:layout_marginEnd="@dimen/margin_horizontal_default"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/top_divider"
-            app:layout_constraintTop_toTopOf="@id/button_expand_collapse"
-            app:layout_constraintBottom_toBottomOf="@id/button_expand_collapse"
+            app:layout_constraintEnd_toStartOf="@id/button_favorite"
+            app:layout_constraintTop_toTopOf="parent"
             android:drawablePadding="@dimen/margin_horizontal_small"
             android:drawableStart="@drawable/ic_smart"
             android:maxLines="2"
             tools:text="My cool scenario " />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_favorite"
+            style="@style/AppTheme.Widget.IconButton"
+            android:contentDescription="@string/content_desc_scenario_favorite"
+            app:layout_constraintStart_toEndOf="@id/scenario_name"
+            app:layout_constraintEnd_toStartOf="@id/top_divider"
+            app:layout_constraintTop_toTopOf="parent"
+            app:icon="@drawable/ic_star" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/scenario_group"
+            style="@style/AppTheme.TextAppearance.Body"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_vertical_mini"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:drawablePadding="@dimen/margin_horizontal_mini"
+            app:drawableLeftCompat="@drawable/ic_folder"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/top_divider"
+            app:layout_constraintTop_toBottomOf="@id/scenario_name"
+            tools:text="Daily tasks" />
 
         <com.google.android.material.divider.MaterialDivider
             android:id="@+id/top_divider"
@@ -56,7 +80,7 @@
             android:layout_width="1dp"
             android:layout_height="0dp"
             android:layout_marginEnd="@dimen/margin_horizontal_small"
-            app:layout_constraintStart_toEndOf="@id/scenario_name"
+            app:layout_constraintStart_toEndOf="@id/button_favorite"
             app:layout_constraintEnd_toStartOf="@id/button_expand_collapse"
             app:layout_constraintTop_toTopOf="@id/button_expand_collapse"
             app:layout_constraintBottom_toBottomOf="@id/button_expand_collapse"/>
@@ -87,7 +111,7 @@
             android:layout_height="wrap_content"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/button_expand_collapse"
+            app:layout_constraintTop_toBottomOf="@id/scenario_group"
             app:layout_constraintBottom_toBottomOf="parent"
             android:visibility="visible">
 

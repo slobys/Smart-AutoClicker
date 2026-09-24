@@ -42,6 +42,7 @@ fun IncludeStaticOrCounterSelectionBinding.setup(
     onChangeTypeClicked: (UiOperandType) -> Unit,
     onStaticValueChangedListener: (Double) -> Unit,
     onOpenCounterSelectionClicked: () -> Unit,
+    allowDetectedNumber: Boolean = false,
     onItemBound: ((UiCounterOperatorDropdownItem, View?) -> Unit)? = null,
 ) {
     operatorField.setItems(
@@ -54,7 +55,11 @@ fun IncludeStaticOrCounterSelectionBinding.setup(
     valueTypeMultiStateButton.apply {
         setup(
             MultiStateButtonConfig(
-                icons = listOf(R.drawable.ic_numbers, R.drawable.ic_change_counter),
+                icons = buildList {
+                    add(R.drawable.ic_numbers)
+                    add(R.drawable.ic_change_counter)
+                    if (allowDetectedNumber) add(R.drawable.ic_number_condition)
+                },
                 singleSelection = true,
                 selectionRequired = true,
             )
@@ -65,6 +70,7 @@ fun IncludeStaticOrCounterSelectionBinding.setup(
                 when (checkedId) {
                     0 -> UiOperandType.STATIC
                     1 -> UiOperandType.COUNTER
+                    2 -> UiOperandType.DETECTED_NUMBER
                     else -> return@setOnCheckedListener
                 }
             )
@@ -110,6 +116,12 @@ fun IncludeStaticOrCounterSelectionBinding.setValueInfo(uiState: UiStaticOrCount
                 uiState.value.toNaturalDisplayString(),
                 InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL,
             )
+        }
+
+        is UiStaticOrCounterSelection.DetectedNumberValue -> {
+            valueTypeMultiStateButton.setChecked(2)
+            staticValueLayout.root.visibility = View.GONE
+            counterValueLayout.root.visibility = View.GONE
         }
     }
 }

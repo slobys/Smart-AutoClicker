@@ -231,6 +231,10 @@ internal class ScenarioDataSource @Inject constructor(
         }
     }
 
+    suspend fun updateScenarioOrganization(scenarioId: Long, isFavorite: Boolean, groupName: String) {
+        database.scenarioDao().updateOrganization(scenarioId, isFavorite, groupName)
+    }
+
     suspend fun markAsUsed(scenarioDbId: Long) {
         database.scenarioDao().let { scenarioDao ->
             val previousStats = scenarioDao.getScenarioStats(scenarioDbId)
@@ -376,7 +380,7 @@ internal class ScenarioDataSource @Inject constructor(
             mappingClosure = { actionInEvent ->
                 actionInEvent.toEntity().apply {
                     eventId = eventDbId
-                    clickOnConditionId = scenarioUpdateState.getClickOnConditionDatabaseId(actionInEvent)
+                    clickOnConditionId = scenarioUpdateState.getActionConditionDatabaseId(actionInEvent)
                 }
             }
         )

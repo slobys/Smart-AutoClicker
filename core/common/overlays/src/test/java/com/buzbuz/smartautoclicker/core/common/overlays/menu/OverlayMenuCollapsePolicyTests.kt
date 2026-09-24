@@ -17,6 +17,7 @@
 package com.buzbuz.smartautoclicker.core.common.overlays.menu
 
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -62,6 +63,45 @@ class OverlayMenuCollapsePolicyTests {
                 isMenuCollapsed = true,
                 isUserInitiated = true,
                 canAutoCollapse = true,
+            ),
+        )
+    }
+
+    @Test
+    fun concealedLauncherLeavesOnlyHandleVisibleOnLeftEdge() {
+        assertEquals(
+            -190,
+            calculateConcealedEdgePosition(
+                displayWidth = 1920,
+                menuWidth = 200,
+                visibleHandleWidth = 10,
+                isOnLeftEdge = true,
+            ),
+        )
+    }
+
+    @Test
+    fun concealedLauncherLeavesOnlyHandleVisibleOnRightEdge() {
+        assertEquals(
+            1910,
+            calculateConcealedEdgePosition(
+                displayWidth = 1920,
+                menuWidth = 200,
+                visibleHandleWidth = 10,
+                isOnLeftEdge = false,
+            ),
+        )
+    }
+
+    @Test
+    fun concealedLauncherClampsHandleToMenuWidth() {
+        assertEquals(
+            0,
+            calculateConcealedEdgePosition(
+                displayWidth = 1920,
+                menuWidth = 40,
+                visibleHandleWidth = 80,
+                isOnLeftEdge = true,
             ),
         )
     }

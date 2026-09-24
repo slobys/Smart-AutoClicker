@@ -33,6 +33,7 @@
     <string name="menu_item_title_select_all">Chọn tất cả</string>
     <string name="menu_item_title_cancel">Hủy bỏ</string>
     <string name="menu_item_title_search">Tìm kiếm</string>
+    <string name="menu_item_title_manage_groups">Quản lý nhóm</string>
     <string name="menu_item_title_settings">Cài đặt</string>
     <string name="item_scenario_filter_by_name">Tên</string>
     <string name="item_scenario_filter_by_recent">Gần đây</string>
@@ -97,4 +98,18 @@
     <string name="field_overlay_menu_auto_collapse_desc">Giữ màn hình gọn gàng bằng cách thu thanh điều khiển thành một biểu tượng sau thời gian ngắn không sử dụng.</string>
     <string name="field_overlay_menu_auto_collapse_delay_title">Thời gian chờ thu gọn điều khiển nổi</string>
     <string name="field_overlay_menu_auto_collapse_delay_value">%1$d giây</string>
+    <string name="content_desc_scenario_favorite">Thêm hoặc xóa kịch bản khỏi mục yêu thích</string>
+    <string name="item_scenario_group_ungrouped">Chưa phân nhóm</string>
+    <string name="dialog_title_scenario_group">Nhóm kịch bản</string>
+    <string name="field_scenario_group_name">Tên nhóm</string>
+    <string name="button_clear_group">Xóa khỏi nhóm</string>
+    <string name="dialog_title_create_scenario_group">Tạo nhóm</string>
+    <string name="dialog_title_edit_scenario_group">Chỉnh sửa nhóm</string>
+    <string name="message_scenario_group_selection_count">Đã chọn %1$d kịch bản</string>
+    <string name="error_scenario_group_name_required">Nhập tên nhóm</string>
+    <string name="error_scenario_group_selection_required">Chọn ít nhất một kịch bản</string>
+    <string name="button_delete_scenario_group">Bỏ nhóm tất cả</string>
+    <string name="content_desc_manage_scenario_group">Chỉnh sửa nhóm và chọn kịch bản</string>
+    <string name="content_desc_collapse_scenario_group">Thu gọn nhóm</string>
+    <string name="content_desc_expand_scenario_group">Mở rộng nhóm</string>
 </resources>

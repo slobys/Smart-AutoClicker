@@ -15,7 +15,7 @@
 * You should have received a copy of the GNU General Public License
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="runtime_switcher_title">Switch script</string>
     <string name="runtime_switcher_summary">%1$d scripts · %2$d smart · %3$d simple</string>
     <string name="runtime_switcher_smart_details">Smart script · %1$d events</string>
@@ -47,6 +47,7 @@
     <string name="menu_item_title_select_all">Select all</string>
     <string name="menu_item_title_cancel">Cancel</string>
     <string name="menu_item_title_search">Search</string>
+    <string name="menu_item_title_manage_groups" tools:ignore="MissingTranslation">Manage groups</string>
     <string name="menu_item_title_settings">Settings</string>
 
     <string name="item_scenario_filter_by_name">Name</string>
@@ -112,6 +113,20 @@
       - They are use as accessibility texts for visually impaired people. They will not be displayed but spoken.
       -->
     <string name="content_desc_add_scenario">Create a new scenario</string>
+    <string name="content_desc_scenario_favorite" tools:ignore="MissingTranslation">Add or remove scenario from favorites</string>
+    <string name="item_scenario_group_ungrouped" tools:ignore="MissingTranslation">Ungrouped</string>
+    <string name="dialog_title_scenario_group" tools:ignore="MissingTranslation">Scenario group</string>
+    <string name="field_scenario_group_name" tools:ignore="MissingTranslation">Group name</string>
+    <string name="button_clear_group" tools:ignore="MissingTranslation">Remove from group</string>
+    <string name="dialog_title_create_scenario_group" tools:ignore="MissingTranslation">Create group</string>
+    <string name="dialog_title_edit_scenario_group" tools:ignore="MissingTranslation">Edit group</string>
+    <string name="message_scenario_group_selection_count" tools:ignore="MissingTranslation">%1$d scenarios selected</string>
+    <string name="error_scenario_group_name_required" tools:ignore="MissingTranslation">Enter a group name</string>
+    <string name="error_scenario_group_selection_required" tools:ignore="MissingTranslation">Select at least one scenario</string>
+    <string name="button_delete_scenario_group" tools:ignore="MissingTranslation">Ungroup all</string>
+    <string name="content_desc_manage_scenario_group" tools:ignore="MissingTranslation">Edit group and choose scenarios</string>
+    <string name="content_desc_collapse_scenario_group" tools:ignore="MissingTranslation">Collapse group</string>
+    <string name="content_desc_expand_scenario_group" tools:ignore="MissingTranslation">Expand group</string>
 
 
     <!-- Default name when creating a new scenario -->

@@ -135,6 +135,17 @@ class EventDialog(
             setOnClickListener(viewModel::toggleEventState)
         }
 
+        fieldIsBreakpoint.apply {
+            setTitle(context.resources.getString(R.string.field_event_breakpoint_title))
+            setupDescriptions(
+                listOf(
+                    context.getString(R.string.field_event_breakpoint_desc_disabled),
+                    context.getString(R.string.field_event_breakpoint_desc_enabled),
+                )
+            )
+            setOnClickListener(viewModel::toggleBreakpointState)
+        }
+
         fieldKeepDetecting.apply {
             setTitle(context.resources.getString(R.string.field_event_keep_detecting_title))
             setupDescriptions(
@@ -316,6 +327,11 @@ class EventDialog(
             fieldIsEnabled.apply {
                 setChecked(state.enabledOnStart)
                 setDescription(if (state.enabledOnStart) 1 else 0)
+            }
+
+            fieldIsBreakpoint.apply {
+                setChecked(state.isBreakpoint)
+                setDescription(if (state.isBreakpoint) 1 else 0)
             }
 
             viewBinding.fieldActionsSelector.setItems(state.actionsItems)

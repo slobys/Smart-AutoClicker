@@ -20,6 +20,7 @@ import android.graphics.Bitmap
 import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.buzbuz.smartautoclicker.core.common.actions.AndroidActionExecutor
+import com.buzbuz.smartautoclicker.core.common.actions.AndroidGestureResult
 import com.buzbuz.smartautoclicker.core.detection.ImageDetector
 import com.buzbuz.smartautoclicker.core.domain.model.action.ChangeCounter.OperationType
 import com.buzbuz.smartautoclicker.core.domain.model.action.ToggleEvent
@@ -33,6 +34,7 @@ import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -100,6 +102,10 @@ class ProcessingTests {
 
         `when`(mockScalingManager.scaleUpDetectionResult(anyNotNull()))
             .doAnswer { invocation -> invocation.getArgument(0) }
+        runBlocking {
+            `when`(mockAndroidExecutor.dispatchGesture(anyNotNull()))
+                .thenReturn(AndroidGestureResult.COMPLETED)
+        }
     }
 
     @After

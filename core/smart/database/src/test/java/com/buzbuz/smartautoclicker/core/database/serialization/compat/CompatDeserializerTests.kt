@@ -39,6 +39,40 @@ class CompatDeserializerTests {
 
     private val deserializer = object : CompatDeserializer() {}
 
+    @Test
+    fun deserializeScenario_missingOrganizationMetadata_usesDefaults() {
+        val result = deserializer.deserializeScenario(
+            JsonObject(
+                mapOf(
+                    "id" to JsonPrimitive(1L),
+                    "name" to JsonPrimitive("Legacy scenario"),
+                )
+            )
+        )
+
+        assertNotNull(result)
+        assertEquals(false, result!!.isFavorite)
+        assertEquals("", result.groupName)
+    }
+
+    @Test
+    fun deserializeScenario_organizationMetadata_isPreserved() {
+        val result = deserializer.deserializeScenario(
+            JsonObject(
+                mapOf(
+                    "id" to JsonPrimitive(1L),
+                    "name" to JsonPrimitive("Organized scenario"),
+                    "isFavorite" to JsonPrimitive(true),
+                    "groupName" to JsonPrimitive("Daily"),
+                )
+            )
+        )
+
+        assertNotNull(result)
+        assertEquals(true, result!!.isFavorite)
+        assertEquals("Daily", result.groupName)
+    }
+
     private fun createJsonImageCondition(detectionType: Int): JsonObject = JsonObject(
         mapOf(
             "id" to JsonPrimitive(1L),

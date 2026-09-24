@@ -40,6 +40,8 @@ sealed class Event: Identifiable, Completable {
     @ConditionOperator abstract val conditionOperator: Int
     /** Tells if the event should be evaluated with the scenario, or if it should be enabled by an action. */
     abstract val enabledOnStart: Boolean
+    /** Tells if the debugger should pause before this event executes its actions. */
+    abstract val isBreakpoint: Boolean
     /** The list of action to execute when the [conditions] have been fulfilled. */
     abstract val actions: List<Action>
     /** The list of conditions to fulfill to execute the [actions].  */
@@ -52,14 +54,17 @@ sealed class Event: Identifiable, Completable {
         name: String = this.name,
         conditionOperator: Int = this.conditionOperator,
         enabledOnStart: Boolean = this.enabledOnStart,
+        isBreakpoint: Boolean = this.isBreakpoint,
         actions: List<Action> = this.actions,
         conditions: List<Condition> = this.conditions,
     ): Event =
         when (this) {
             is ScreenEvent -> copy(id = id, scenarioId = scenarioId, name = name, conditionOperator = conditionOperator,
-                enabledOnStart = enabledOnStart, actions = actions, conditions = conditions as List<ScreenCondition.Image>)
+                enabledOnStart = enabledOnStart, isBreakpoint = isBreakpoint,
+                actions = actions, conditions = conditions as List<ScreenCondition.Image>)
             is TriggerEvent -> copy(id = id, scenarioId = scenarioId, name = name, conditionOperator = conditionOperator,
-                enabledOnStart = enabledOnStart, actions = actions, conditions = conditions as List<TriggerCondition>)
+                enabledOnStart = enabledOnStart, isBreakpoint = isBreakpoint,
+                actions = actions, conditions = conditions as List<TriggerCondition>)
         }
 
     @CallSuper
@@ -84,6 +89,7 @@ data class ScreenEvent(
     override var priority: Int,
     val keepDetecting: Boolean,
     val cooldownMs: Long,
+    override val isBreakpoint: Boolean = false,
 ): Event(), Prioritizable {
 
     /** Tells if this event is complete and valid for save. */
@@ -107,6 +113,7 @@ data class TriggerEvent(
     override val actions: List<Action> = emptyList(),
     override val conditions: List<TriggerCondition> =  emptyList(),
     override val enabledOnStart: Boolean = true,
+    override val isBreakpoint: Boolean = false,
 ) : Event() {
 
     override fun isComplete(): Boolean {

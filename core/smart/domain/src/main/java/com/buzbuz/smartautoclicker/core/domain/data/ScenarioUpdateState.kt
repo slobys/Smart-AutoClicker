@@ -18,6 +18,7 @@ package com.buzbuz.smartautoclicker.core.domain.data
 
 import com.buzbuz.smartautoclicker.core.base.identifier.Identifier
 import com.buzbuz.smartautoclicker.core.domain.model.action.Action
+import com.buzbuz.smartautoclicker.core.domain.model.action.ChangeCounter
 import com.buzbuz.smartautoclicker.core.domain.model.action.Click
 
 internal class ScenarioUpdateState {
@@ -49,9 +50,11 @@ internal class ScenarioUpdateState {
         conditionsDomainToDbIdMap[domainId] = dbId
     }
 
-    fun getClickOnConditionDatabaseId(action: Action): Long? =
-        if (action is Click) action.clickOnConditionId?.let { getConditionDbId(it) }
-        else null
+    fun getActionConditionDatabaseId(action: Action): Long? = when (action) {
+        is Click -> action.clickOnConditionId?.let { getConditionDbId(it) }
+        is ChangeCounter -> action.detectedNumberConditionId?.let { getConditionDbId(it) }
+        else -> null
+    }
 
     private fun getConditionDbId(identifier: Identifier?): Long = when {
         identifier != null && identifier.tempId == null && identifier.databaseId != 0L -> identifier.databaseId

@@ -26,6 +26,7 @@ sealed class EventDialogUiState {
     abstract val name: String?
     abstract val nameError: Boolean
     abstract val enabledOnStart: Boolean
+    abstract val isBreakpoint: Boolean
     abstract val conditionOperator: Int
     abstract val actionsItems: List<EventChildrenItem>
 
@@ -35,6 +36,7 @@ sealed class EventDialogUiState {
         override val name: String?,
         override val nameError: Boolean,
         override val enabledOnStart: Boolean,
+        override val isBreakpoint: Boolean,
         override val conditionOperator: Int,
         override val actionsItems: List<EventChildrenItem>,
         val keepDetecting: Boolean,
@@ -51,6 +53,7 @@ sealed class EventDialogUiState {
         override val name: String?,
         override val nameError: Boolean,
         override val enabledOnStart: Boolean,
+        override val isBreakpoint: Boolean,
         override val conditionOperator: Int,
         override val actionsItems: List<EventChildrenItem>,
         val triggerConditionsItems: List<EventChildrenItem>,

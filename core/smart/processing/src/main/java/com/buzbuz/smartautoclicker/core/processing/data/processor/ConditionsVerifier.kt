@@ -51,8 +51,6 @@ internal class ConditionsVerifier(
     private val progressListener: SmartProcessingListener? = null,
 ) {
 
-    /** List of results for the last call to verifyConditions. */
-    private val verificationResults: ConditionsResults = ConditionsResults()
     /** Raw detector results reusable only while processing the current captured frame. */
     private val frameDetectionCache: MutableMap<ScreenDetectionKey, DetectionResult> = mutableMapOf()
 
@@ -71,7 +69,9 @@ internal class ConditionsVerifier(
     }
 
     suspend fun verifyConditions(@ConditionOperator operator: Int, conditions: List<Condition>): ConditionsResults {
-        verificationResults.reset()
+        // A subflow can verify its own conditions while its parent action list is still using the
+        // parent's results. Keep each verification isolated so nested calls cannot erase them.
+        val verificationResults = ConditionsResults()
         currentVerificationTsMs = System.currentTimeMillis()
 
         var verificationResult: ProcessedConditionResult

@@ -102,7 +102,26 @@ enum class ChangeCounterOperationType {
     /** Remove from the current counter value. */
     MINUS,
     /** Set the counter to a specific value. */
-    SET;
+    SET,
+    /** Set the counter to the absolute difference between its current value and the operand. */
+    ABS_DIFF;
+}
+
+/** Waiting strategy used by a [ActionType.PAUSE] action. */
+enum class PauseWaitMode {
+    FIXED_DELAY,
+    TARGET_APPEARS,
+    TARGET_DISAPPEARS,
+    SCREEN_STABLE,
+    SCREEN_CHANGED,
+}
+
+/** Behaviour applied when a smart pause reaches its maximum waiting time. */
+enum class PauseTimeoutBehavior {
+    RETRY,
+    SKIP,
+    STOP,
+    EXECUTE_FALLBACK,
 }
 
 
@@ -144,6 +163,8 @@ enum class EventToggleType {
     DISABLE,
     /** Enable the event if it is disabled, disable it if it is enabled. */
     TOGGLE,
+    /** Execute the target event actions once, then return to the caller. */
+    EXECUTE_ONCE,
 }
 
 

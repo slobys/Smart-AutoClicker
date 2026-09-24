@@ -87,6 +87,13 @@ interface ScenarioDao {
     @Update
     suspend fun update(scenarioEntity: ScenarioEntity)
 
+    /** Update list organization metadata without rewriting the scenario content. */
+    @Query(
+        "UPDATE scenario_table SET is_favorite = :isFavorite, group_name = :groupName " +
+            "WHERE id = :scenarioId"
+    )
+    suspend fun updateOrganization(scenarioId: Long, isFavorite: Boolean, groupName: String)
+
     /**
      * Delete the provided click scenario from the database.
      *

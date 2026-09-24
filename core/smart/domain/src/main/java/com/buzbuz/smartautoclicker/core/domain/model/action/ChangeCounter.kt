@@ -28,6 +28,8 @@ data class ChangeCounter(
     val counterName: String,
     val operation: OperationType,
     val operationValue: CounterOperationValue,
+    /** Number condition whose latest OCR result is used as operand, or null for a static/counter operand. */
+    val detectedNumberConditionId: Identifier? = null,
 ): Action() {
 
     /**
@@ -40,13 +42,16 @@ data class ChangeCounter(
         /** Remove from the current counter value. */
         MINUS,
         /** Set the counter to a specific value. */
-        SET;
+        SET,
+        /** Replace the counter by the absolute difference between its value and the operand. */
+        ABS_DIFF;
 
         fun toEntity(): ChangeCounterOperationType = ChangeCounterOperationType.valueOf(name)
     }
 
     override fun isComplete(): Boolean =
-        super.isComplete() && counterName.isNotEmpty() && operationValue.isComplete()
+        super.isComplete() && counterName.isNotEmpty() &&
+                (detectedNumberConditionId?.isValidConditionReference() ?: operationValue.isComplete())
 
     override fun hashCodeNoIds(): Int =
         name.hashCode() + counterName.hashCode() + operation.hashCode() + operationValue.hashCode()
@@ -56,3 +61,6 @@ data class ChangeCounter(
         counterName = "" + counterName,
     )
 }
+
+private fun Identifier.isValidConditionReference(): Boolean =
+    isInDatabase() || tempId?.let { it > 0L } == true

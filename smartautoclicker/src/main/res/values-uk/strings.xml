@@ -44,6 +44,7 @@
     <string name="menu_item_title_select_all">Вибрати все</string>
     <string name="menu_item_title_cancel">Скасувати</string>
     <string name="menu_item_title_search">Пошук</string>
+    <string name="menu_item_title_manage_groups">Керування групами</string>
     <string name="menu_item_title_settings">Налаштування</string>
 
     <string name="item_scenario_filter_by_name">Назва</string>
@@ -172,4 +173,18 @@
     <string name="field_overlay_menu_auto_collapse_desc">Звільняє екран, згортаючи панель до однієї піктограми після короткої бездіяльності.</string>
     <string name="field_overlay_menu_auto_collapse_delay_title">Затримка згортання плаваючих елементів</string>
     <string name="field_overlay_menu_auto_collapse_delay_value">%1$d с</string>
+    <string name="content_desc_scenario_favorite">Додати сценарій до вибраного або вилучити з нього</string>
+    <string name="item_scenario_group_ungrouped">Без групи</string>
+    <string name="dialog_title_scenario_group">Група сценарію</string>
+    <string name="field_scenario_group_name">Назва групи</string>
+    <string name="button_clear_group">Вилучити з групи</string>
+    <string name="dialog_title_create_scenario_group">Створити групу</string>
+    <string name="dialog_title_edit_scenario_group">Редагувати групу</string>
+    <string name="message_scenario_group_selection_count">Вибрано сценаріїв: %1$d</string>
+    <string name="error_scenario_group_name_required">Введіть назву групи</string>
+    <string name="error_scenario_group_selection_required">Виберіть принаймні один сценарій</string>
+    <string name="button_delete_scenario_group">Розгрупувати все</string>
+    <string name="content_desc_manage_scenario_group">Редагувати групу та вибрати сценарії</string>
+    <string name="content_desc_collapse_scenario_group">Згорнути групу</string>
+    <string name="content_desc_expand_scenario_group">Розгорнути групу</string>
 </resources>

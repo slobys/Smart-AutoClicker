@@ -25,6 +25,8 @@ import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
 import com.buzbuz.smartautoclicker.core.domain.model.event.ScreenEvent
 import com.buzbuz.smartautoclicker.core.domain.model.scenario.Scenario
 import com.buzbuz.smartautoclicker.core.processing.domain.model.DetectionState
+import com.buzbuz.smartautoclicker.core.processing.domain.model.DebugExecutionState
+import com.buzbuz.smartautoclicker.core.processing.domain.model.ActionFailureSnapshot
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.time.Duration
@@ -43,6 +45,11 @@ interface SmartProcessingRepository : Dumpable {
 
     /** State of the scenario processing.*/
     val detectionState: Flow<DetectionState>
+
+    /** Event-level debugger state. Debug pauses preserve counters and the active execution context. */
+    val debugExecutionState: StateFlow<DebugExecutionState>
+
+    val lastActionFailure: StateFlow<ActionFailureSnapshot?>
 
 
     /** @return the unique identifier of the scenario that will be/is processed. */
@@ -93,6 +100,18 @@ interface SmartProcessingRepository : Dumpable {
      * Ignored if the state is different than [DetectionState.DETECTING].
      */
     fun stopDetection()
+
+    /** Suspends execution immediately before the next fulfilled event runs its actions. */
+    fun requestDebugPauseAtNextEvent()
+
+    /** Cancels a pending pause request. Does not resume an event that is already suspended. */
+    fun cancelDebugPauseRequest()
+
+    /** Resumes normal execution from a debug pause. */
+    fun resumeDebugExecution()
+
+    /** Executes the suspended event and pauses before the next fulfilled event. */
+    fun stepDebugExecution()
 
     /**
      * Stop the processing for the current [Scenario].

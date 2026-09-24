@@ -14,7 +14,7 @@
 * You should have received a copy of the GNU General Public License
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Generic =================================================================================================== -->
     <!-- Those values are shared between several dialogs due to their generic meaning, such as name or formatting -->
@@ -101,6 +101,8 @@
     <string name="item_toggle_event_details_disable_all">Disable all</string>
     <string name="item_toggle_event_details_invert_all">Invert all</string>
     <string name="item_toggle_event_details_manual">Change %1$d events</string>
+    <string name="item_toggle_event_details_subflows" tools:ignore="MissingTranslation">Run %1$d subflows</string>
+    <string name="item_toggle_event_details_mixed" tools:ignore="MissingTranslation">Control or run %1$d events</string>
     <string name="item_toggle_event_details_error">Target event not found</string>
 
     <string name="item_intent_title">Intent</string>
@@ -204,6 +206,9 @@
     <string name="menu_item_title_state">State</string>
 
     <string name="field_event_state_title">Initial state</string>
+    <string name="field_event_breakpoint_title" tools:ignore="MissingTranslation">Pause at this event</string>
+    <string name="field_event_breakpoint_desc_disabled" tools:ignore="MissingTranslation">Breakpoint disabled. Actions run immediately when the event matches.</string>
+    <string name="field_event_breakpoint_desc_enabled" tools:ignore="MissingTranslation">Breakpoint enabled. Execution pauses before the first action.</string>
     <string name="field_event_state_desc_enabled">This event will be interpreted normally when playing the scenario</string>
     <string name="field_event_state_desc_disabled">This event needs to be enabled by an action to be interpreted when playing the scenario</string>
 
@@ -432,16 +437,26 @@
     <string name="dropdown_counter_operation_item_add" translatable="false">+</string>
     <string name="dropdown_counter_operation_item_set" translatable="false">=</string>
     <string name="dropdown_counter_operation_item_minus" translatable="false">-</string>
+    <string name="dropdown_counter_operation_item_abs_diff" translatable="false">|−|</string>
 
     <string name="field_change_counter_effect_title">Action effect</string>
     <string name="field_change_counter_effect_desc_set">%1$s = %2$s</string> <!-- Toto = Tata -->
     <string name="field_change_counter_effect_desc_operation">%1$s = %1$s %2$s %3$s</string> <!-- Toto = Toto + Tata -->
+    <string name="field_change_counter_effect_desc_abs_diff" translatable="false">%1$s = |%1$s − %2$s|</string>
+    <string name="field_detected_number_source_title" tools:ignore="MissingTranslation">Detected number source</string>
+    <string name="field_detected_number_source_empty" tools:ignore="MissingTranslation">Select a number condition</string>
+    <string name="operand_detected_number" tools:ignore="MissingTranslation">Detected number</string>
 
 
     <!-- Dialogs Action ToggleEvent ================================================================================ -->
 
     <string name="dialog_title_toggle_event">Event state</string>
-    <string name="dialog_title_events_toggle">Events toggles</string>
+    <string name="dialog_title_events_toggle">Event controls and subflows</string>
+    <string name="dialog_events_toggle_help" tools:ignore="MissingTranslation">Choose one operation per event: enable, toggle, disable, or run once as a subflow. A subflow runs only the target actions; use counters for input and output parameters.</string>
+    <string name="content_desc_event_operation_enable" tools:ignore="MissingTranslation">Enable event</string>
+    <string name="content_desc_event_operation_toggle" tools:ignore="MissingTranslation">Toggle event</string>
+    <string name="content_desc_event_operation_disable" tools:ignore="MissingTranslation">Disable event</string>
+    <string name="content_desc_event_operation_execute_once" tools:ignore="MissingTranslation">Run event actions once as a subflow</string>
 
     <string name="list_header_image_events">Screen Events</string>
     <string name="list_header_trigger_events">Trigger Events</string>
@@ -452,9 +467,9 @@
     <string name="field_change_all_desc_invert_all">Invert the state of all events in this scenario</string>
     <string name="field_change_all_desc_disable_all">Disable all events in this scenario. When all events are disabled, the scenario is stopped automatically.</string>
 
-    <string name="field_select_toggle_events_title">%1$d changes</string>
-    <string name="field_select_toggle_events_title_empty">No changes</string>
-    <string name="field_select_toggle_events_desc_empty">Select at least one event to change to state of</string>
+    <string name="field_select_toggle_events_title">%1$d event operations</string>
+    <string name="field_select_toggle_events_title_empty">No event operation</string>
+    <string name="field_select_toggle_events_desc_empty">Select an event to enable, toggle, disable, or run once as a subflow. Counters are shared as input and output parameters.</string>
 
 
     <!-- Dialogs Notification ===================================================================================== -->
@@ -570,5 +585,35 @@
     <string name="content_desc_image_condition">The image to be detected</string>
     <string name="content_desc_open_event_list">Open the event list</string>
     <string name="content_desc_application_icon">The icon of the application to start.</string>
+    <string name="content_desc_debug_pause_next_event" tools:ignore="MissingTranslation">Pause before the next matched event actions</string>
+    <string name="content_desc_debug_cancel_pause" tools:ignore="MissingTranslation">Cancel the pending debug pause</string>
+    <string name="content_desc_debug_resume" tools:ignore="MissingTranslation">Resume scenario execution</string>
+    <string name="content_desc_debug_step" tools:ignore="MissingTranslation">Execute this event and pause at the next matched event</string>
+    <string name="content_desc_quick_open_full_menu" tools:ignore="MissingTranslation">Open the complete floating menu</string>
+    <string name="debug_waiting_for_event" tools:ignore="MissingTranslation">Waiting for next event</string>
+    <string name="debug_breakpoint_armed" tools:ignore="MissingTranslation">Armed</string>
+    <string name="debug_paused" tools:ignore="MissingTranslation">Paused</string>
+    <string name="debug_pause_request_accepted" tools:ignore="MissingTranslation">Pause requested. The scenario will pause before the next matched event runs.</string>
+    <string name="debug_pause_request_cancelled" tools:ignore="MissingTranslation">Pause request cancelled.</string>
+    <string name="debug_execution_resumed" tools:ignore="MissingTranslation">Scenario resumed.</string>
 
+    <string name="pause_wait_mode_label" tools:ignore="MissingTranslation">Waiting condition</string>
+    <string name="pause_wait_mode_fixed" tools:ignore="MissingTranslation">Fixed delay</string>
+    <string name="pause_wait_mode_target_appears" tools:ignore="MissingTranslation">Selected target appears</string>
+    <string name="pause_wait_mode_target_disappears" tools:ignore="MissingTranslation">Selected target disappears</string>
+    <string name="pause_wait_mode_screen_stable" tools:ignore="MissingTranslation">Screen becomes stable</string>
+    <string name="pause_wait_mode_screen_changed" tools:ignore="MissingTranslation">Screen changes</string>
+    <string name="pause_timeout_behavior_label" tools:ignore="MissingTranslation">When maximum wait is reached</string>
+    <string name="pause_timeout_retry" tools:ignore="MissingTranslation">Retry</string>
+    <string name="pause_timeout_skip" tools:ignore="MissingTranslation">Skip and continue</string>
+    <string name="pause_timeout_stop" tools:ignore="MissingTranslation">Stop scenario</string>
+    <string name="pause_timeout_fallback" tools:ignore="MissingTranslation">Execute fallback event</string>
+    <string name="pause_max_retries_label" tools:ignore="MissingTranslation">Maximum retries (0–20)</string>
+    <string name="pause_confirmation_frames_label" tools:ignore="MissingTranslation">Consecutive confirmation frames (1–10)</string>
+    <string name="pause_change_threshold_label" tools:ignore="MissingTranslation">Screen change threshold (1–100%)</string>
+    <string name="pause_select_fallback_event" tools:ignore="MissingTranslation">Select fallback event</string>
+    <string name="pause_select_wait_target_event" tools:ignore="MissingTranslation">Select the target event to observe</string>
+    <string name="content_desc_failure_snapshot" tools:ignore="MissingTranslation">Show latest failed action screenshot</string>
+    <string name="failure_snapshot_title" tools:ignore="MissingTranslation">Latest action failure</string>
+    <string name="failure_snapshot_message" tools:ignore="MissingTranslation">Event: %1$s\nAction: %2$s\nResult: %3$s</string>
 </resources>

@@ -94,8 +94,34 @@
             android:gravity="center_vertical"
             android:layout_marginStart="@dimen/margin_horizontal_mini"
             app:layout_constraintStart_toEndOf="@id/icon_right"
+            app:layout_constraintEnd_toStartOf="@id/icon_end"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             tools:text="1"/>
+
+        <ImageView
+            android:id="@+id/icon_end"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/margin_horizontal_large"
+            app:layout_constraintStart_toEndOf="@id/text_right"
+            app:layout_constraintEnd_toStartOf="@id/text_end"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            tools:src="@drawable/ic_play_arrow"
+            tools:ignore="ContentDescription" />
+
+        <TextView
+            android:id="@+id/text_end"
+            style="@style/AppTheme.Field.SubText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:layout_marginStart="@dimen/margin_horizontal_mini"
+            app:layout_constraintStart_toEndOf="@id/icon_end"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            tools:text="2"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

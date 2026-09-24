@@ -30,6 +30,7 @@ interface IEventsState {
 
     fun getScreenEvents(): Collection<ScreenEvent>
     fun getTriggerEvents(): Collection<TriggerEvent>
+    fun getEvent(eventId: Long): Event?
 
     fun enableAll()
     fun enableEvent(eventId: Long)
@@ -86,6 +87,9 @@ internal class EventsState(
     override fun getTriggerEvents(): Collection<TriggerEvent> =
         triggerEventList.getEvents().toList()
 
+    override fun getEvent(eventId: Long): Event? =
+        screenEventList.getEvent(eventId) ?: triggerEventList.getEvent(eventId)
+
     override fun enableEvent(eventId: Long) {
         screenEventList.enableEvent(eventId)
         triggerEventList.enableEvent(eventId)
@@ -139,6 +143,9 @@ private class EventList<T : Event>(events: List<T>) {
 
     fun getEvents(): Collection<T> =
         eventsMap.values
+
+    fun getEvent(eventId: Long): T? =
+        eventsMap[eventId]
 
     fun enableEvent(eventId: Long) {
         if (enabledEventsMap.containsKey(eventId)) return

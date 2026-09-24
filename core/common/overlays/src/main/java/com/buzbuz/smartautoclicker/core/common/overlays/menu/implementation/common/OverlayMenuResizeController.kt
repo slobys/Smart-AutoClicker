@@ -24,8 +24,10 @@ import android.view.View.MeasureSpec
 import android.view.ViewGroup
 import androidx.core.view.children
 import androidx.core.view.isGone
+import androidx.core.view.marginBottom
 import androidx.core.view.marginEnd
 import androidx.core.view.marginStart
+import androidx.core.view.marginTop
 
 /**
  * Controls the resize of an overlay window.
@@ -132,15 +134,24 @@ internal class OverlayMenuResizeController(
 
         // Get the height of all children + the padding.
         // Use measuredHeight as fallback for views that are now visible but not yet laid out (height == 0).
-        val height = resizedContainer.children.fold(0) { acc, child ->
+        val resizedContainerHeight = resizedContainer.children.fold(0) { acc, child ->
             acc + (if (child.isGone) 0 else maxOf(child.height, child.measuredHeight))
         } + resizedContainer.paddingTop + resizedContainer.paddingBottom
 
         val firstChild = (backgroundViewGroup.getChildAt(0) as? ViewGroup)
+        firstChild?.measure(
+            MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED),
+            MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED),
+        )
         val width = if (firstChild == null || firstChild.id == resizedContainer.id) {
             resizedContainer.width
         } else {
-            firstChild.visibleHorizontalContentSpan()
+            maxOf(firstChild.measuredWidth, firstChild.visibleHorizontalContentSpan())
+        }
+        val height = if (firstChild == null || firstChild.id == resizedContainer.id) {
+            resizedContainerHeight
+        } else {
+            maxOf(resizedContainerHeight, firstChild.measuredHeight, firstChild.visibleVerticalContentSpan())
         }
 
         return Size(width, height)
@@ -159,6 +170,20 @@ private fun ViewGroup.visibleHorizontalContentSpan(): Int {
         }
 
     return if (leftBound == Int.MAX_VALUE) 0 else rightBound - leftBound
+}
+
+private fun ViewGroup.visibleVerticalContentSpan(): Int {
+    var topBound = Int.MAX_VALUE
+    var bottomBound = Int.MIN_VALUE
+
+    children
+        .filterNot { it.isGone }
+        .forEach { child ->
+            topBound = minOf(topBound, child.top - child.marginTop)
+            bottomBound = maxOf(bottomBound, child.bottom + child.marginBottom)
+        }
+
+    return if (topBound == Int.MAX_VALUE) 0 else bottomBound - topBound
 }
 
 private data class OverlayTransition(

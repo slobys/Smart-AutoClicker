@@ -27,6 +27,7 @@ import android.view.View
 import android.view.View.OnAttachStateChangeListener
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.Toast
 
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SearchView
@@ -42,12 +43,14 @@ import com.buzbuz.smartautoclicker.core.common.navigation.TutorialNavigator
 import com.buzbuz.smartautoclicker.core.common.navigation.getTutorialNavigator
 import com.buzbuz.smartautoclicker.core.ui.utils.getDynamicColorsContext
 import com.buzbuz.smartautoclicker.databinding.DialogImportExportBinding
+import com.buzbuz.smartautoclicker.databinding.DialogScenarioGroupBinding
 import com.buzbuz.smartautoclicker.databinding.FragmentScenariosBinding
 import com.buzbuz.smartautoclicker.feature.backup.ui.BackupDialogFragment
 import com.buzbuz.smartautoclicker.feature.backup.ui.BackupDialogFragment.Companion.FRAGMENT_TAG_BACKUP_DIALOG
 import com.buzbuz.smartautoclicker.scenarios.migration.ConditionsMigrationFragment
 import com.buzbuz.smartautoclicker.scenarios.creation.ScenarioCreationDialog
 import com.buzbuz.smartautoclicker.scenarios.list.adapter.ScenarioAdapter
+import com.buzbuz.smartautoclicker.scenarios.list.adapter.ScenarioGroupSelectionAdapter
 import com.buzbuz.smartautoclicker.scenarios.list.copy.ScenarioCopyDialog
 import com.buzbuz.smartautoclicker.scenarios.list.copy.ScenarioCopyDialog.Companion.FRAGMENT_TAG_COPY_DIALOG
 import com.buzbuz.smartautoclicker.scenarios.list.model.ScenarioListUiState
@@ -102,6 +105,12 @@ class ScenarioListFragment : Fragment() {
             deleteScenarioListener = ::onDeleteClicked,
             exportClickListener = ::onExportClicked,
             copyClickedListener = ::showCopyScenarioDialog,
+            favoriteClickedListener = scenarioListViewModel::toggleFavorite,
+            groupClickedListener = ::showScenarioGroupDialog,
+            groupHeaderClickedListener = scenarioListViewModel::toggleGroupCollapsed,
+            groupManageClickedListener = { header ->
+                showGroupEditor(header.groupName.takeIf { it.isNotBlank() })
+            },
             expandCollapseListener = scenarioListViewModel::expandCollapseItem,
             onSortTypeClicked = scenarioListViewModel::updateSortType,
             onSmartChipClicked = scenarioListViewModel::updateSmartVisible,
@@ -156,6 +165,7 @@ class ScenarioListFragment : Fragment() {
                 else if (scenarioListViewModel.getScenarioValidForBackupCount() == 0) showBackupDialog(isImport = true)
                 else showImportExportDialog()
             }
+            R.id.action_groups -> showGroupEditor()
             R.id.action_tutorials -> tutorialNavigator.startTutorialActivity(requireContext())
             R.id.action_cancel -> scenarioListViewModel.setUiState(ScenarioListUiState.Type.SELECTION)
             R.id.action_search -> scenarioListViewModel.setUiState(ScenarioListUiState.Type.SEARCH)
@@ -183,6 +193,7 @@ class ScenarioListFragment : Fragment() {
             findItem(R.id.action_select_all)?.bind(menuState.selectAllItemState)
             findItem(R.id.action_cancel)?.bind(menuState.cancelItemState)
             findItem(R.id.action_import_export)?.bind(menuState.importExportItemState)
+            findItem(R.id.action_groups)?.bind(menuState.groupsItemState)
             findItem(R.id.action_tutorials)?.bind(menuState.tutorialsItemState)
             findItem(R.id.action_search)?.apply {
                 bind(menuState.searchItemState)
@@ -360,6 +371,105 @@ class ScenarioListFragment : Fragment() {
                 defaultName = scenarioItem.displayName,
             )
             .show(requireActivity().supportFragmentManager, FRAGMENT_TAG_COPY_DIALOG)
+    }
+
+    private fun showScenarioGroupDialog(scenarioItem: ScenarioListUiState.Item.ScenarioItem) {
+        val dialogContext = requireContext().getDynamicColorsContext(R.style.AppTheme)
+        val groupBinding = DialogScenarioGroupBinding.inflate(LayoutInflater.from(dialogContext))
+        groupBinding.groupName.apply {
+            setText(scenarioItem.groupName)
+            setSelection(text?.length ?: 0)
+        }
+        groupBinding.selectionSummary.visibility = View.GONE
+        groupBinding.scenarioList.visibility = View.GONE
+
+        showDialog(
+            MaterialAlertDialogBuilder(dialogContext)
+                .setTitle(R.string.dialog_title_scenario_group)
+                .setView(groupBinding.root)
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    scenarioListViewModel.updateGroup(
+                        scenarioItem,
+                        groupBinding.groupName.text?.toString().orEmpty(),
+                    )
+                }
+                .setNeutralButton(R.string.button_clear_group) { _, _ ->
+                    scenarioListViewModel.updateGroup(scenarioItem, "")
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .create()
+        )
+    }
+
+    /** Creates a group or edits all of its members from a single multi-selection dialog. */
+    private fun showGroupEditor(originalGroupName: String? = null) {
+        val scenarios = scenarioListViewModel.groupableScenarios.value
+        if (scenarios.isEmpty()) return
+
+        val dialogContext = requireContext().getDynamicColorsContext(R.style.AppTheme)
+        val groupBinding = DialogScenarioGroupBinding.inflate(LayoutInflater.from(dialogContext))
+        val selectionAdapter = ScenarioGroupSelectionAdapter { selectedCount ->
+            groupBinding.selectionSummary.text = getString(
+                R.string.message_scenario_group_selection_count,
+                selectedCount,
+            )
+        }
+        val initialSelection = originalGroupName?.let { groupName ->
+            scenarios
+                .filter { it.groupName.trim().equals(groupName.trim(), ignoreCase = true) }
+                .mapTo(mutableSetOf()) { it.reference }
+        }.orEmpty()
+
+        groupBinding.apply {
+            groupName.setText(originalGroupName.orEmpty())
+            groupName.setSelection(groupName.text?.length ?: 0)
+            scenarioList.adapter = selectionAdapter
+        }
+        selectionAdapter.setScenarios(scenarios, initialSelection)
+
+        val builder = MaterialAlertDialogBuilder(dialogContext)
+            .setTitle(
+                if (originalGroupName == null) R.string.dialog_title_create_scenario_group
+                else R.string.dialog_title_edit_scenario_group
+            )
+            .setView(groupBinding.root)
+            .setPositiveButton(android.R.string.ok, null)
+            .setNegativeButton(android.R.string.cancel, null)
+
+        if (originalGroupName != null) {
+            builder.setNeutralButton(R.string.button_delete_scenario_group) { _, _ ->
+                scenarioListViewModel.deleteGroup(originalGroupName)
+            }
+        }
+
+        val groupDialog = builder.create()
+        groupDialog.setOnShowListener {
+            groupDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val groupName = groupBinding.groupName.text?.toString()?.trim().orEmpty()
+                val selection = selectionAdapter.getSelection()
+                when {
+                    groupName.isEmpty() -> {
+                        groupBinding.groupNameContainer.error =
+                            getString(R.string.error_scenario_group_name_required)
+                    }
+                    selection.isEmpty() -> Toast.makeText(
+                        dialogContext,
+                        R.string.error_scenario_group_selection_required,
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                    else -> {
+                        groupBinding.groupNameContainer.error = null
+                        scenarioListViewModel.saveGroup(
+                            originalGroupName = originalGroupName,
+                            groupName = groupName,
+                            selectedScenarios = selection,
+                        )
+                        groupDialog.dismiss()
+                    }
+                }
+            }
+        }
+        showDialog(groupDialog)
     }
 
     private fun startSettingsActivity() {

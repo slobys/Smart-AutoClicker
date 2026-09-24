@@ -161,13 +161,24 @@ internal class Repository @Inject internal constructor(
                 return@launch
             }
 
-            dataSource.addCompleteScenario(scenario.copy(name = copyName), events, counters, ::clearRemovedConditionsBitmaps)
+            dataSource.addCompleteScenario(
+                scenario.copy(name = copyName, isFavorite = false),
+                events,
+                counters,
+                ::clearRemovedConditionsBitmaps,
+            )
             onCopyCompleted(true)
         }
     }
 
     override suspend fun updateScenario(scenario: Scenario, events: List<Event>, counters: List<Counter>): Boolean =
         dataSource.updateScenario(scenario, events, counters, ::clearRemovedConditionsBitmaps)
+
+    override suspend fun updateScenarioOrganization(
+        scenarioId: Long,
+        isFavorite: Boolean,
+        groupName: String,
+    ) = dataSource.updateScenarioOrganization(scenarioId, isFavorite, groupName)
 
     override suspend fun migrateLegacyImageConditions(): Boolean {
         val legacyConditions = dataSource.getLegacyImageConditions()

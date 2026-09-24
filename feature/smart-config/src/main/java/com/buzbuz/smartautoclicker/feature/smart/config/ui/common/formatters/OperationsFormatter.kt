@@ -49,6 +49,7 @@ internal fun ChangeCounter.OperationType.toNameRes(): Int =
         ChangeCounter.OperationType.ADD -> R.string.dropdown_counter_operation_item_add
         ChangeCounter.OperationType.MINUS -> R.string.dropdown_counter_operation_item_minus
         ChangeCounter.OperationType.SET -> R.string.dropdown_counter_operation_item_set
+        ChangeCounter.OperationType.ABS_DIFF -> R.string.dropdown_counter_operation_item_abs_diff
     }
 
 fun ComparisonOperation.toEffectDescription(context: Context, counterName: String? = null, operand: String) =
@@ -74,6 +75,13 @@ internal fun ChangeCounter.OperationType.toEffectDescription(context: Context, c
         ChangeCounter.OperationType.SET ->
             context.getString(
                 R.string.field_change_counter_effect_desc_set,
+                counterName.ifEmpty { "?" },
+                operand.ifEmpty { "?" },
+            )
+
+        ChangeCounter.OperationType.ABS_DIFF ->
+            context.getString(
+                R.string.field_change_counter_effect_desc_abs_diff,
                 counterName.ifEmpty { "?" },
                 operand.ifEmpty { "?" },
             )

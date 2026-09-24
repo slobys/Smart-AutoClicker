@@ -38,6 +38,8 @@ import com.buzbuz.smartautoclicker.core.domain.model.scenario.Scenario
 import com.buzbuz.smartautoclicker.core.processing.data.DetectorEngine
 import com.buzbuz.smartautoclicker.core.processing.data.DetectorState
 import com.buzbuz.smartautoclicker.core.processing.domain.model.DetectionState
+import com.buzbuz.smartautoclicker.core.processing.domain.model.DebugExecutionState
+import com.buzbuz.smartautoclicker.core.processing.domain.model.ActionFailureSnapshot
 import com.buzbuz.smartautoclicker.core.processing.domain.model.toDetectionState
 import com.buzbuz.smartautoclicker.core.processing.domain.trying.ActionTry
 import com.buzbuz.smartautoclicker.core.processing.domain.trying.ScreenConditionTry
@@ -102,6 +104,9 @@ internal class SmartProcessingRepositoryImpl @Inject constructor(
 
     override val detectionState: Flow<DetectionState> = detectorEngine.state
         .mapNotNull { it.toDetectionState() }
+
+    override val debugExecutionState: StateFlow<DebugExecutionState> = detectorEngine.debugExecutionState
+    override val lastActionFailure: StateFlow<ActionFailureSnapshot?> = detectorEngine.lastActionFailure
 
     private val shouldKeepScreenOn: Flow<Boolean> = _scenarioId
         .combine(detectionState) { id, state ->
@@ -184,6 +189,14 @@ internal class SmartProcessingRepositoryImpl @Inject constructor(
         autoStopJob?.cancel()
         autoStopJob = null
     }
+
+    override fun requestDebugPauseAtNextEvent() = detectorEngine.requestDebugPauseAtNextEvent()
+
+    override fun cancelDebugPauseRequest() = detectorEngine.cancelDebugPauseRequest()
+
+    override fun resumeDebugExecution() = detectorEngine.resumeDebugExecution()
+
+    override fun stepDebugExecution() = detectorEngine.stepDebugExecution()
 
     override fun stopScreenRecord() {
         projectionErrorHandler = null
