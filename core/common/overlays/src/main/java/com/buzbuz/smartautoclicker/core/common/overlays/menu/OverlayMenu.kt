@@ -220,7 +220,10 @@ abstract class OverlayMenu(
         setupButtons(buttonsContainer)
 
         // Setup the touch event handler for the move button
-        moveTouchEventHandler = OverlayMenuMoveTouchEventHandler(::updateMenuPosition)
+        moveTouchEventHandler = OverlayMenuMoveTouchEventHandler(
+            onMenuMoved = ::updateMenuPosition,
+            onDragFinished = ::onExpandedMenuDragFinished,
+        )
 
         // Restore the last menu position, if any.
         menuLayoutParams.gravity = Gravity.TOP or Gravity.START
@@ -653,8 +656,19 @@ abstract class OverlayMenu(
         saveMenuPosition(displayConfigManager.displayConfig.orientation)
     }
 
+    private fun onExpandedMenuDragFinished() {
+        onMenuDockChanged(isMenuOnLeftHalf())
+        refreshMenuPositionAfterContentChange()
+    }
+
     /** Allows specialised menus to temporarily prevent automatic collapsing, such as while debug details are shown. */
     protected open fun canAutoCollapseMenu(): Boolean = true
+
+    /**
+     * Tells whether a collapsed menu can be tucked outside the display.
+     * Specialised menus can keep additional visible content, such as a live debug panel, fully on screen.
+     */
+    protected open fun shouldConcealCollapsedMenuAtEdge(): Boolean = true
 
     /**
      * Called when the edge launcher is clicked while the regular menu is collapsed.
@@ -663,8 +677,8 @@ abstract class OverlayMenu(
      */
     protected open fun onCollapsedLauncherClicked(): Boolean = false
 
-    /** Called after the collapsed launcher has snapped to an edge. */
-    protected open fun onCollapsedLauncherDockChanged(isOnLeftEdge: Boolean): Unit = Unit
+    /** Called after the menu has been moved or snapped to the opposite horizontal edge. */
+    protected open fun onMenuDockChanged(isOnLeftEdge: Boolean): Unit = Unit
 
     /** Tells specialised menus whether the compact launcher is currently displayed. */
     protected fun isMenuCurrentlyCollapsed(): Boolean = isMenuCollapsed
@@ -709,6 +723,18 @@ abstract class OverlayMenu(
         collapseButton?.imageAlpha = if (visible) FULL_IMAGE_ALPHA else 0
     }
 
+    /** Keeps the menu reachable after specialised content changes its window size or visibility. */
+    protected fun refreshMenuPositionAfterContentChange() {
+        menuLayout.post {
+            if (isMenuCollapsed) {
+                setCollapsedLauncherIconVisible(!shouldConcealCollapsedMenuAtEdge())
+                snapMenuToNearestHorizontalEdge()
+            } else {
+                updateMenuPosition(Point(menuLayoutParams.x, menuLayoutParams.y))
+            }
+        }
+    }
+
     /** Expands the regular menu from a specialised collapsed-launcher interaction. */
     protected fun expandCollapsedMenu() {
         if (!resizeController.isAnimating) expandMenu()
@@ -745,7 +771,7 @@ abstract class OverlayMenu(
 
         isMenuCollapsed = true
         button.contentDescription = context.getString(R.string.content_desc_expand_overlay_menu)
-        setCollapsedLauncherIconVisible(false)
+        setCollapsedLauncherIconVisible(!shouldConcealCollapsedMenuAtEdge())
         animateCollapseButton(button)
         animateLayoutChanges {
             buttonsContainer.children
@@ -785,17 +811,18 @@ abstract class OverlayMenu(
 
         val displayWidth = displayConfigManager.displayConfig.sizePx.x
         val isOnLeftEdge = menuLayoutParams.x + menuLayout.width / 2 <= displayWidth / 2
-        val targetX = calculateConcealedEdgePosition(
+        val targetX = calculateCollapsedEdgePosition(
             displayWidth = displayWidth,
             menuWidth = menuLayout.width,
             visibleHandleWidth = context.resources.getDimensionPixelSize(
                 R.dimen.overlay_menu_collapsed_handle_visible_width,
             ),
             isOnLeftEdge = isOnLeftEdge,
+            concealAtEdge = shouldConcealCollapsedMenuAtEdge(),
         )
         updateCollapsedMenuPosition(Point(targetX, menuLayoutParams.y))
         collapseButton?.rotation = 0f
-        onCollapsedLauncherDockChanged(isOnLeftEdge)
+        onMenuDockChanged(isOnLeftEdge)
     }
 
     /** Gives the launcher a short tactile-looking pulse without changing its control-centre glyph. */
@@ -821,10 +848,12 @@ abstract class OverlayMenu(
     /** Safe setter for the position of the overlay menu ensuring it will not be displayed outside the screen. */
     private fun updateMenuPosition(position: Point) {
         val displaySize = displayConfigManager.displayConfig.sizePx
-        if (displaySize.x < menuLayout.width || displaySize.y < menuLayout.height) return
+        val menuWidth = menuLayoutParams.width.takeIf { it > 0 } ?: menuLayout.width
+        val menuHeight = menuLayoutParams.height.takeIf { it > 0 } ?: menuLayout.height
+        if (displaySize.x < menuWidth || displaySize.y < menuHeight) return
 
-        menuLayoutParams.x = position.x.coerceIn(0, displaySize.x - menuLayout.width)
-        menuLayoutParams.y = position.y.coerceIn(0, displaySize.y - menuLayout.height)
+        menuLayoutParams.x = position.x.coerceIn(0, displaySize.x - menuWidth)
+        menuLayoutParams.y = position.y.coerceIn(0, displaySize.y - menuHeight)
 
         if (lifecycle.currentState.isAtLeast(Lifecycle.State.CREATED)) {
             Log.d(TAG, "Updating menu window position: ${menuLayoutParams.x}/${menuLayoutParams.y}")
@@ -834,6 +863,11 @@ abstract class OverlayMenu(
 
     /** Keeps the collapsed edge handle reachable while allowing the rest of its window to sit outside the display. */
     private fun updateCollapsedMenuPosition(position: Point) {
+        if (!shouldConcealCollapsedMenuAtEdge()) {
+            updateMenuPosition(position)
+            return
+        }
+
         val displaySize = displayConfigManager.displayConfig.sizePx
         if (displaySize.y < menuLayout.height || menuLayout.width <= 0) return
 
@@ -925,6 +959,21 @@ internal fun calculateConcealedEdgePosition(
     } else {
         displayWidth - safeHandleWidth
     }
+}
+
+/** Horizontal window position for either a concealed launcher or a fully visible collapsed menu. */
+internal fun calculateCollapsedEdgePosition(
+    displayWidth: Int,
+    menuWidth: Int,
+    visibleHandleWidth: Int,
+    isOnLeftEdge: Boolean,
+    concealAtEdge: Boolean,
+): Int = if (concealAtEdge) {
+    calculateConcealedEdgePosition(displayWidth, menuWidth, visibleHandleWidth, isOnLeftEdge)
+} else if (isOnLeftEdge) {
+    0
+} else {
+    (displayWidth - menuWidth).coerceAtLeast(0)
 }
 
 /** Tag for logs */

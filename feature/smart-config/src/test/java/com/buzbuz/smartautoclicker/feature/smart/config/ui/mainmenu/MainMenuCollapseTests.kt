@@ -46,6 +46,16 @@ class MainMenuCollapseTests {
     }
 
     @Test
+    fun collapsedRuntimeMenuStaysFullyOnScreenWhileLiveDebugging() {
+        assertFalse(shouldConcealCollapsedRuntimeMenu(isLiveDebuggingEnabled = true))
+    }
+
+    @Test
+    fun collapsedRuntimeMenuCanHideAtEdgeWithoutLiveDebugging() {
+        assertTrue(shouldConcealCollapsedRuntimeMenu(isLiveDebuggingEnabled = false))
+    }
+
+    @Test
     fun pauseControlShowsPauseIconWhileScenarioIsRunning() {
         assertFalse(shouldShowResumeDebugIcon(DebugExecutionState.Running))
     }

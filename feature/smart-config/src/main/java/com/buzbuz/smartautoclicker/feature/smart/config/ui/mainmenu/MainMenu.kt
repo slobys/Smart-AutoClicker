@@ -121,7 +121,7 @@ class MainMenu(
     private var menuBackgroundColor: Int = Color.TRANSPARENT
     private var menuBackgroundElevation: Float = 0f
     private var quickControlsAreExpanded: Boolean = false
-    private var quickControlsAreDockedLeft: Boolean = true
+    private var menuIsDockedLeft: Boolean = true
     private var quickControlsAutoHideJob: Job? = null
     private var lastQuickPauseClickAtMs: Long = 0L
 
@@ -255,12 +255,15 @@ class MainMenu(
         return true
     }
 
-    override fun onCollapsedLauncherDockChanged(isOnLeftEdge: Boolean) {
-        if (!quickControlsAreExpanded || quickControlsAreDockedLeft == isOnLeftEdge) return
+    override fun onMenuDockChanged(isOnLeftEdge: Boolean) {
+        if (menuIsDockedLeft == isOnLeftEdge) return
 
-        quickControlsAreDockedLeft = isOnLeftEdge
-        updateQuickControlsDock()
+        menuIsDockedLeft = isOnLeftEdge
+        updateRuntimePanelsDock()
     }
+
+    override fun shouldConcealCollapsedMenuAtEdge(): Boolean =
+        shouldConcealCollapsedRuntimeMenu(liveDebuggingIsEnabled)
 
     override fun onKeyEvent(keyEvent: KeyEvent): Boolean {
         if (!keyEvent.isStopScenarioKey()) return false
@@ -408,8 +411,10 @@ class MainMenu(
      * @param isVisible true when the debug view should be shown, false to hide it.
      */
     private fun updateDebugOverlayViewVisibility(isVisible: Boolean) {
+        menuIsDockedLeft = isMenuOnLeftHalf()
         liveDebuggingIsEnabled = isVisible
         updateCompactPauseMenuAvailability()
+        updateRuntimePanelsDock()
 
         if (isVisible && debugObservableJob == null) {
             debugObservableJob = observeDebugValues()
@@ -422,6 +427,7 @@ class MainMenu(
         }
 
         setMenuItemVisibility(viewBinding.layoutDebug, isVisible)
+        refreshMenuPositionAfterContentChange()
     }
 
     /**
@@ -586,16 +592,16 @@ class MainMenu(
         quickControlsAreExpanded = targetExpanded
 
         if (targetExpanded) {
-            quickControlsAreDockedLeft = isMenuOnLeftHalf()
+            menuIsDockedLeft = isMenuOnLeftHalf()
             setCollapsedLauncherIconVisible(true)
-            updateQuickControlsDock()
+            updateRuntimePanelsDock()
             menuBackground.setCardBackgroundColor(Color.TRANSPARENT)
             menuBackground.cardElevation = 0f
             viewBinding.layoutQuickControls.alpha = 0f
             setQuickControlsClickable(false)
             setMenuItemVisibility(viewBinding.layoutQuickControls, true)
             viewBinding.root.post {
-                dockMenuToHorizontalEdge(quickControlsAreDockedLeft)
+                dockMenuToHorizontalEdge(menuIsDockedLeft)
                 viewBinding.layoutQuickControls.postOnAnimation {
                     if (!quickControlsAreExpanded) return@postOnAnimation
 
@@ -617,22 +623,38 @@ class MainMenu(
             if (isMenuCurrentlyCollapsed()) {
                 setCollapsedLauncherIconVisible(false)
                 viewBinding.root.post {
-                    concealCollapsedLauncherAtHorizontalEdge(quickControlsAreDockedLeft)
+                    concealCollapsedLauncherAtHorizontalEdge(menuIsDockedLeft)
                 }
             }
         }
     }
 
-    private fun updateQuickControlsDock() {
+    private fun updateRuntimePanelsDock() {
         ConstraintSet().apply {
             clone(viewBinding.menuContent)
-            clear(viewBinding.layoutQuickControls.id, ConstraintSet.START)
-            clear(viewBinding.layoutQuickControls.id, ConstraintSet.END)
-            clear(viewBinding.menuItems.id, ConstraintSet.START)
-            clear(viewBinding.menuItems.id, ConstraintSet.END)
+            listOf(
+                viewBinding.menuItems,
+                viewBinding.layoutDebug,
+                viewBinding.layoutQuickControls,
+            ).forEach { view ->
+                clear(view.id, ConstraintSet.START)
+                clear(view.id, ConstraintSet.END)
+            }
 
-            if (quickControlsAreDockedLeft) {
+            if (menuIsDockedLeft) {
                 connect(viewBinding.menuItems.id, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START)
+                connect(
+                    viewBinding.layoutDebug.id,
+                    ConstraintSet.START,
+                    viewBinding.menuItems.id,
+                    ConstraintSet.END,
+                )
+                connect(
+                    viewBinding.layoutDebug.id,
+                    ConstraintSet.END,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.END,
+                )
                 connect(
                     viewBinding.layoutQuickControls.id,
                     ConstraintSet.START,
@@ -647,6 +669,18 @@ class MainMenu(
                 )
             } else {
                 connect(
+                    viewBinding.layoutDebug.id,
+                    ConstraintSet.START,
+                    ConstraintSet.PARENT_ID,
+                    ConstraintSet.START,
+                )
+                connect(
+                    viewBinding.layoutDebug.id,
+                    ConstraintSet.END,
+                    viewBinding.menuItems.id,
+                    ConstraintSet.START,
+                )
+                connect(
                     viewBinding.layoutQuickControls.id,
                     ConstraintSet.START,
                     ConstraintSet.PARENT_ID,
@@ -657,12 +691,6 @@ class MainMenu(
                     ConstraintSet.END,
                     viewBinding.menuItems.id,
                     ConstraintSet.START,
-                )
-                connect(
-                    viewBinding.menuItems.id,
-                    ConstraintSet.START,
-                    viewBinding.layoutQuickControls.id,
-                    ConstraintSet.END,
                 )
                 connect(
                     viewBinding.menuItems.id,
@@ -674,7 +702,7 @@ class MainMenu(
             applyTo(viewBinding.menuContent)
         }
 
-        val mirrorScale = if (quickControlsAreDockedLeft) 1f else -1f
+        val mirrorScale = if (menuIsDockedLeft) 1f else -1f
         viewBinding.layoutQuickControls.scaleX = mirrorScale
         viewBinding.btnQuickPauseResume.scaleX = mirrorScale
         viewBinding.btnQuickStep.scaleX = mirrorScale
@@ -702,7 +730,7 @@ class MainMenu(
     }
 
     private fun openFullMenuFromQuickControls() {
-        val wasDockedLeft = quickControlsAreDockedLeft
+        val wasDockedLeft = menuIsDockedLeft
         setQuickControlsExpanded(false)
         viewBinding.root.post {
             expandCollapsedMenu()
@@ -789,6 +817,9 @@ internal fun shouldUseCompactPauseMenu(
     isDetectionRunning: Boolean,
     isLiveDebuggingEnabled: Boolean,
 ): Boolean = isDetectionRunning && !isLiveDebuggingEnabled
+
+internal fun shouldConcealCollapsedRuntimeMenu(isLiveDebuggingEnabled: Boolean): Boolean =
+    !isLiveDebuggingEnabled
 
 internal fun shouldShowResumeDebugIcon(state: DebugExecutionState): Boolean =
     state != DebugExecutionState.Running

@@ -105,4 +105,46 @@ class OverlayMenuCollapsePolicyTests {
             ),
         )
     }
+
+    @Test
+    fun visibleCollapsedMenuStaysInsideLeftEdge() {
+        assertEquals(
+            0,
+            calculateCollapsedEdgePosition(
+                displayWidth = 1920,
+                menuWidth = 540,
+                visibleHandleWidth = 24,
+                isOnLeftEdge = true,
+                concealAtEdge = false,
+            ),
+        )
+    }
+
+    @Test
+    fun visibleCollapsedMenuStaysInsideRightEdge() {
+        assertEquals(
+            1380,
+            calculateCollapsedEdgePosition(
+                displayWidth = 1920,
+                menuWidth = 540,
+                visibleHandleWidth = 24,
+                isOnLeftEdge = false,
+                concealAtEdge = false,
+            ),
+        )
+    }
+
+    @Test
+    fun regularCollapsedLauncherStillUsesConcealedEdgePosition() {
+        assertEquals(
+            1896,
+            calculateCollapsedEdgePosition(
+                displayWidth = 1920,
+                menuWidth = 540,
+                visibleHandleWidth = 24,
+                isOnLeftEdge = false,
+                concealAtEdge = true,
+            ),
+        )
+    }
 }
