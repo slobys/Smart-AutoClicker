@@ -42,7 +42,7 @@
             android:layout_marginBottom="0dp"
             android:layout_marginEnd="@dimen/margin_horizontal_default"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/button_favorite"
+            app:layout_constraintEnd_toStartOf="@id/button_start"
             app:layout_constraintTop_toTopOf="parent"
             android:drawablePadding="@dimen/margin_horizontal_small"
             android:drawableStart="@drawable/ic_dumb"
@@ -50,10 +50,19 @@
             tools:text="My cool scenario " />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_start"
+            style="@style/AppTheme.Widget.IconButtonFilled"
+            android:contentDescription="@string/content_desc_play_pause_scenario"
+            app:layout_constraintStart_toEndOf="@id/scenario_name"
+            app:layout_constraintEnd_toStartOf="@id/button_favorite"
+            app:layout_constraintTop_toTopOf="parent"
+            app:icon="@drawable/ic_play_arrow" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/button_favorite"
             style="@style/AppTheme.Widget.IconButton"
             android:contentDescription="@string/content_desc_scenario_favorite"
-            app:layout_constraintStart_toEndOf="@id/scenario_name"
+            app:layout_constraintStart_toEndOf="@id/button_start"
             app:layout_constraintEnd_toStartOf="@id/top_divider"
             app:layout_constraintTop_toTopOf="parent"
             app:icon="@drawable/ic_star" />
@@ -61,16 +70,21 @@
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/scenario_group"
             style="@style/AppTheme.TextAppearance.Body"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/margin_vertical_mini"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
             android:focusable="true"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/item_height"
+            android:paddingEnd="@dimen/margin_horizontal_small"
             android:drawablePadding="@dimen/margin_horizontal_mini"
             app:drawableLeftCompat="@drawable/ic_folder"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/top_divider"
+            app:layout_constraintEnd_toStartOf="@id/button_start"
+            app:layout_constraintHorizontal_bias="0"
+            app:layout_constrainedWidth="true"
             app:layout_constraintTop_toBottomOf="@id/scenario_name"
             tools:text="Daily tasks" />
 

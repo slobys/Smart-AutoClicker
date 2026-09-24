@@ -84,6 +84,8 @@ class DumbScenarioViewHolder(
         )
 
         if (scenarioItem.showExportCheckbox) {
+            buttonStart.visibility = View.GONE
+            buttonStart.isEnabled = false
             buttonFavorite.visibility = View.GONE
             scenarioGroup.isEnabled = false
             buttonExpandCollapse.visibility = View.INVISIBLE
@@ -96,6 +98,8 @@ class DumbScenarioViewHolder(
             root.setOnClickListener { exportClickListener(scenarioItem) }
 
         } else {
+            buttonStart.visibility = View.VISIBLE
+            buttonStart.isEnabled = true
             buttonFavorite.visibility = View.VISIBLE
             scenarioGroup.isEnabled = true
             buttonExpandCollapse.visibility = View.VISIBLE
@@ -123,6 +127,7 @@ class DumbScenarioViewHolder(
         }
 
         buttonCopy.setOnClickListener { copyClickedListener(scenarioItem) }
+        buttonStart.setOnClickListener { startScenarioListener(scenarioItem) }
         buttonExpandCollapse.setOnClickListener { expandCollapseListener(scenarioItem) }
         buttonDelete.setOnClickListener { deleteScenarioListener(scenarioItem) }
         buttonExport.setOnClickListener { exportClickListener(scenarioItem) }
@@ -158,6 +163,8 @@ class SmartScenarioViewHolder(
         )
 
         if (scenarioItem.showExportCheckbox) {
+            buttonStart.visibility = View.GONE
+            buttonStart.isEnabled = false
             buttonFavorite.visibility = View.GONE
             scenarioGroup.isEnabled = false
             buttonExpandCollapse.visibility = View.INVISIBLE
@@ -169,6 +176,8 @@ class SmartScenarioViewHolder(
             topDivider.visibility = View.GONE
             root.setOnClickListener { exportClickListener(scenarioItem) }
         } else {
+            buttonStart.visibility = View.VISIBLE
+            buttonStart.isEnabled = true
             buttonFavorite.visibility = View.VISIBLE
             scenarioGroup.isEnabled = true
             buttonExpandCollapse.visibility = View.VISIBLE
@@ -201,6 +210,7 @@ class SmartScenarioViewHolder(
         }
 
         buttonCopy.setOnClickListener { copyClickedListener(scenarioItem) }
+        buttonStart.setOnClickListener { startScenarioListener(scenarioItem) }
         buttonExpandCollapse.setOnClickListener { expandCollapseListener(scenarioItem) }
         buttonDelete.setOnClickListener { deleteScenarioListener(scenarioItem) }
         buttonExport.setOnClickListener { exportClickListener(scenarioItem) }

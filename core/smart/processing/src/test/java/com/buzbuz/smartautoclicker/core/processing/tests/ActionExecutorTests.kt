@@ -452,6 +452,29 @@ class ActionExecutorTests {
     }
 
     @Test
+    fun execute_changeCounter_failsWhenReferencedCounterIsMissing() = runTest {
+        val changeCounter = ChangeCounter(
+            id = Identifier(databaseId = 93L),
+            eventId = TEST_EVENT_ID,
+            name = TEST_NAME,
+            priority = 0,
+            counterName = "target",
+            operation = ChangeCounter.OperationType.SET,
+            operationValue = CounterOperationValue.Counter("missing"),
+        )
+        mockWhen(mockProcessingState.getCounterValue("target")).thenReturn(12.0)
+        mockWhen(mockProcessingState.getCounterValue("missing")).thenReturn(null)
+
+        val result = actionExecutor.executeActions(
+            event = getNewDefaultEvent(actions = listOf(changeCounter)),
+            results = ConditionsResults(),
+        )
+
+        assertEquals(ActionExecutionResult.Failed("Referenced counter not found: missing"), result)
+        verify(mockProcessingState, never()).setCounterValue(any(), any())
+    }
+
+    @Test
     fun execute_subflow_executesTargetActionsAndReturns() = runTest {
         val targetEventId = 77L
         val targetEvent = getNewDefaultEvent(
@@ -551,27 +574,54 @@ class ActionExecutorTests {
         ).copy(id = Identifier(databaseId = targetEventId))
         mockWhen(mockProcessingState.getEvent(targetEventId)).thenReturn(targetEvent)
 
-        actionExecutor.executeActions(
+        val result = actionExecutor.executeActions(
             event = getNewDefaultEvent(actions = listOf(getExecuteOnceAction(121L, targetEventId))),
             results = ConditionsResults(),
         )
 
+        assertEquals(
+            ActionExecutionResult.Failed("Recursive subflow call blocked: ${TEST_EVENT_ID.databaseId}"),
+            result,
+        )
         verify(mockProcessingState).getEvent(targetEventId)
         verify(mockProcessingState, never()).getEvent(TEST_EVENT_ID.databaseId)
         verify(mockAndroidExecutor, never()).dispatchGesture(anyNotNull())
     }
 
     @Test
-    fun execute_subflow_skipsMissingTarget() = runTest {
+    fun execute_subflow_reportsMissingTarget() = runTest {
         val targetEventId = 80L
         mockWhen(mockProcessingState.getEvent(targetEventId)).thenReturn(null)
 
-        actionExecutor.executeActions(
+        val result = actionExecutor.executeActions(
             event = getNewDefaultEvent(actions = listOf(getExecuteOnceAction(130L, targetEventId))),
             results = ConditionsResults(),
         )
 
+        assertEquals(ActionExecutionResult.Failed("Subflow event not found: $targetEventId"), result)
         verify(mockProcessingState).getEvent(targetEventId)
+        verify(mockAndroidExecutor, never()).dispatchGesture(anyNotNull())
+    }
+
+    @Test
+    fun execute_subflow_propagatesChildFailureAndStopsParentActions() = runTest {
+        val targetEventId = 81L
+        val invalidSwipe = getNewDefaultSwipe(140L).copy(from = null)
+        val targetEvent = getNewDefaultEvent(actions = listOf(invalidSwipe))
+            .copy(id = Identifier(databaseId = targetEventId))
+        mockWhen(mockProcessingState.getEvent(targetEventId)).thenReturn(targetEvent)
+
+        val result = actionExecutor.executeActions(
+            event = getNewDefaultEvent(
+                actions = listOf(
+                    getExecuteOnceAction(141L, targetEventId),
+                    getNewDefaultClickUserPos(142L),
+                ),
+            ),
+            results = ConditionsResults(),
+        )
+
+        assertEquals(ActionExecutionResult.Failed("Swipe coordinates are invalid"), result)
         verify(mockAndroidExecutor, never()).dispatchGesture(anyNotNull())
     }
 

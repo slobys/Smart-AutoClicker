@@ -106,19 +106,23 @@ internal class ActionExecutor(
         }
     }
 
-    suspend fun executeActions(event: Event, results: ConditionsResults? = null) {
+    suspend fun executeActions(
+        event: Event,
+        results: ConditionsResults? = null,
+    ): ActionExecutionResult =
         executeActionsInternal(
             event = event,
             results = results,
             callStack = listOf(event.getValidId()),
+            trackFailure = true,
         )
-    }
 
     private suspend fun executeActionsInternal(
         event: Event,
         results: ConditionsResults?,
         callStack: List<Long>,
-    ) {
+        trackFailure: Boolean,
+    ): ActionExecutionResult {
         for (action in event.actions) {
             val timeoutMs = action.watchdogTimeoutMs()
             val result = withTimeoutOrNull(timeoutMs) {
@@ -127,17 +131,21 @@ internal class ActionExecutor(
 
             onActionResult(event, action, result)
             if (result.isFailure) {
-                consecutiveFailures++
-                Log.w(TAG, "Action ${action.name} failed ($consecutiveFailures/$MAX_CONSECUTIVE_FAILURES): $result")
-                if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-                    Log.e(TAG, "Execution watchdog stopped the scenario after repeated action failures")
-                    onStopRequested()
+                if (trackFailure) {
+                    consecutiveFailures++
+                    Log.w(TAG, "Action ${action.name} failed ($consecutiveFailures/$MAX_CONSECUTIVE_FAILURES): $result")
+                    if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+                        Log.e(TAG, "Execution watchdog stopped the scenario after repeated action failures")
+                        onStopRequested()
+                    }
                 }
-                break
+                return result
             } else if (result is ActionExecutionResult.Success) {
-                consecutiveFailures = 0
+                if (trackFailure) consecutiveFailures = 0
             }
         }
+
+        return ActionExecutionResult.Success
     }
 
     private suspend fun executeAction(
@@ -150,7 +158,7 @@ internal class ActionExecutor(
         is Swipe -> executeSwipe(action)
         is Pause -> executePause(event, action, callStack)
         is Intent -> { executeIntent(action); ActionExecutionResult.Success }
-        is ToggleEvent -> { executeToggleEvent(action, callStack); ActionExecutionResult.Success }
+        is ToggleEvent -> executeToggleEvent(action, callStack)
         is ChangeCounter -> executeChangeCounter(action, results)
         is Notification -> { executeNotification(event, action); ActionExecutionResult.Success }
         is SystemAction -> { executeSystemAction(action); ActionExecutionResult.Success }
@@ -254,10 +262,11 @@ internal class ActionExecutor(
                 onActionResult(event, pause, ActionExecutionResult.TimedOut(pause.pauseDuration!!))
                 val targetId = pause.fallbackEventId?.databaseId
                     ?: return ActionExecutionResult.Failed("Fallback event is missing")
-                if (executeEventOnce(targetId, callStack)) {
+                val fallbackResult = executeEventOnce(targetId, callStack)
+                if (!fallbackResult.isFailure) {
                     ActionExecutionResult.Skipped("Fallback event executed after timeout")
                 } else {
-                    ActionExecutionResult.Failed("Fallback event is unavailable")
+                    fallbackResult
                 }
             }
             Pause.TimeoutBehavior.RETRY -> ActionExecutionResult.TimedOut(pause.pauseDuration!!)
@@ -297,18 +306,30 @@ internal class ActionExecutor(
      * Execute the provided toggle event.
      * @param toggleEvent the toggleEvent to be executed.
      */
-    private suspend fun executeToggleEvent(toggleEvent: ToggleEvent, callStack: List<Long>) {
+    private suspend fun executeToggleEvent(
+        toggleEvent: ToggleEvent,
+        callStack: List<Long>,
+    ): ActionExecutionResult {
         if (toggleEvent.toggleAll) {
-            when (toggleEvent.toggleAllType) {
-                ToggleEvent.ToggleType.ENABLE -> processingState.enableAll()
-                ToggleEvent.ToggleType.DISABLE -> processingState.disableAll()
-                ToggleEvent.ToggleType.TOGGLE -> processingState.toggleAll()
-                ToggleEvent.ToggleType.EXECUTE_ONCE ->
+            return when (toggleEvent.toggleAllType) {
+                ToggleEvent.ToggleType.ENABLE -> {
+                    processingState.enableAll()
+                    ActionExecutionResult.Success
+                }
+                ToggleEvent.ToggleType.DISABLE -> {
+                    processingState.disableAll()
+                    ActionExecutionResult.Success
+                }
+                ToggleEvent.ToggleType.TOGGLE -> {
+                    processingState.toggleAll()
+                    ActionExecutionResult.Success
+                }
+                ToggleEvent.ToggleType.EXECUTE_ONCE -> {
                     Log.w(TAG, "Execute-once is not supported with toggle-all")
-                null -> Unit
+                    ActionExecutionResult.Failed("Execute-once is not supported with toggle-all")
+                }
+                null -> ActionExecutionResult.Failed("Toggle-all operation is missing")
             }
-
-            return
         }
 
         toggleEvent.eventToggles.forEach { eventToggle ->
@@ -316,39 +337,47 @@ internal class ActionExecutor(
                 ToggleEvent.ToggleType.ENABLE -> processingState.enableEvent(eventToggle.targetEventId!!.databaseId)
                 ToggleEvent.ToggleType.DISABLE -> processingState.disableEvent(eventToggle.targetEventId!!.databaseId)
                 ToggleEvent.ToggleType.TOGGLE -> processingState.toggleEvent(eventToggle.targetEventId!!.databaseId)
-                ToggleEvent.ToggleType.EXECUTE_ONCE -> executeEventOnce(
-                    targetEventId = eventToggle.targetEventId!!.databaseId,
-                    callStack = callStack,
-                )
+                ToggleEvent.ToggleType.EXECUTE_ONCE -> {
+                    val result = executeEventOnce(
+                        targetEventId = eventToggle.targetEventId!!.databaseId,
+                        callStack = callStack,
+                    )
+                    if (result.isFailure) return result
+                }
             }
         }
+
+        return ActionExecutionResult.Success
     }
 
-    private suspend fun executeEventOnce(targetEventId: Long, callStack: List<Long>): Boolean {
+    private suspend fun executeEventOnce(
+        targetEventId: Long,
+        callStack: List<Long>,
+    ): ActionExecutionResult {
         if (targetEventId in callStack) {
             Log.w(TAG, "Subflow call skipped: recursive event reference $targetEventId")
-            return false
+            return ActionExecutionResult.Failed("Recursive subflow call blocked: $targetEventId")
         }
         if (callStack.size >= MAX_SUBFLOW_CALL_DEPTH) {
             Log.w(TAG, "Subflow call skipped: maximum depth $MAX_SUBFLOW_CALL_DEPTH reached")
-            return false
+            return ActionExecutionResult.Failed("Maximum subflow depth reached: $MAX_SUBFLOW_CALL_DEPTH")
         }
 
         val targetEvent = processingState.getEvent(targetEventId)
         if (targetEvent == null) {
             Log.w(TAG, "Subflow call skipped: target event $targetEventId not found")
-            return false
+            return ActionExecutionResult.Failed("Subflow event not found: $targetEventId")
         }
 
         Log.d(TAG, "Executing subflow event $targetEventId at depth ${callStack.size}")
         val targetResults = subflowResultsProvider(targetEvent)
         beforeSubflowActions(targetEvent)
-        executeActionsInternal(
+        return executeActionsInternal(
             event = targetEvent,
             results = targetResults,
             callStack = callStack + targetEventId,
+            trackFailure = false,
         )
-        return true
     }
 
     /**
@@ -365,7 +394,10 @@ internal class ActionExecutor(
                 ?.getScreenConditionResult(detectedNumberConditionId.databaseId)
                 ?.numberDetected
         } else when (val operationValue = changeCounter.operationValue) {
-                is CounterOperationValue.Counter -> processingState.getCounterValue(operationValue.value) ?: 0.0
+                is CounterOperationValue.Counter -> processingState.getCounterValue(operationValue.value)
+                    ?: return ActionExecutionResult.Failed(
+                        "Referenced counter not found: ${operationValue.value}",
+                    )
                 is CounterOperationValue.Number -> operationValue.value
             }
 
