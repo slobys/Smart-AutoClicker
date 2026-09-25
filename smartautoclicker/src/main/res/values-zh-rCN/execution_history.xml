@@ -1,0 +1,9 @@
+<resources>
+    <string name="execution_history_title">运行历史</string>
+    <string name="execution_history_empty">暂无记录。运行后会在本机保留最近 20 次运行，每次最多保留最近 500 个动作。</string>
+    <string name="execution_history_export">导出诊断 ZIP</string>
+    <string name="execution_history_export_warning">诊断包可能包含游戏截图和事件名称，分享前请检查是否有私人信息。</string>
+    <string name="execution_history_export_ok">诊断包已导出</string>
+    <string name="execution_history_export_failed">诊断包导出失败</string>
+    <string name="execution_history_count">%1$d 个动作</string>
+</resources>

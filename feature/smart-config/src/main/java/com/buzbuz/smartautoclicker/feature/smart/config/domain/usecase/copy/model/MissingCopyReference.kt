@@ -17,11 +17,17 @@
 package com.buzbuz.smartautoclicker.feature.smart.config.domain.usecase.copy.model
 
 import com.buzbuz.smartautoclicker.core.base.identifier.Identifier
+import com.buzbuz.smartautoclicker.core.domain.model.action.ActionEventReferenceSlot
 
 /** Indicates an item reference that is not present in the results of a copy.*/
 sealed class MissingCopyReference {
 
     abstract val name: String
+
+    data class ActionEventReference(
+        override val name: String,
+        val slot: ActionEventReferenceSlot,
+    ) : MissingCopyReference()
 
     /** An Event referenced by an EventToggle from a ToggleEvent can't be found in the current scenario. */
     data class EventToggleReference(

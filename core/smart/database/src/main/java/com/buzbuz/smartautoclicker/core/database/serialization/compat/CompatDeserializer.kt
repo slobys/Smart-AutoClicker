@@ -51,6 +51,8 @@ import com.buzbuz.smartautoclicker.core.database.entity.IntentExtraType
 import com.buzbuz.smartautoclicker.core.database.entity.NumberFormatType
 import com.buzbuz.smartautoclicker.core.database.entity.ScenarioEntity
 import com.buzbuz.smartautoclicker.core.database.entity.SystemActionType
+import com.buzbuz.smartautoclicker.core.database.entity.PauseWaitMode
+import com.buzbuz.smartautoclicker.core.database.entity.PauseTimeoutBehavior
 import com.buzbuz.smartautoclicker.core.database.serialization.Deserializer
 
 import kotlinx.serialization.json.JsonArray
@@ -256,6 +258,7 @@ internal open class CompatDeserializer : Deserializer {
             type = type,
             keepDetecting = keepDetecting,
             detectionCooldownMs = cooldownMs,
+            isBreakpoint = jsonEvent.getBoolean("isBreakpoint") ?: false,
         )
     }
 
@@ -546,6 +549,8 @@ internal open class CompatDeserializer : Deserializer {
                 ?: DEFAULT_CLICK_DURATION,
             clickOffsetX = clickOffsetX,
             clickOffsetY = clickOffsetY,
+            verificationEventId = jsonClick.getLong("verificationEventId"),
+            verificationTimeoutMs = jsonClick.getLong("verificationTimeoutMs"),
         )
     }
 
@@ -571,6 +576,9 @@ internal open class CompatDeserializer : Deserializer {
             swipeDuration = jsonSwipe.getLong("swipeDuration")
                 ?.coerceIn(DURATION_LOWER_BOUND..DURATION_GESTURE_UPPER_BOUND)
                 ?: DEFAULT_SWIPE_DURATION,
+            verificationEventId = jsonSwipe.getLong("verificationEventId"),
+            verificationTimeoutMs = jsonSwipe.getLong("verificationTimeoutMs"),
+            searchMaxSwipes = jsonSwipe.getInt("searchMaxSwipes"),
         )
     }
 
@@ -586,6 +594,13 @@ internal open class CompatDeserializer : Deserializer {
             priority = jsonPause.getInt("priority")?.coerceAtLeast(0) ?: 0,
             type = ActionType.PAUSE,
             pauseDuration = jsonPause.getLong("pauseDuration")?.coerceAtLeast(0) ?: DEFAULT_PAUSE_DURATION,
+            pauseWaitMode = jsonPause.getEnum<PauseWaitMode>("pauseWaitMode"),
+            pauseWaitTargetEventId = jsonPause.getLong("pauseWaitTargetEventId"),
+            pauseTimeoutBehavior = jsonPause.getEnum<PauseTimeoutBehavior>("pauseTimeoutBehavior"),
+            pauseMaxRetries = jsonPause.getInt("pauseMaxRetries"),
+            pauseFallbackEventId = jsonPause.getLong("pauseFallbackEventId"),
+            pauseConfirmationFrames = jsonPause.getInt("pauseConfirmationFrames"),
+            pauseChangeThresholdPercent = jsonPause.getInt("pauseChangeThresholdPercent"),
         )
     }
 

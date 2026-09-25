@@ -79,6 +79,16 @@ internal class ConditionsVerifier(
             verificationResult = verifyCondition(condition)
             verificationResults.addResult(condition.getValidId(), verificationResult)
 
+            if (verificationResult.errorReason != null) {
+                if (operator == AND) {
+                    verificationResults.setFulfilledState(false)
+                    return verificationResults
+                }
+                // An unreadable alternative cannot satisfy OR, but another valid match can.
+                yield()
+                continue
+            }
+
             if (operator == OR && verificationResult.isFulfilled) {
                 verificationResults.setFulfilledState(true)
                 return verificationResults
@@ -95,14 +105,33 @@ internal class ConditionsVerifier(
         return verificationResults
     }
 
-    private suspend fun verifyCondition(condition: Condition): ProcessedConditionResult =
-        when (condition) {
+    private suspend fun verifyCondition(condition: Condition): ProcessedConditionResult {
+        val referencedCounters = when (condition) {
+            is TriggerCondition.OnCounterCountReached -> listOfNotNull(
+                condition.counterName, (condition.counterValue as? CounterOperationValue.Counter)?.value,
+            )
+            is ScreenCondition.Number -> listOfNotNull((condition.counterValue as? CounterOperationValue.Counter)?.value)
+            else -> emptyList()
+        }
+        val missing = referencedCounters.firstOrNull { state.getCounterValue(it) == null }
+        if (missing != null) {
+            val reason = "计数器不存在：$missing"
+            return when (condition) {
+                is ScreenCondition -> condition.toInvalidConditionResult(reason).also {
+                    progressListener?.onScreenConditionProcessingStarted()
+                    progressListener?.onScreenConditionProcessingCompleted(it)
+                }
+                is TriggerCondition -> ProcessedConditionResult.Trigger(false, condition, reason)
+            }
+        }
+        return when (condition) {
             is ScreenCondition.Color -> verifyColorCondition(condition)
             is ScreenCondition.Image -> verifyImageCondition(condition)
             is ScreenCondition.Text -> verifyTextCondition(condition)
             is ScreenCondition.Number -> verifyNumberCondition(condition)
             is TriggerCondition -> condition.toConditionResult(verifyTriggerCondition(condition))
         }
+    }
 
     private fun verifyTriggerCondition(condition: TriggerCondition): Boolean =
         when (condition) {
@@ -118,7 +147,7 @@ internal class ConditionsVerifier(
         state.getCounterValue(condition.counterName)?.let { counterValue ->
 
             val operandValue = when (val operationValue = condition.counterValue) {
-                is CounterOperationValue.Counter -> state.getCounterValue(operationValue.value) ?: 0.0
+                is CounterOperationValue.Counter -> state.getCounterValue(operationValue.value) ?: return@let false
                 is CounterOperationValue.Number -> operationValue.value
             }
 
@@ -247,7 +276,8 @@ internal class ConditionsVerifier(
             if (numberDetected == null) condition.toInvalidConditionResult()
             else {
                 val operandValue = when (val operationValue = condition.counterValue) {
-                    is CounterOperationValue.Counter -> state.getCounterValue(operationValue.value) ?: 0.0
+                    is CounterOperationValue.Counter -> state.getCounterValue(operationValue.value)
+                        ?: return condition.toInvalidConditionResult("计数器不存在：${operationValue.value}")
                     is CounterOperationValue.Number -> operationValue.value
                 }
 
@@ -310,7 +340,7 @@ internal class ConditionsVerifier(
         return result
     }
 
-    private fun ScreenCondition.toInvalidConditionResult(): ProcessedConditionResult.Screen =
+    private fun ScreenCondition.toInvalidConditionResult(reason: String = "识别数据不可用"): ProcessedConditionResult.Screen =
         ProcessedConditionResult.Screen(
             isFulfilled = false,
             haveBeenDetected = false,
@@ -318,6 +348,7 @@ internal class ConditionsVerifier(
             confidenceRate = 0.0,
             position = null,
             size = null,
+            errorReason = reason,
         )
 
     private fun TriggerCondition.toConditionResult(positive: Boolean): ProcessedConditionResult.Trigger =

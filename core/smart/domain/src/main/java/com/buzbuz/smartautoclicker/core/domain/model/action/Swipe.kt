@@ -37,13 +37,18 @@ data class Swipe(
     val swipeDuration: Long? = null,
     val from: Point? = null,
     val to: Point? = null,
+    val verificationEventId: Identifier? = null,
+    val verificationTimeoutMs: Long = 1_500L,
+    val searchMaxSwipes: Int = 5,
 ) : Action() {
 
     override fun isComplete(): Boolean =
-        super.isComplete() && swipeDuration != null && from != null&& to != null
+        super.isComplete() && swipeDuration != null && from != null && to != null &&
+            (verificationEventId == null || (searchMaxSwipes in 1..50 && verificationTimeoutMs in 200..30_000))
 
     override fun hashCodeNoIds(): Int =
-        name.hashCode() + swipeDuration.hashCode() + from.hashCode() + to.hashCode()
+        name.hashCode() + swipeDuration.hashCode() + from.hashCode() + to.hashCode() +
+            verificationEventId.hashCode() + verificationTimeoutMs.hashCode() + searchMaxSwipes
 
     override fun deepCopy(): Swipe = copy(name = "" + name)
 }

@@ -67,7 +67,7 @@ class IsActionRelatedToUnreachableItemUseCaseTest {
 
     @Test
     fun `swipe action is not related to unreachable item`() {
-        assertFalse(useCase(mockk<Swipe>(relaxed = true)))
+        assertFalse(useCase(mockk<Swipe>(relaxed = true) { every { verificationEventId } returns null }))
     }
 
     @Test
@@ -117,6 +117,7 @@ class IsActionRelatedToUnreachableItemUseCaseTest {
     @Test
     fun `click user selected position is not related to unreachable item`() {
         val click = mockk<Click>(relaxed = true) {
+            every { verificationEventId } returns null
             every { positionType } returns Click.PositionType.USER_SELECTED
         }
         assertFalse(useCase(click))
@@ -125,6 +126,7 @@ class IsActionRelatedToUnreachableItemUseCaseTest {
     @Test
     fun `click on detected condition with null conditionId is not related to unreachable item`() {
         val click = mockk<Click>(relaxed = true) {
+            every { verificationEventId } returns null
             every { positionType } returns Click.PositionType.ON_DETECTED_CONDITION
             every { clickOnConditionId } returns null
         }
@@ -142,6 +144,7 @@ class IsActionRelatedToUnreachableItemUseCaseTest {
         every { mockEditionState.getAllEditedEvents() } returns listOf(event)
 
         val click = mockk<Click>(relaxed = true) {
+            every { verificationEventId } returns null
             every { eventId } returns EVENT_ID
             every { positionType } returns Click.PositionType.ON_DETECTED_CONDITION
             every { clickOnConditionId } returns conditionId
@@ -160,6 +163,7 @@ class IsActionRelatedToUnreachableItemUseCaseTest {
         every { mockEditionState.getAllEditedEvents() } returns listOf(otherEvent)
 
         val click = mockk<Click>(relaxed = true) {
+            every { verificationEventId } returns null
             every { eventId } returns EVENT_ID
             every { positionType } returns Click.PositionType.ON_DETECTED_CONDITION
             every { clickOnConditionId } returns conditionId
@@ -173,6 +177,7 @@ class IsActionRelatedToUnreachableItemUseCaseTest {
         every { mockEditionState.getAllEditedEvents() } returns emptyList()
 
         val click = mockk<Click>(relaxed = true) {
+            every { verificationEventId } returns null
             every { eventId } returns EVENT_ID
             every { positionType } returns Click.PositionType.ON_DETECTED_CONDITION
             every { clickOnConditionId } returns conditionId
@@ -191,6 +196,7 @@ class IsActionRelatedToUnreachableItemUseCaseTest {
         every { mockEditionState.getAllEditedEvents() } returns emptyList()
 
         val click = mockk<Click>(relaxed = true) {
+            every { verificationEventId } returns null
             every { eventId } returns EVENT_ID
             every { positionType } returns Click.PositionType.ON_DETECTED_CONDITION
             every { clickOnConditionId } returns conditionId
@@ -209,6 +215,7 @@ class IsActionRelatedToUnreachableItemUseCaseTest {
         every { mockEditionState.getAllEditedEvents() } returns emptyList()
 
         val click = mockk<Click>(relaxed = true) {
+            every { verificationEventId } returns null
             every { eventId } returns EVENT_ID
             every { positionType } returns Click.PositionType.ON_DETECTED_CONDITION
             every { clickOnConditionId } returns conditionId

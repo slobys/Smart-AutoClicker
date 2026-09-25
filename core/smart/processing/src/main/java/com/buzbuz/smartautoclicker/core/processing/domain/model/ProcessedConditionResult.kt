@@ -25,6 +25,7 @@ sealed class ProcessedConditionResult {
 
     /** Tells if the condition has been fulfilled or not.*/
     abstract val isFulfilled: Boolean
+    abstract val errorReason: String?
 
     /**
      * Results for an ScreenCondition.
@@ -45,6 +46,7 @@ sealed class ProcessedConditionResult {
         val size: Point?,
         val numberDetected: Double? = null,
         val numberComparisonFulfilled: Boolean? = null,
+        override val errorReason: String? = null,
     ) : ProcessedConditionResult()
 
     /**
@@ -55,5 +57,6 @@ sealed class ProcessedConditionResult {
     data class Trigger(
         override val isFulfilled: Boolean,
         val condition: TriggerCondition,
+        override val errorReason: String? = null,
     )  : ProcessedConditionResult()
 }

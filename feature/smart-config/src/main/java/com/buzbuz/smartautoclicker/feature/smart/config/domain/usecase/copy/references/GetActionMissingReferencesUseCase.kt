@@ -20,6 +20,8 @@ import com.buzbuz.smartautoclicker.core.base.identifier.Identifier
 import com.buzbuz.smartautoclicker.core.common.actions.text.findCounterReferences
 import com.buzbuz.smartautoclicker.core.domain.IRepository
 import com.buzbuz.smartautoclicker.core.domain.model.action.Action
+import com.buzbuz.smartautoclicker.core.domain.model.action.ActionEventReferenceSlot
+import com.buzbuz.smartautoclicker.core.domain.model.action.eventReferences
 import com.buzbuz.smartautoclicker.core.domain.model.action.ChangeCounter
 import com.buzbuz.smartautoclicker.core.domain.model.action.Click
 import com.buzbuz.smartautoclicker.core.domain.model.action.Intent
@@ -32,6 +34,7 @@ import com.buzbuz.smartautoclicker.core.domain.model.action.ToggleEvent
 import com.buzbuz.smartautoclicker.core.domain.model.counter.CounterOperationValue
 import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
 import com.buzbuz.smartautoclicker.core.domain.model.event.Event
+import com.buzbuz.smartautoclicker.core.domain.model.event.ScreenEvent
 import com.buzbuz.smartautoclicker.feature.smart.config.domain.EditionRepository
 import com.buzbuz.smartautoclicker.feature.smart.config.domain.usecase.copy.model.ItemWithMissingReferences
 import com.buzbuz.smartautoclicker.feature.smart.config.domain.usecase.copy.model.MissingCopyReference
@@ -72,9 +75,14 @@ class GetActionMissingReferencesUseCase @Inject constructor(
             is SystemAction -> emptyList()
         }
 
+        val eventReferences = action.eventReferences().mapNotNull { (slot, id) ->
+            val target = copyResultEvents[id]
+            if (target != null && (slot == ActionEventReferenceSlot.FALLBACK || target is ScreenEvent)) null
+            else MissingCopyReference.ActionEventReference(smartRepository.getEventName(id) ?: "#${id.databaseId}", slot)
+        }
         return ItemWithMissingReferences.ActionItem(
             item = action,
-            missingReferences = missingReferences,
+            missingReferences = missingReferences + eventReferences,
         )
     }
 

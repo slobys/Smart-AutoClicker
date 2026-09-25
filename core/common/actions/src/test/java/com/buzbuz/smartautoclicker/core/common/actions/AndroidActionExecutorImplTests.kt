@@ -79,6 +79,33 @@ class AndroidActionExecutorImplTests {
         assertEquals(AndroidGestureResult.SERVICE_UNAVAILABLE, executor.dispatchGesture(gesture()))
     }
 
+    @Test fun globalAction_returnsAndroidAcceptance() {
+        val service = mock(AccessibilityService::class.java)
+        val executor = actionExecutor(service)
+        `when`(service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)).thenReturn(false, true)
+        assertEquals(false, executor.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK))
+        assertEquals(true, executor.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK))
+    }
+
+    @Test fun missingActivity_isReportedAsFailure() {
+        val service = mock(AccessibilityService::class.java)
+        val intent = android.content.Intent("test.missing")
+        org.mockito.Mockito.doThrow(android.content.ActivityNotFoundException()).`when`(service).startActivity(intent)
+        assertEquals(false, actionExecutor(service).startActivity(intent))
+    }
+
+    @Test fun textWithoutFocusedField_fails() {
+        assertEquals(false, TextExecutor().writeText(mock(AccessibilityService::class.java), "test", false))
+    }
+
+    @Test fun unavailableService_doesNotReportSuccessForNonGestureActions() {
+        val executor = AndroidActionExecutorImpl(GestureExecutor(), mock(NotificationRequestExecutor::class.java), TextExecutor())
+        assertEquals(false, executor.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK))
+        assertEquals(false, executor.startActivity(android.content.Intent("test")))
+        assertEquals(false, executor.sendBroadcast(android.content.Intent("test")))
+        assertEquals(false, executor.writeTextOnFocusedItem("text", false))
+    }
+
     private fun actionExecutor(service: AccessibilityService): AndroidActionExecutorImpl =
         AndroidActionExecutorImpl(
             gestureExecutor = GestureExecutor(),

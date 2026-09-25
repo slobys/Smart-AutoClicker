@@ -19,7 +19,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  verify:
+    name: Verify release source
+    uses: ./.github/workflows/execute-tests.yml
+    with:
+      ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
   build:
+    needs: verify
     name: Build application
     runs-on: ubuntu-latest
 

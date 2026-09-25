@@ -43,6 +43,8 @@ data class Click(
     val position: Point? = null,
     val clickOnConditionId: Identifier? = null,
     val clickOffset: Point? = null,
+    val verificationEventId: Identifier? = null,
+    val verificationTimeoutMs: Long = 5_000L,
 ) : Action() {
 
     /**
@@ -63,11 +65,12 @@ data class Click(
     }
 
     override fun isComplete(): Boolean =
-        super.isComplete() && pressDuration != null && isPositionValid()
+        super.isComplete() && pressDuration != null && isPositionValid() &&
+            (verificationEventId == null || verificationTimeoutMs in 400..300_000)
 
     override fun hashCodeNoIds(): Int =
         name.hashCode() + pressDuration.hashCode() + positionType.hashCode() + position.hashCode() +
-                clickOnConditionId.hashCode() + clickOffset.hashCode()
+                clickOnConditionId.hashCode() + clickOffset.hashCode() + verificationEventId.hashCode() + verificationTimeoutMs.hashCode()
 
 
     override fun deepCopy(): Click = copy(name = "" + name)

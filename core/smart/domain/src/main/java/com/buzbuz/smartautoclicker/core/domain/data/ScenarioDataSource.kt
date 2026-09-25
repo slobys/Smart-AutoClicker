@@ -381,6 +381,11 @@ internal class ScenarioDataSource @Inject constructor(
                 actionInEvent.toEntity().apply {
                     eventId = eventDbId
                     clickOnConditionId = scenarioUpdateState.getActionConditionDatabaseId(actionInEvent)
+                    verificationEventId = scenarioUpdateState.getVerificationEventDatabaseId(actionInEvent)
+                    if (actionInEvent is com.buzbuz.smartautoclicker.core.domain.model.action.Pause) {
+                        pauseWaitTargetEventId = actionInEvent.waitTargetEventId?.let(scenarioUpdateState::getEventDbId)
+                        pauseFallbackEventId = actionInEvent.fallbackEventId?.let(scenarioUpdateState::getEventDbId)
+                    }
                 }
             }
         )

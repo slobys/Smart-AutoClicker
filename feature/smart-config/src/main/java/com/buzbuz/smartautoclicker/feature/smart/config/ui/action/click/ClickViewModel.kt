@@ -112,6 +112,21 @@ class ClickViewModel @Inject constructor(
     fun getEditedClick(): Click? =
         editionRepository.editionState.getEditedAction<Click>()
 
+    val verificationAction: Flow<Click> = configuredClick
+
+    fun getVerificationEvents(): List<com.buzbuz.smartautoclicker.core.domain.model.event.ScreenEvent> =
+        editionRepository.editionState.getAllEditedEvents()
+            .filterIsInstance<com.buzbuz.smartautoclicker.core.domain.model.event.ScreenEvent>()
+            .filter { it.conditions.isNotEmpty() }
+
+    fun setVerificationTarget(id: com.buzbuz.smartautoclicker.core.base.identifier.Identifier?) {
+        getEditedClick()?.let { editionRepository.updateEditedAction(it.copy(verificationEventId = id)) }
+    }
+
+    fun setVerificationTimeout(timeout: Long) {
+        getEditedClick()?.let { editionRepository.updateEditedAction(it.copy(verificationTimeoutMs = timeout)) }
+    }
+
     fun hasUnsavedModifications(): Boolean =
         editedActionHasChanged.value
 

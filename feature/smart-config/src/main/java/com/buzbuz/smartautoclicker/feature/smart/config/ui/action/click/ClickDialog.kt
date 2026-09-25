@@ -83,6 +83,7 @@ class ClickDialog(
 
     /** ViewBinding containing the views for this dialog. */
     private lateinit var viewBinding: DialogConfigActionClickBinding
+    private lateinit var verificationUi: com.buzbuz.smartautoclicker.feature.smart.config.ui.action.ActionVerificationUi
 
     override fun onCreateView(): ViewGroup {
         viewBinding = DialogConfigActionClickBinding.inflate(LayoutInflater.from(context)).apply {
@@ -147,6 +148,10 @@ class ClickDialog(
             }
         }
 
+        verificationUi = com.buzbuz.smartautoclicker.feature.smart.config.ui.action.ActionVerificationUi(
+            context, viewBinding.fieldVerification, false, viewModel::getVerificationEvents,
+            viewModel::setVerificationTarget, viewModel::setVerificationTimeout, {},
+        )
         return viewBinding.root
     }
 
@@ -159,6 +164,7 @@ class ClickDialog(
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.uiState.collect(::updateUi) }
+                launch { viewModel.verificationAction.collect(verificationUi::render) }
             }
         }
     }

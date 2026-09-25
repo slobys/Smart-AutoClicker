@@ -30,26 +30,27 @@ import javax.inject.Singleton
 @Singleton
 internal class TextExecutor @Inject constructor() {
 
-    fun writeText(service: AccessibilityService, text: String, validateInput: Boolean) {
+    fun writeText(service: AccessibilityService, text: String, validateInput: Boolean): Boolean {
         // Find the view to write on
         val focusedItem = service.findTextInputNode() ?: let {
             Log.d(TAG, "Cannot write text, no focused item found")
-            return
+            return false
         }
 
         // Write the text, if not successful, try to paste it
         if (!focusedItem.writeText(text)) {
             if (!focusedItem.pasteText(service, text)) {
                 Log.d(TAG, "Cannot write text, focused item can't be written on")
-                return
+                return false
             }
         }
 
         // Nothing to validate? We can stop here
         if (validateInput && !focusedItem.validateInput()) {
             Log.d(TAG, "Cannot validate text input, focused item can't be validated")
-            return
+            return false
         }
+        return true
     }
 }
 

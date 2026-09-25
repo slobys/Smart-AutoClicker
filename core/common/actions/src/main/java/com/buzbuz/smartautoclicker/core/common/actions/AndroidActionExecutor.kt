@@ -72,7 +72,7 @@ interface AndroidActionExecutor: Dumpable {
      * - @see AccessibilityService.GLOBAL_ACTION_HOME
      * - @see AccessibilityService.GLOBAL_ACTION_RECENTS
      */
-    fun performGlobalAction(globalAction: Int)
+    fun performGlobalAction(globalAction: Int): Boolean
 
     /**
      * Action that sets the text of the currently focused item on the screen.
@@ -80,7 +80,7 @@ interface AndroidActionExecutor: Dumpable {
      * Performing the action with an empty text will clear the text in the view. This action will also put the
      * cursor at the end of text.
      */
-    fun writeTextOnFocusedItem(text: String, validate: Boolean)
+    fun writeTextOnFocusedItem(text: String, validate: Boolean): Boolean
 
     /**
      * Launch a new activity.
@@ -90,7 +90,7 @@ interface AndroidActionExecutor: Dumpable {
      *
      * Please note that nothing ensure the intent is effectively sent if malformed.
      */
-    fun startActivity(intent: Intent)
+    fun startActivity(intent: Intent): Boolean
 
     /**
      * Send an Android broadcast
@@ -100,7 +100,7 @@ interface AndroidActionExecutor: Dumpable {
      *
      * Please note that nothing ensure the intent is effectively sent if malformed.
      */
-    fun sendBroadcast(intent: Intent)
+    fun sendBroadcast(intent: Intent): Boolean
 
     /**
      * Post an Android notification on the device.
@@ -109,7 +109,7 @@ interface AndroidActionExecutor: Dumpable {
      * unlike all other methods from this executor, this one will return before the action is effectively executed (iow,
      * due to the queuing system).
      */
-    fun postNotification(notificationRequest: ActionNotificationRequest)
+    fun postNotification(notificationRequest: ActionNotificationRequest): Boolean
 }
 
 /** Observable result of a gesture request, used by the scenario reliability layer. */

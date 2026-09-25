@@ -20,6 +20,7 @@ import com.buzbuz.smartautoclicker.core.base.identifier.Identifier
 import com.buzbuz.smartautoclicker.core.domain.model.action.Action
 import com.buzbuz.smartautoclicker.core.domain.model.action.ChangeCounter
 import com.buzbuz.smartautoclicker.core.domain.model.action.Click
+import com.buzbuz.smartautoclicker.core.domain.model.action.Swipe
 
 internal class ScenarioUpdateState {
 
@@ -53,6 +54,12 @@ internal class ScenarioUpdateState {
     fun getActionConditionDatabaseId(action: Action): Long? = when (action) {
         is Click -> action.clickOnConditionId?.let { getConditionDbId(it) }
         is ChangeCounter -> action.detectedNumberConditionId?.let { getConditionDbId(it) }
+        else -> null
+    }
+
+    fun getVerificationEventDatabaseId(action: Action): Long? = when (action) {
+        is Click -> action.verificationEventId?.let(::getEventDbId)
+        is Swipe -> action.verificationEventId?.let(::getEventDbId)
         else -> null
     }
 

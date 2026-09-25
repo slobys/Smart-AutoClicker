@@ -1,0 +1,13 @@
+<!-- English fallback for locales not yet translated; Simplified Chinese is provided. -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="action_reference_replace">Select a replacement target event</string>
+    <string name="action_verification_off">Off · keep normal action</string>
+    <string name="action_verification_target">Target: %1$s</string>
+    <string name="action_verification_missing">Target missing · select again</string>
+    <string name="action_verification_pick">Select a screen event to check</string>
+    <string name="action_verification_timeout">Confirmation timeout (ms, 400–300000)</string>
+    <string name="action_search_interval">Wait after each swipe (ms, 200–30000)</string>
+    <string name="action_search_max">Maximum swipes (1–50)</string>
+    <string name="action_verification_help">Click once, then confirm the target on two fresh frames. A failed confirmation stops the scenario; the click is never automatically replayed. Only target conditions are checked, not its actions.</string>
+    <string name="action_search_help">Swipe until the target appears. Check before the first swipe and after each swipe, with a fixed limit. Only target conditions are checked. To click it afterwards, call its subflow with a detected-position click.</string>
+</resources>

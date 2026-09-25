@@ -33,6 +33,52 @@ import org.robolectric.annotation.Config
 class ActionMapperTests {
 
     @Test
+    fun clickVerification_roundTripAndTemporaryReferenceRemapping() {
+        val click = ActionTestsData.getNewClick(eventId = ActionTestsData.ACTION_EVENT_ID).copy(
+            verificationEventId = com.buzbuz.smartautoclicker.core.base.identifier.Identifier(databaseId = 91),
+            verificationTimeoutMs = 20_000,
+        )
+        val complete = com.buzbuz.smartautoclicker.core.database.entity.CompleteActionEntity(click.toEntity(), emptyList(), emptyList())
+        assertEquals(click, complete.toDomain())
+        val imported = complete.toDomain(cleanIds = true) as Click
+        assertEquals(91L, imported.verificationEventId!!.tempId)
+        val state = com.buzbuz.smartautoclicker.core.domain.data.ScenarioUpdateState()
+        state.addEventIdMapping(91, 201)
+        assertEquals(201L, state.getVerificationEventDatabaseId(imported))
+    }
+
+    @Test
+    fun swipeSearch_roundTripPreservesLimits() {
+        val swipe = ActionTestsData.getNewSwipe(eventId = ActionTestsData.ACTION_EVENT_ID).copy(
+            verificationEventId = com.buzbuz.smartautoclicker.core.base.identifier.Identifier(databaseId = 91),
+            verificationTimeoutMs = 600, searchMaxSwipes = 9,
+        )
+        val complete = com.buzbuz.smartautoclicker.core.database.entity.CompleteActionEntity(swipe.toEntity(), emptyList(), emptyList())
+        assertEquals(swipe, complete.toDomain())
+        assertEquals(91L, (complete.toDomain(cleanIds = true) as Swipe).verificationEventId!!.tempId)
+    }
+
+    @Test
+    fun waitTargets_importedIdsAndReferenceReplacementStayIndependent() {
+        val pause = ActionTestsData.getNewPause(eventId = ActionTestsData.ACTION_EVENT_ID).copy(
+            waitMode = Pause.WaitMode.TARGET_APPEARS,
+            waitTargetEventId = com.buzbuz.smartautoclicker.core.base.identifier.Identifier(databaseId = 91),
+            timeoutBehavior = Pause.TimeoutBehavior.EXECUTE_FALLBACK,
+            fallbackEventId = com.buzbuz.smartautoclicker.core.base.identifier.Identifier(databaseId = 92),
+        )
+        val complete = com.buzbuz.smartautoclicker.core.database.entity.CompleteActionEntity(pause.toEntity(), emptyList(), emptyList())
+        val imported = complete.toDomain(cleanIds = true) as Pause
+        assertEquals(91L, imported.waitTargetEventId!!.tempId)
+        assertEquals(92L, imported.fallbackEventId!!.tempId)
+        val replaced = pause.replaceEventReference(ActionEventReferenceSlot.FALLBACK,
+            com.buzbuz.smartautoclicker.core.base.identifier.Identifier(databaseId = 93)) as Pause
+        assertEquals(pause.waitTargetEventId, replaced.waitTargetEventId)
+        assertEquals(93L, replaced.fallbackEventId!!.databaseId)
+        assertEquals(2, replaced.eventReferences().size)
+        assertEquals(0, replaced.copy(waitMode = Pause.WaitMode.FIXED_DELAY).eventReferences().size)
+    }
+
+    @Test
     fun click_toEntity() {
         assertEquals(
             ActionTestsData.getNewClickEntity(eventId = ActionTestsData.ACTION_EVENT_ID).action,

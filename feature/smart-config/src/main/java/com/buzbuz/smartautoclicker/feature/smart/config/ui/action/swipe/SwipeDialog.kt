@@ -68,6 +68,7 @@ class SwipeDialog(
 
     /** ViewBinding containing the views for this dialog. */
     private lateinit var viewBinding: DialogConfigActionSwipeBinding
+    private lateinit var verificationUi: com.buzbuz.smartautoclicker.feature.smart.config.ui.action.ActionVerificationUi
 
     override fun onCreateView(): ViewGroup {
         viewBinding = DialogConfigActionSwipeBinding.inflate(LayoutInflater.from(context)).apply {
@@ -109,6 +110,10 @@ class SwipeDialog(
             }
         }
 
+        verificationUi = com.buzbuz.smartautoclicker.feature.smart.config.ui.action.ActionVerificationUi(
+            context, viewBinding.fieldVerification, true, viewModel::getVerificationEvents,
+            viewModel::setVerificationTarget, viewModel::setVerificationTimeout, viewModel::setSearchMaxSwipes,
+        )
         return viewBinding.root
     }
 
@@ -121,6 +126,7 @@ class SwipeDialog(
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.uiState.collect(::updateUi) }
+                launch { viewModel.verificationAction.collect(verificationUi::render) }
             }
         }
     }

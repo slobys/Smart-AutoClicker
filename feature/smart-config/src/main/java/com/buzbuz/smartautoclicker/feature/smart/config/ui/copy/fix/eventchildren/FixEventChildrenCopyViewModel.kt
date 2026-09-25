@@ -29,6 +29,7 @@ import com.buzbuz.smartautoclicker.core.domain.model.event.ScreenEvent
 import com.buzbuz.smartautoclicker.feature.smart.config.R
 import com.buzbuz.smartautoclicker.feature.smart.config.domain.EditionRepository
 import com.buzbuz.smartautoclicker.feature.smart.config.domain.usecase.copy.model.MissingCopyReference
+import com.buzbuz.smartautoclicker.core.domain.model.action.replaceEventReference
 import com.buzbuz.smartautoclicker.feature.smart.config.domain.usecase.copy.references.GetActionMissingReferencesUseCase
 import com.buzbuz.smartautoclicker.feature.smart.config.domain.usecase.copy.references.GetConditionMissingReferencesUseCase
 import com.buzbuz.smartautoclicker.feature.smart.config.domain.usecase.copy.references.ReplaceMissingCounterReferenceUseCase
@@ -149,6 +150,16 @@ class FixEventChildrenCopyViewModel @Inject constructor(
 
     fun getFixedEventToCopy(): Event? =
         itemsToCopy.value?.parent
+
+    fun updateActionEventReference(item: FixCopyUiItem.Item.EventChildren, reference: MissingCopyReference.ActionEventReference, replacement: Event) {
+        if (item !is FixCopyUiItem.Item.EventChildren.ActionItem) return
+        val action = item.itemWithMissingReferences.item
+        itemsToCopy.update { old ->
+            old?.copy(parent = old.parent.copyBase(actions = old.parent.actions.map {
+                if (it.id == action.id) it.replaceEventReference(reference.slot, replacement.id) else it
+            }))
+        }
+    }
 
     private suspend fun FixEventChildrenCopyDialog.Arguments?.toUiState(context: Context): FixEventsChildrenCopyUiState {
         val items = this?.let { (_, event, showHelpMessage) ->

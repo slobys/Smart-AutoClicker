@@ -1,0 +1,10 @@
+<!-- English fallback for locales not yet translated; Simplified Chinese is provided. -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="execution_history_title">Run history</string>
+    <string name="execution_history_empty">No run history yet. Up to 20 runs and the latest 500 actions per run are kept locally.</string>
+    <string name="execution_history_export">Export diagnostic ZIP</string>
+    <string name="execution_history_export_warning">The ZIP may contain game screenshots and event names. Review it before sharing.</string>
+    <string name="execution_history_export_ok">Diagnostics exported</string>
+    <string name="execution_history_export_failed">Unable to export diagnostics</string>
+    <string name="execution_history_count">%1$d actions</string>
+</resources>

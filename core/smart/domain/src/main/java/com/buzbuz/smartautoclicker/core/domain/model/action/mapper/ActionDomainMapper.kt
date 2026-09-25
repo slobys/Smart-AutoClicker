@@ -49,7 +49,9 @@ private fun CompleteActionEntity.toDomainClick(cleanIds: Boolean = false) = Clic
     clickOnConditionId = action.clickOnConditionId?.let { Identifier(id = it, asTemporary = cleanIds) },
     clickOffset =
         if (action.clickOffsetX != null && action.clickOffsetY != null) Point(action.clickOffsetX!!, action.clickOffsetY!!)
-        else null
+        else null,
+    verificationEventId = action.verificationEventId?.let { Identifier(id = it, asTemporary = cleanIds) },
+    verificationTimeoutMs = action.verificationTimeoutMs ?: 5_000L,
 )
 
 private fun CompleteActionEntity.toDomainSwipe(cleanIds: Boolean = false) = Swipe(
@@ -60,6 +62,9 @@ private fun CompleteActionEntity.toDomainSwipe(cleanIds: Boolean = false) = Swip
     swipeDuration = action.swipeDuration!!,
     from = getPositionIfValid(action.fromX, action.fromY),
     to = getPositionIfValid(action.toX, action.toY),
+    verificationEventId = action.verificationEventId?.let { Identifier(id = it, asTemporary = cleanIds) },
+    verificationTimeoutMs = action.verificationTimeoutMs ?: 1_500L,
+    searchMaxSwipes = action.searchMaxSwipes ?: 5,
 )
 
 private fun CompleteActionEntity.toDomainPause(cleanIds: Boolean = false) = Pause(

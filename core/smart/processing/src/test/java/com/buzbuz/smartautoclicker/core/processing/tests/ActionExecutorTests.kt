@@ -48,6 +48,7 @@ import com.buzbuz.smartautoclicker.core.processing.data.processor.state.Processi
 import com.buzbuz.smartautoclicker.core.processing.utils.anyNotNull
 import com.buzbuz.smartautoclicker.core.processing.domain.model.ProcessedConditionResult
 import com.buzbuz.smartautoclicker.core.processing.domain.model.ActionExecutionResult
+import com.buzbuz.smartautoclicker.core.processing.domain.model.isFailure
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.*
@@ -720,5 +721,165 @@ class ActionExecutorTests {
 
         assertTrue(results.first() is ActionExecutionResult.TimedOut)
         assertTrue(results.last() is ActionExecutionResult.Skipped)
+    }
+
+    @Test
+    fun repeatedEventFailures_areNotResetBySuccessfulPreambleOrOtherEvents() = runTest {
+        var stops = 0
+        val executor = ActionExecutor(mockAndroidExecutor, mockProcessingState, false, onStopRequested = { stops++ })
+        val failing = getNewDefaultEvent(actions = listOf(getNewDefaultPause(1), getNewDefaultSwipe(2).copy(from = null)))
+        val other = getNewDefaultEvent(actions = listOf(getNewDefaultPause(3))).copy(id = Identifier(databaseId = 99))
+        repeat(3) {
+            assertTrue(executor.executeActions(failing) is ActionExecutionResult.Failed)
+            assertEquals(ActionExecutionResult.Success, executor.executeActions(other))
+        }
+        assertEquals(1, stops)
+    }
+
+    @Test
+    fun successfulWholeEvent_resetsItsFailureCount() = runTest {
+        var stops = 0
+        val executor = ActionExecutor(mockAndroidExecutor, mockProcessingState, false, onStopRequested = { stops++ })
+        val failed = getNewDefaultEvent(actions = listOf(getNewDefaultSwipe(1).copy(from = null)))
+        repeat(2) { executor.executeActions(failed) }
+        executor.executeActions(getNewDefaultEvent(actions = listOf(getNewDefaultPause(2))))
+        repeat(2) { executor.executeActions(failed) }
+        assertEquals(0, stops)
+    }
+
+    @Test
+    fun longSubflowAndDebuggerPause_doNotConsumeAParentDeadline() = runTest {
+        val target = getNewDefaultEvent(actions = listOf(getNewDefaultPause(2).copy(pauseDuration = 90_000L)))
+            .copy(id = Identifier(databaseId = 99))
+        whenever(mockProcessingState.getEvent(99)).thenReturn(target)
+        var gateFinished = false
+        val executor = ActionExecutor(
+            mockAndroidExecutor, mockProcessingState, false,
+            beforeSubflowActions = { delay(120_000); gateFinished = true },
+            subflowResultsProvider = { assertTrue(gateFinished); null },
+        )
+        assertEquals(ActionExecutionResult.Success, executor.executeActions(
+            getNewDefaultEvent(actions = listOf(getExecuteOnceAction(1, 99))),
+        ))
+        assertEquals(210_000L, currentTime)
+    }
+
+    @Test
+    fun fifteenMinuteWait_isNotTruncatedAtTenMinutes() = runTest {
+        assertEquals(ActionExecutionResult.Success, actionExecutor.executeActions(
+            getNewDefaultEvent(actions = listOf(getNewDefaultPause(1).copy(pauseDuration = 900_000L))),
+        ))
+        assertEquals(900_000L, currentTime)
+    }
+
+    @Test
+    fun rejectedSystemAction_stopsFollowingClick() = runTest {
+        val system = com.buzbuz.smartautoclicker.core.domain.model.action.SystemAction(
+            Identifier(databaseId = 1), TEST_EVENT_ID, "返回", 0,
+            com.buzbuz.smartautoclicker.core.domain.model.action.SystemAction.Type.BACK,
+        )
+        whenever(mockAndroidExecutor.performGlobalAction(any())).thenReturn(false)
+        assertTrue(actionExecutor.executeActions(getNewDefaultEvent(actions = listOf(system, getNewDefaultClickUserPos(2))))
+            is ActionExecutionResult.Failed)
+        verify(mockAndroidExecutor, never()).dispatchGesture(any())
+    }
+
+    @Test
+    fun longWait_remainsCancellable() = runTest {
+        val job = launch {
+            actionExecutor.executeActions(getNewDefaultEvent(actions = listOf(getNewDefaultPause(1).copy(pauseDuration = 900_000L))))
+        }
+        runCurrent()
+        job.cancelAndJoin()
+        assertTrue(job.isCancelled)
+        assertEquals(0L, currentTime)
+    }
+
+    @Test
+    fun swipeSearch_checksBeforeSwipingAndNeverRunsTargetActions() = runTest {
+        val target = getNewDefaultEvent(conditions = listOf(getNewDefaultCondition(3)), actions = listOf(getNewDefaultClickUserPos(4)))
+            .copy(id = Identifier(databaseId = 99), enabledOnStart = false)
+        whenever(mockProcessingState.getEvent(99)).thenReturn(target)
+        var confirmations = 0
+        val executor = ActionExecutor(mockAndroidExecutor, mockProcessingState, false,
+            subflowResultsProvider = { ConditionsResults().apply { setFulfilledState(true) } },
+            smartWaitExecutor = { _, wait ->
+                assertEquals(2, wait.confirmationFrames)
+                confirmations++
+                ActionExecutionResult.Success
+            })
+        val search = getNewDefaultSwipe(1).copy(verificationEventId = target.id)
+        assertEquals(ActionExecutionResult.Success, executor.executeActions(getNewDefaultEvent(actions = listOf(search))))
+        assertEquals(1, confirmations)
+        verify(mockAndroidExecutor, never()).dispatchGesture(any())
+    }
+
+    @Test
+    fun swipeSearch_checksAfterFinalSwipeAndStopsAtLimit() = runTest {
+        val target = getNewDefaultEvent(conditions = listOf(getNewDefaultCondition(3))).copy(id = Identifier(databaseId = 99))
+        whenever(mockProcessingState.getEvent(99)).thenReturn(target)
+        var observations = 0
+        val executor = ActionExecutor(mockAndroidExecutor, mockProcessingState, false,
+            subflowResultsProvider = { observations++; ConditionsResults().apply { setFulfilledState(false) } })
+        val search = getNewDefaultSwipe(1).copy(verificationEventId = target.id, searchMaxSwipes = 2, verificationTimeoutMs = 200)
+        assertTrue(executor.executeActions(getNewDefaultEvent(actions = listOf(search, getNewDefaultClickUserPos(2)))) is ActionExecutionResult.Failed)
+        assertEquals(3, observations)
+        verify(mockAndroidExecutor, times(2)).dispatchGesture(any())
+    }
+
+    @Test
+    fun swipeSearch_findsTargetAfterLastAllowedSwipe() = runTest {
+        val target = getNewDefaultEvent(conditions = listOf(getNewDefaultCondition(3))).copy(id = Identifier(databaseId = 99))
+        whenever(mockProcessingState.getEvent(99)).thenReturn(target)
+        var observations = 0
+        val executor = ActionExecutor(mockAndroidExecutor, mockProcessingState, false,
+            subflowResultsProvider = { ConditionsResults().apply { setFulfilledState(++observations == 3) } },
+            smartWaitExecutor = { _, _ -> ActionExecutionResult.Success })
+        val search = getNewDefaultSwipe(1).copy(verificationEventId = target.id, searchMaxSwipes = 2, verificationTimeoutMs = 200)
+        assertEquals(ActionExecutionResult.Success, executor.executeActions(getNewDefaultEvent(actions = listOf(search))))
+        assertEquals(3, observations)
+        verify(mockAndroidExecutor, times(2)).dispatchGesture(any())
+    }
+
+    @Test
+    fun swipeSearch_missingCaptureDoesNotScrollBlindly() = runTest {
+        val target = getNewDefaultEvent(conditions = listOf(getNewDefaultCondition(3))).copy(id = Identifier(databaseId = 99))
+        whenever(mockProcessingState.getEvent(99)).thenReturn(target)
+        val search = getNewDefaultSwipe(1).copy(verificationEventId = target.id)
+        assertTrue(actionExecutor.executeActions(getNewDefaultEvent(actions = listOf(search))) is ActionExecutionResult.Failed)
+        verify(mockAndroidExecutor, never()).dispatchGesture(any())
+    }
+
+    @Test
+    fun clickConfirmation_failureRecordsBeforeStoppingAndNeverRetriesClick() = runTest {
+        whenever(mockProcessingState.getEvent(99)).thenReturn(getNewDefaultEvent(conditions = listOf(getNewDefaultCondition(3))))
+        val order = mutableListOf<String>()
+        val executor = ActionExecutor(mockAndroidExecutor, mockProcessingState, false,
+            smartWaitExecutor = { _, _ -> ActionExecutionResult.TimedOut(500) },
+            onStopRequested = { order += "stop" },
+            onActionCompleted = { _, _, result, _ -> assertTrue(result.isFailure); order += "record" })
+        val click = getNewDefaultClickUserPos(1).copy(verificationEventId = Identifier(databaseId = 99), verificationTimeoutMs = 500)
+        assertEquals(ActionExecutionResult.TimedOut(500), executor.executeActions(getNewDefaultEvent(actions = listOf(click, getNewDefaultClickUserPos(2)))))
+        assertEquals(listOf("record", "stop"), order)
+        verify(mockAndroidExecutor, times(1)).dispatchGesture(any())
+    }
+
+    @Test
+    fun clickConfirmation_successContinuesFollowingActions() = runTest {
+        whenever(mockProcessingState.getEvent(99)).thenReturn(getNewDefaultEvent(conditions = listOf(getNewDefaultCondition(3))))
+        var confirmations = 0
+        val executor = ActionExecutor(mockAndroidExecutor, mockProcessingState, false,
+            smartWaitExecutor = { _, _ -> confirmations++; ActionExecutionResult.Success })
+        val click = getNewDefaultClickUserPos(1).copy(verificationEventId = Identifier(databaseId = 99))
+        assertEquals(ActionExecutionResult.Success, executor.executeActions(getNewDefaultEvent(actions = listOf(click, getNewDefaultClickUserPos(2)))))
+        assertEquals(1, confirmations)
+        verify(mockAndroidExecutor, times(2)).dispatchGesture(any())
+    }
+
+    @Test
+    fun clickConfirmation_missingTargetIsRejectedBeforeClick() = runTest {
+        val click = getNewDefaultClickUserPos(1).copy(verificationEventId = Identifier(databaseId = 99))
+        assertTrue(actionExecutor.executeActions(getNewDefaultEvent(actions = listOf(click))) is ActionExecutionResult.Failed)
+        verify(mockAndroidExecutor, never()).dispatchGesture(any())
     }
 }

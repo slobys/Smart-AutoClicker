@@ -19,6 +19,9 @@ package com.buzbuz.smartautoclicker.feature.smart.config.domain.usecase.copy.unr
 import com.buzbuz.smartautoclicker.core.base.identifier.Identifier
 import com.buzbuz.smartautoclicker.core.common.actions.text.findCounterReferences
 import com.buzbuz.smartautoclicker.core.domain.model.action.Action
+import com.buzbuz.smartautoclicker.core.domain.model.action.ActionEventReferenceSlot
+import com.buzbuz.smartautoclicker.core.domain.model.action.eventReferences
+import com.buzbuz.smartautoclicker.core.domain.model.event.ScreenEvent
 import com.buzbuz.smartautoclicker.core.domain.model.action.ChangeCounter
 import com.buzbuz.smartautoclicker.core.domain.model.action.Click
 import com.buzbuz.smartautoclicker.core.domain.model.action.Intent
@@ -44,6 +47,11 @@ class IsActionRelatedToUnreachableItemUseCase @Inject constructor(
             putAll(editionRepository.editionState.getAllEditedEvents().map { event -> event.id to event })
             putAll(eventsToCopy.map { event -> event.id to event })
         }
+
+        if (action.eventReferences().any { (slot, id) ->
+            val target = copyResultEvents[id]
+            target == null || (slot != ActionEventReferenceSlot.FALLBACK && target !is ScreenEvent)
+        }) return true
 
         return when (action) {
             is ChangeCounter -> action.isRelatedToUnreachableItem()

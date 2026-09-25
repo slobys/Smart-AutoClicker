@@ -64,6 +64,8 @@ private fun Click.toClickEntity(): ActionEntity =
         clickOnConditionId = clickOnConditionId?.databaseId,
         clickOffsetX = clickOffset?.x,
         clickOffsetY = clickOffset?.y,
+        verificationEventId = verificationEventId?.databaseId,
+        verificationTimeoutMs = verificationTimeoutMs.takeIf { verificationEventId != null },
     )
 
 private fun Swipe.toSwipeEntity(): ActionEntity =
@@ -78,6 +80,9 @@ private fun Swipe.toSwipeEntity(): ActionEntity =
         fromY = from?.y,
         toX = to?.x,
         toY = to?.y,
+        verificationEventId = verificationEventId?.databaseId,
+        verificationTimeoutMs = verificationTimeoutMs.takeIf { verificationEventId != null },
+        searchMaxSwipes = searchMaxSwipes.takeIf { verificationEventId != null },
     )
 
 private fun Pause.toPauseEntity(): ActionEntity =

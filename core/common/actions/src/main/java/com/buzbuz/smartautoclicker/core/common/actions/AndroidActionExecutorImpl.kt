@@ -98,27 +98,34 @@ internal class AndroidActionExecutorImpl @Inject constructor(
         return AndroidGestureResult.REJECTED
     }
 
-    override fun performGlobalAction(globalAction: Int) {
-        val service = accessibilityService ?: return
+    override fun performGlobalAction(globalAction: Int): Boolean {
+        val service = accessibilityService ?: return false
 
         try {
-            service.performGlobalAction(globalAction)
+            return service.performGlobalAction(globalAction)
         } catch (ex: Exception) {
             Log.w(TAG, "Can't execute global action.", ex)
         }
+        return false
     }
 
-    override fun writeTextOnFocusedItem(text: String, validate: Boolean) {
-        val service = accessibilityService ?: return
+    override fun writeTextOnFocusedItem(text: String, validate: Boolean): Boolean {
+        val service = accessibilityService ?: return false
 
-        textExecutor.writeText(service, text, validate)
+        return try {
+            textExecutor.writeText(service, text, validate)
+        } catch (ex: RuntimeException) {
+            Log.w(TAG, "Text input was rejected", ex)
+            false
+        }
     }
 
-    override fun startActivity(intent: Intent) {
-        val service = accessibilityService ?: return
+    override fun startActivity(intent: Intent): Boolean {
+        val service = accessibilityService ?: return false
 
         try {
             service.startActivity(intent)
+            return true
         } catch (anfe: ActivityNotFoundException) {
             Log.w(TAG, "Can't start activity, it is not found.", anfe)
         } catch (arex: AndroidRuntimeException) {
@@ -130,21 +137,27 @@ internal class AndroidActionExecutorImpl @Inject constructor(
         } catch (npe: NullPointerException) {
             Log.w(TAG, "Can't start activity with intent $intent, intent is invalid", npe)
         }
+        return false
     }
 
-    override fun sendBroadcast(intent: Intent) {
-        val service = accessibilityService ?: return
+    override fun sendBroadcast(intent: Intent): Boolean {
+        val service = accessibilityService ?: return false
 
         try {
             service.sendBroadcast(intent)
+            return true
         } catch (iaex: IllegalArgumentException) {
             Log.w(TAG, "Can't send broadcast, Intent is invalid: $intent", iaex)
+        } catch (ex: SecurityException) {
+            Log.w(TAG, "Broadcast permission denied", ex)
         }
+        return false
     }
 
-    override fun postNotification(notificationRequest: ActionNotificationRequest) {
-        accessibilityService ?: return // No need for service here, but init state is bound to it
+    override fun postNotification(notificationRequest: ActionNotificationRequest): Boolean {
+        accessibilityService ?: return false // Queue acceptance is not notification delivery.
         notificationRequestExecutor.postNotification(notificationRequest)
+        return true
     }
 
     override fun dump(writer: PrintWriter, prefix: CharSequence) {

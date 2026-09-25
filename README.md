@@ -35,6 +35,7 @@
 
 
 ## Links:
+* 中文新增功能使用说明：[稳定执行与诊断](documentation/reliability-and-diagnostics-zh.md)
 * A question ? Read the Wiki first: https://github.com/Nain57/Smart-AutoClicker/wiki
 * Found a bug? Open an issue here: https://github.com/Nain57/Smart-AutoClicker/issues/new?template=bug_report.yml
 * You think an application is blocking Klick'r? Try the obfuscated version: https://github.com/Nain57/Smart-AutoClicker/releases/tag/obfuscation-start

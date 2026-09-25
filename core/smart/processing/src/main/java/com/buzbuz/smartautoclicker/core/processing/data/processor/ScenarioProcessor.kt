@@ -76,6 +76,8 @@ internal class ScenarioProcessor(
         isBreakpoint: Boolean,
     ) -> Unit = { _, _, _, _ -> },
     private val onActionResult: suspend (Event, Action, ActionExecutionResult) -> Unit = { _, _, _ -> },
+    private val monotonicTimeMs: () -> Long = { System.nanoTime() / 1_000_000L },
+    private val onActionCompleted: suspend (Event, Action, ActionExecutionResult, Long) -> Unit = { _, _, _, _ -> },
 ) {
 
     private companion object {
@@ -119,6 +121,7 @@ internal class ScenarioProcessor(
         },
         smartWaitExecutor = ::executeSmartWait,
         onActionResult = onActionResult,
+        onActionCompleted = onActionCompleted,
         onStopRequested = onStopRequested,
     )
     /** Filters one-frame visual glitches before actions are executed. */
@@ -126,7 +129,7 @@ internal class ScenarioProcessor(
         requiredHits = screenEventConfirmationHits,
         windowSize = screenEventConfirmationWindow,
     )
-    /** True only while the detector owns a captured frame that subflows can reuse. */
+    /** True only while the detector owns a captured frame. Subflows acquire a fresh one. */
     private var isScreenFrameActive: Boolean = false
     /** The frame currently owned by the detector, if any. */
     private var activeScreenFrame: Bitmap? = null
@@ -218,9 +221,19 @@ internal class ScenarioProcessor(
         when (event) {
             is ScreenEvent -> {
                 if (event.conditions.isEmpty()) null
-                else if (isScreenFrameActive) conditionsVerifier.verifyConditions(event.conditionOperator, event.conditions)
-                else withLatestScreenFrame {
-                    conditionsVerifier.verifyConditions(event.conditionOperator, event.conditions)
+                else {
+                    releaseActiveScreenFrame()
+                    // A frame may not be ready immediately after a gesture. Wait briefly for a
+                    // fresh capture; never fall back to coordinates from the parent's old frame.
+                    val startedAt = monotonicTimeMs()
+                    var results: ConditionsResults? = null
+                    while (results == null && monotonicTimeMs() - startedAt < 1_000L) {
+                        results = withLatestScreenFrame {
+                            conditionsVerifier.verifyConditions(event.conditionOperator, event.conditions)
+                        }
+                        if (results == null) delay(50L)
+                    }
+                    results
                 }
             }
             is TriggerEvent -> {
@@ -329,16 +342,17 @@ internal class ScenarioProcessor(
         }
     }
 
-    private suspend fun executeSmartWait(event: Event, pause: Pause): ActionExecutionResult {
+    @VisibleForTesting
+    internal suspend fun executeSmartWait(event: Event, pause: Pause): ActionExecutionResult {
         val timeoutMs = pause.pauseDuration ?: return ActionExecutionResult.Failed("Wait timeout is missing")
         // Never compare against the bitmap that triggered this event. A wait must observe captures
         // produced after the preceding action, otherwise animated/loading screens can be misread.
         releaseActiveScreenFrame()
-        val startedAt = System.nanoTime()
+        val startedAt = monotonicTimeMs()
         var confirmedFrames = 0
         var baseline: IntArray? = null
 
-        while (elapsedMillisecondsSince(startedAt) < timeoutMs) {
+        while (monotonicTimeMs() - startedAt < timeoutMs) {
             val matched = when (pause.waitMode) {
                 Pause.WaitMode.FIXED_DELAY -> true
                 Pause.WaitMode.TARGET_APPEARS,
@@ -354,13 +368,20 @@ internal class ScenarioProcessor(
                         conditionsVerifier.verifyConditions(
                             screenEvent.conditionOperator,
                             screenEvent.conditions,
-                        ).fulfilled == true
-                    } ?: false
+                        ).let { if (it.errorReason == null) it.fulfilled else null }
+                    } ?: run {
+                        // Unknown capture/invalid condition is NOT proof that a target vanished.
+                        confirmedFrames = 0
+                        delay(SMART_WAIT_POLL_INTERVAL_MS)
+                        continue
+                    }
                     if (pause.waitMode == Pause.WaitMode.TARGET_APPEARS) fulfilled else !fulfilled
                 }
                 Pause.WaitMode.SCREEN_STABLE,
                 Pause.WaitMode.SCREEN_CHANGED -> {
                     val fingerprint = captureScreenFingerprint() ?: run {
+                        confirmedFrames = 0
+                        if (pause.waitMode == Pause.WaitMode.SCREEN_STABLE) baseline = null
                         delay(SMART_WAIT_POLL_INTERVAL_MS)
                         continue
                     }

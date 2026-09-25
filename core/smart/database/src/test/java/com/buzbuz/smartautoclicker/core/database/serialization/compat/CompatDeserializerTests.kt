@@ -37,6 +37,25 @@ import org.robolectric.annotation.Config
 @Config(sdk = [Build.VERSION_CODES.Q])
 class CompatDeserializerTests {
 
+    @Test
+    fun oldBackup_preservesSmartWaitAndBreakpointAfterSchemaUpgrade() {
+        val parser = com.buzbuz.smartautoclicker.core.database.serialization.DeserializerFactory.create(26) as CompatDeserializer
+        val wait = parser.deserializeActionPause(kotlinx.serialization.json.Json.parseToJsonElement("""
+            {"id":1,"eventId":2,"name":"等待", "pauseDuration":10000,
+             "pauseWaitMode":"TARGET_APPEARS", "pauseWaitTargetEventId":3,
+             "pauseTimeoutBehavior":"EXECUTE_FALLBACK", "pauseFallbackEventId":4,
+             "pauseMaxRetries":2,"pauseConfirmationFrames":3,"pauseChangeThresholdPercent":5}
+        """).let { it as JsonObject })!!
+        assertEquals(com.buzbuz.smartautoclicker.core.database.entity.PauseWaitMode.TARGET_APPEARS, wait.pauseWaitMode)
+        assertEquals(3L, wait.pauseWaitTargetEventId)
+        assertEquals(4L, wait.pauseFallbackEventId)
+        assertEquals(3, wait.pauseConfirmationFrames)
+        val event = parser.deserializeEvent(kotlinx.serialization.json.Json.parseToJsonElement("""
+            {"id":2,"scenarioId":1,"name":"断点", "type":"IMAGE_EVENT","isBreakpoint":true}
+        """).let { it as JsonObject })!!
+        assertEquals(true, event.isBreakpoint)
+    }
+
     private val deserializer = object : CompatDeserializer() {}
 
     @Test

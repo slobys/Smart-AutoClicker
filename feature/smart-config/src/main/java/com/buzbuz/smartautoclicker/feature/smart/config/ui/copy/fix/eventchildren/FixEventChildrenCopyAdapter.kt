@@ -167,6 +167,7 @@ private class EventChildViewHolder(
 private fun MissingCopyReference.getIconRes(): Int =
     when (this) {
         is MissingCopyReference.EventToggleReference -> R.drawable.ic_toggle_event
+        is MissingCopyReference.ActionEventReference -> R.drawable.ic_toggle_event
         is MissingCopyReference.ScreenConditionReference -> R.drawable.ic_image_condition
         is MissingCopyReference.CounterReference -> R.drawable.ic_change_counter
     }

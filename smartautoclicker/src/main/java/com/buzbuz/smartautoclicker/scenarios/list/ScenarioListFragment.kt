@@ -171,6 +171,8 @@ class ScenarioListFragment : Fragment() {
             R.id.action_search -> scenarioListViewModel.setUiState(ScenarioListUiState.Type.SEARCH)
             R.id.action_select_all -> scenarioListViewModel.toggleAllScenarioSelectionForBackup()
             R.id.action_settings -> startSettingsActivity()
+            R.id.action_execution_history -> com.buzbuz.smartautoclicker.scenarios.history.ExecutionHistoryDialog()
+                .show(parentFragmentManager, "execution-history")
             else -> return false
         }
 

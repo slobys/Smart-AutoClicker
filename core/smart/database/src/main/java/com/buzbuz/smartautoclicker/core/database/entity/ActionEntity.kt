@@ -135,10 +135,10 @@ data class ActionEntity(
     // ActionType.PAUSE
     @ColumnInfo(name = "pauseDuration") val pauseDuration: Long? = null,
     @ColumnInfo(name = "pause_wait_mode") val pauseWaitMode: PauseWaitMode? = null,
-    @ColumnInfo(name = "pause_wait_target_event_id") val pauseWaitTargetEventId: Long? = null,
+    @ColumnInfo(name = "pause_wait_target_event_id") var pauseWaitTargetEventId: Long? = null,
     @ColumnInfo(name = "pause_timeout_behavior") val pauseTimeoutBehavior: PauseTimeoutBehavior? = null,
     @ColumnInfo(name = "pause_max_retries") val pauseMaxRetries: Int? = null,
-    @ColumnInfo(name = "pause_fallback_event_id") val pauseFallbackEventId: Long? = null,
+    @ColumnInfo(name = "pause_fallback_event_id") var pauseFallbackEventId: Long? = null,
     @ColumnInfo(name = "pause_confirmation_frames") val pauseConfirmationFrames: Int? = null,
     @ColumnInfo(name = "pause_change_threshold_percent") val pauseChangeThresholdPercent: Int? = null,
 
@@ -170,6 +170,11 @@ data class ActionEntity(
     // ActionType.TEXT
     @ColumnInfo(name = "text_value") val textValue: String? = null,
     @ColumnInfo(name = "text_validate_input") val textValidateInput: Boolean? = null,
+
+    // Optional post-click verification / bounded swipe-until target. Null keeps legacy behaviour.
+    @ColumnInfo(name = "verification_event_id") var verificationEventId: Long? = null,
+    @ColumnInfo(name = "verification_timeout_ms") val verificationTimeoutMs: Long? = null,
+    @ColumnInfo(name = "search_max_swipes") val searchMaxSwipes: Int? = null,
 ) : EntityWithId
 
 /**

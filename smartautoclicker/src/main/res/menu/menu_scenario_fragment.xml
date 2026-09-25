@@ -68,4 +68,7 @@
         android:title="@string/menu_item_title_settings"
         tools:ignore="AlwaysShowAction" />
 
+    <item android:id="@+id/action_execution_history"
+        app:showAsAction="never" android:title="@string/execution_history_title" />
+
 </menu>

@@ -82,6 +82,7 @@ internal class ActionExecutor(
     },
     private val onActionResult: suspend (Event, Action, ActionExecutionResult) -> Unit = { _, _, _ -> },
     private val onStopRequested: () -> Unit = {},
+    private val onActionCompleted: suspend (Event, Action, ActionExecutionResult, Long) -> Unit = { _, _, _, _ -> },
 ) {
 
     init { androidExecutor.resetState() }
@@ -92,7 +93,9 @@ internal class ActionExecutor(
     private val unblockGestureScheduler: UnblockGestureScheduler? =
         if (unblockWorkaroundEnabled) UnblockGestureScheduler()
         else null
-    private var consecutiveFailures: Int = 0
+    // A successful preamble (for example a delay) must not hide an event that fails every run.
+    private val eventFailures = mutableMapOf<Long, Int>()
+    private var stopAfterAction = false
 
 
     suspend fun onScenarioLoopFinished() {
@@ -109,40 +112,45 @@ internal class ActionExecutor(
     suspend fun executeActions(
         event: Event,
         results: ConditionsResults? = null,
-    ): ActionExecutionResult =
-        executeActionsInternal(
+    ): ActionExecutionResult {
+        val result = executeActionsInternal(
             event = event,
             results = results,
             callStack = listOf(event.getValidId()),
-            trackFailure = true,
         )
+        val eventId = event.getValidId()
+        if (result.isFailure) {
+            val failures = (eventFailures[eventId] ?: 0) + 1
+            eventFailures[eventId] = failures
+            Log.w(TAG, "Event ${event.name} failed ($failures/$MAX_CONSECUTIVE_FAILURES): $result")
+            if (failures == MAX_CONSECUTIVE_FAILURES) stopAfterAction = true
+        } else if (result == ActionExecutionResult.Success) {
+            eventFailures.remove(eventId)
+        }
+        if (stopAfterAction) { stopAfterAction = false; onStopRequested() }
+        return result
+    }
 
     private suspend fun executeActionsInternal(
         event: Event,
         results: ConditionsResults?,
         callStack: List<Long>,
-        trackFailure: Boolean,
     ): ActionExecutionResult {
         for (action in event.actions) {
+            val startedAt = System.nanoTime()
             val timeoutMs = action.watchdogTimeoutMs()
-            val result = withTimeoutOrNull(timeoutMs) {
+            // Orchestration is bounded by its leaf actions and cycle/depth guards. A parent
+            // deadline would also count debugger pauses and truncate valid long child waits.
+            val result = if (timeoutMs == null) {
+                executeAction(event, action, results, callStack)
+            } else withTimeoutOrNull(timeoutMs) {
                 executeAction(event, action, results, callStack)
             } ?: ActionExecutionResult.TimedOut(timeoutMs)
 
+            val durationMs = (System.nanoTime() - startedAt) / 1_000_000L
             onActionResult(event, action, result)
-            if (result.isFailure) {
-                if (trackFailure) {
-                    consecutiveFailures++
-                    Log.w(TAG, "Action ${action.name} failed ($consecutiveFailures/$MAX_CONSECUTIVE_FAILURES): $result")
-                    if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-                        Log.e(TAG, "Execution watchdog stopped the scenario after repeated action failures")
-                        onStopRequested()
-                    }
-                }
-                return result
-            } else if (result is ActionExecutionResult.Success) {
-                if (trackFailure) consecutiveFailures = 0
-            }
+            onActionCompleted(event, action, result, durationMs)
+            if (result.isFailure) return result
         }
 
         return ActionExecutionResult.Success
@@ -155,17 +163,24 @@ internal class ActionExecutor(
         callStack: List<Long>,
     ): ActionExecutionResult = when (action) {
         is Click -> executeClick(event, action, results)
-        is Swipe -> executeSwipe(action)
+        is Swipe -> executeSwipeSearch(event, action)
         is Pause -> executePause(event, action, callStack)
-        is Intent -> { executeIntent(action); ActionExecutionResult.Success }
+        is Intent -> executeIntent(action)
         is ToggleEvent -> executeToggleEvent(action, callStack)
         is ChangeCounter -> executeChangeCounter(action, results)
-        is Notification -> { executeNotification(event, action); ActionExecutionResult.Success }
-        is SystemAction -> { executeSystemAction(action); ActionExecutionResult.Success }
-        is SetText -> { executeSetText(action); ActionExecutionResult.Success }
+        is Notification -> executeNotification(event, action)
+        is SystemAction -> executeSystemAction(action)
+        is SetText -> executeSetText(action)
     }
 
     private suspend fun executeClick(event: Event, click: Click, results: ConditionsResults?): ActionExecutionResult {
+        if ((click.pressDuration ?: 0L) !in 1..59_999) return ActionExecutionResult.Failed("Invalid click duration")
+        click.verificationEventId?.let { id ->
+            val target = processingState.getEvent(id.databaseId) as? ScreenEvent
+            if (target == null || target.conditions.isEmpty() || click.verificationTimeoutMs !in 400..300_000) {
+                return ActionExecutionResult.Failed("Click confirmation target or timeout is invalid")
+            }
+        }
         val clickPath = when (click.positionType) {
             Click.PositionType.USER_SELECTED -> {
                 click.position?.let { position ->
@@ -183,9 +198,16 @@ internal class ActionExecutor(
             random = random,
         )
 
-        return withContext(Dispatchers.Main) {
-            androidExecutor.dispatchGesture(clickGesture)
-        }.toExecutionResult()
+        val result = dispatchGesture(clickGesture, click.pressDuration!!)
+        if (result.isFailure || click.verificationEventId == null) return result
+        val verification = smartWaitExecutor(event, Pause(
+            id = click.id, eventId = click.eventId, name = click.name, priority = click.priority,
+            pauseDuration = click.verificationTimeoutMs, waitMode = Pause.WaitMode.TARGET_APPEARS,
+            waitTargetEventId = click.verificationEventId, confirmationFrames = 2,
+        ))
+        // Never repeat a potentially consuming click after an ambiguous result.
+        if (verification.isFailure) stopAfterAction = true
+        return verification
     }
 
     private fun getOnConditionClickPath(event: Event, click: Click, results: ConditionsResults?): Path? {
@@ -219,6 +241,7 @@ internal class ActionExecutor(
      * @param swipe the swipe to be executed.
      */
     private suspend fun executeSwipe(swipe: Swipe): ActionExecutionResult {
+        if ((swipe.swipeDuration ?: 0L) !in 1..59_999) return ActionExecutionResult.Failed("Invalid swipe duration")
         val swipeGesture = GestureDescription.Builder().buildSingleStroke(
             path =
                 if (swipe.from == null || swipe.to == null) return ActionExecutionResult.Failed("Swipe coordinates are invalid")
@@ -227,9 +250,41 @@ internal class ActionExecutor(
             random = random,
         )
 
-        return withContext(Dispatchers.Main) {
-            androidExecutor.dispatchGesture(swipeGesture)
-        }.toExecutionResult()
+        return dispatchGesture(swipeGesture, swipe.swipeDuration!!)
+    }
+
+    private suspend fun dispatchGesture(gesture: GestureDescription, durationMs: Long): ActionExecutionResult =
+        withTimeoutOrNull(durationMs.coerceIn(0, 59_999) + ACTION_TIMEOUT_GRACE_MS) {
+            withContext(Dispatchers.Main) { androidExecutor.dispatchGesture(gesture) }.toExecutionResult()
+        } ?: ActionExecutionResult.TimedOut(durationMs + ACTION_TIMEOUT_GRACE_MS)
+
+    private suspend fun executeSwipeSearch(event: Event, swipe: Swipe): ActionExecutionResult {
+        val targetId = swipe.verificationEventId ?: return executeSwipe(swipe)
+        if (swipe.searchMaxSwipes !in 1..50 || swipe.verificationTimeoutMs !in 200..30_000) {
+            return ActionExecutionResult.Failed("Invalid swipe search limits")
+        }
+        val target = processingState.getEvent(targetId.databaseId) as? ScreenEvent
+            ?: return ActionExecutionResult.Failed("Swipe search target is unavailable")
+        if (target.conditions.isEmpty()) return ActionExecutionResult.Failed("Swipe search target has no conditions")
+        // Check first, then after every swipe, including the final allowed swipe.
+        repeat(swipe.searchMaxSwipes + 1) { attempt ->
+            val observation = subflowResultsProvider(target)
+                ?: return ActionExecutionResult.Failed("Swipe search cannot capture a fresh screen")
+            observation.errorReason?.let { return ActionExecutionResult.Failed(it) }
+            if (observation.fulfilled == true) {
+                val confirmed = smartWaitExecutor(event, Pause(
+                    swipe.id, swipe.eventId, swipe.name, swipe.priority, swipe.verificationTimeoutMs.coerceAtLeast(400L),
+                    waitMode = Pause.WaitMode.TARGET_APPEARS, waitTargetEventId = targetId, confirmationFrames = 2,
+                ))
+                // A transient match is not a reason to blindly swipe past the target.
+                return confirmed
+            }
+            if (attempt == swipe.searchMaxSwipes) return ActionExecutionResult.Failed("Swipe search reached its limit")
+            val result = executeSwipe(swipe)
+            if (result.isFailure) return result
+            delay(swipe.verificationTimeoutMs)
+        }
+        return ActionExecutionResult.Failed("Swipe search did not find the target")
     }
 
     /**
@@ -237,6 +292,9 @@ internal class ActionExecutor(
      * @param pause the pause to be executed.
      */
     private suspend fun executePause(event: Event, pause: Pause, callStack: List<Long>): ActionExecutionResult {
+        if ((pause.pauseDuration ?: 0L) <= 0 || pause.maxRetries !in 0..20) {
+            return ActionExecutionResult.Failed("Invalid wait duration or retry count")
+        }
         if (pause.waitMode == Pause.WaitMode.FIXED_DELAY) {
             delay(pause.pauseDuration!!.getPauseDurationMs(random))
             return ActionExecutionResult.Success
@@ -255,7 +313,7 @@ internal class ActionExecutor(
                 ActionExecutionResult.Skipped("Smart wait timed out")
             }
             Pause.TimeoutBehavior.STOP -> {
-                onStopRequested()
+                stopAfterAction = true
                 ActionExecutionResult.TimedOut(pause.pauseDuration!!)
             }
             Pause.TimeoutBehavior.EXECUTE_FALLBACK -> {
@@ -277,7 +335,7 @@ internal class ActionExecutor(
      * Execute the provided intent.
      * @param intent the intent to be executed.
      */
-    private suspend fun executeIntent(intent: Intent) {
+    private suspend fun executeIntent(intent: Intent): ActionExecutionResult {
         val androidIntent = AndroidIntent().apply {
             action = intent.intentAction!!
             flags = intent.flags!!
@@ -289,17 +347,18 @@ internal class ActionExecutor(
             intent.extras?.forEach { putDomainExtra(it) }
         }
 
-        if (intent.isBroadcast) {
+        val accepted = if (intent.isBroadcast) {
             withContext(Dispatchers.Main) {
                 androidExecutor.sendBroadcast(androidIntent)
             }
-            delay(INTENT_BROADCAST_DELAY)
         } else {
             withContext(Dispatchers.Main) {
                 androidExecutor.startActivity(androidIntent)
             }
-            delay(INTENT_START_ACTIVITY_DELAY)
         }
+        if (!accepted) return ActionExecutionResult.Failed("Android rejected the intent or the target app is unavailable")
+        delay(if (intent.isBroadcast) INTENT_BROADCAST_DELAY else INTENT_START_ACTIVITY_DELAY)
+        return ActionExecutionResult.Success
     }
 
     /**
@@ -370,13 +429,13 @@ internal class ActionExecutor(
         }
 
         Log.d(TAG, "Executing subflow event $targetEventId at depth ${callStack.size}")
-        val targetResults = subflowResultsProvider(targetEvent)
         beforeSubflowActions(targetEvent)
+        // Resolve after the breakpoint: the screen may have changed while execution was paused.
+        val targetResults = subflowResultsProvider(targetEvent)
         return executeActionsInternal(
             event = targetEvent,
             results = targetResults,
             callStack = callStack + targetEventId,
-            trackFailure = false,
         )
     }
 
@@ -418,7 +477,7 @@ internal class ActionExecutor(
         return ActionExecutionResult.Success
     }
 
-    private fun executeNotification(event: Event, notification: Notification) {
+    private fun executeNotification(event: Event, notification: Notification): ActionExecutionResult {
         val counters = buildMap {
             notification.messageText.findCounterReferences().forEach { counterName ->
                 processingState.getCounterValue(counterName)?.let { counterValue ->
@@ -427,7 +486,7 @@ internal class ActionExecutor(
             }
         }
 
-        androidExecutor.postNotification(
+        val accepted = androidExecutor.postNotification(
             ActionNotificationRequest(
                 actionId = notification.id.databaseId,
                 title = notification.name ?: "Klick'r",
@@ -437,21 +496,22 @@ internal class ActionExecutor(
                 importance = notification.channelImportance,
             )
         )
+        return accepted.toExecutionResult("Notification could not be queued")
     }
 
-    private suspend fun executeSystemAction(action: SystemAction) {
+    private suspend fun executeSystemAction(action: SystemAction): ActionExecutionResult {
         val globalAction = when (action.type) {
             SystemAction.Type.BACK -> AccessibilityService.GLOBAL_ACTION_BACK
             SystemAction.Type.HOME -> AccessibilityService.GLOBAL_ACTION_HOME
             SystemAction.Type.RECENT_APPS -> AccessibilityService.GLOBAL_ACTION_RECENTS
         }
 
-        withContext(Dispatchers.Main) {
+        return withContext(Dispatchers.Main) {
             androidExecutor.performGlobalAction(globalAction)
-        }
+        }.toExecutionResult("Android rejected the system action")
     }
 
-    private suspend fun executeSetText(action: SetText) {
+    private suspend fun executeSetText(action: SetText): ActionExecutionResult {
         val counters = buildMap {
             action.text.findCounterReferences().forEach { counterName ->
                 processingState.getCounterValue(counterName)?.let { counterValue ->
@@ -460,12 +520,12 @@ internal class ActionExecutor(
             }
         }
 
-        withContext(Dispatchers.Main) {
+        return withContext(Dispatchers.Main) {
             androidExecutor.writeTextOnFocusedItem(
                 text = action.text.replaceCounterReferences(counters),
                 validate = action.validateInput,
             )
-        }
+        }.toExecutionResult("Text input failed: no writable field, or validation was rejected")
     }
 }
 
@@ -476,15 +536,14 @@ private fun AndroidGestureResult.toExecutionResult(): ActionExecutionResult = wh
     AndroidGestureResult.SERVICE_UNAVAILABLE -> ActionExecutionResult.Failed("Accessibility service is unavailable")
 }
 
-private fun Action.watchdogTimeoutMs(): Long = when (this) {
-    is Pause -> if (waitMode == Pause.WaitMode.FIXED_DELAY) {
-        (pauseDuration ?: 0L) + ACTION_TIMEOUT_GRACE_MS
-    } else {
-        ((pauseDuration ?: 0L) * (if (timeoutBehavior == Pause.TimeoutBehavior.RETRY) maxRetries + 1 else 1)) +
-            ACTION_TIMEOUT_GRACE_MS
-    }
+private fun Boolean.toExecutionResult(reason: String): ActionExecutionResult =
+    if (this) ActionExecutionResult.Success else ActionExecutionResult.Failed(reason)
+
+private fun Action.watchdogTimeoutMs(): Long? = when (this) {
+    is Pause, is ToggleEvent -> null
+    is Click, is Swipe -> null // Individual gestures have their own deadline; checks/waits have theirs.
     else -> DEFAULT_ACTION_TIMEOUT_MS
-}.coerceIn(MIN_ACTION_TIMEOUT_MS, MAX_ACTION_TIMEOUT_MS)
+}
 
 /**
  * Returns the actual detection centre used by a click-on-condition action.
@@ -525,6 +584,4 @@ private const val INTENT_BROADCAST_DELAY = 100L
 private const val MAX_SUBFLOW_CALL_DEPTH = 8
 private const val MAX_CONSECUTIVE_FAILURES = 3
 private const val DEFAULT_ACTION_TIMEOUT_MS = 60_000L
-private const val MIN_ACTION_TIMEOUT_MS = 1_000L
-private const val MAX_ACTION_TIMEOUT_MS = 600_000L
 private const val ACTION_TIMEOUT_GRACE_MS = 5_000L

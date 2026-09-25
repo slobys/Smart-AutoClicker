@@ -259,6 +259,7 @@ class DetectorEngine @Inject constructor(
             }
 
             // Instantiate the processor and initialize its detection state.
+            actionFailureRecorder.beginSession(scenario.name)
             scenarioProcessor = ScenarioProcessor(
                 processingTag = appComponentsProvider.originalAppId,
                 imageDetector = detector,
@@ -278,6 +279,7 @@ class DetectorEngine @Inject constructor(
                 singleFrameConfidenceMargin = SINGLE_FRAME_CONFIDENCE_MARGIN,
                 beforeEventActions = runtimeDebugger::awaitBeforeActions,
                 onActionResult = actionFailureRecorder::onActionResult,
+                onActionCompleted = actionFailureRecorder::onActionCompleted,
             )
             scenarioProcessor?.onScenarioStart(context)
 
@@ -344,6 +346,7 @@ class DetectorEngine @Inject constructor(
             scenarioProcessor?.onScenarioEnd()
             scenarioProcessor = null
             debuggingListener.onSessionEnded()
+            actionFailureRecorder.endSession()
 
             scalingManager.stopScaling()
             displayRecorder.resizeDisplay(displayConfigManager.displayConfig.sizePx)

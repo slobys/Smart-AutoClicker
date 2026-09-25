@@ -26,6 +26,9 @@ internal class ConditionsResults {
     var fulfilled: Boolean? = null
         private set
 
+    val errorReason: String?
+        get() = if (fulfilled == true) null else _results.values.firstNotNullOfOrNull { it.errorReason }
+
     fun getScreenConditionResult(conditionId: Long): ProcessedConditionResult.Screen? =
         _results[conditionId]?.let { result -> result as? ProcessedConditionResult.Screen }
 

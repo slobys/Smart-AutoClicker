@@ -24,6 +24,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 
 import com.buzbuz.smartautoclicker.core.common.overlays.base.viewModels
+import com.buzbuz.smartautoclicker.core.common.overlays.manager.OverlayManager.Companion.showAsOverlay
+import com.buzbuz.smartautoclicker.core.domain.model.action.ActionEventReferenceSlot
+import com.buzbuz.smartautoclicker.core.domain.model.event.ScreenEvent
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.buzbuz.smartautoclicker.core.common.overlays.dialog.OverlayDialog
 import com.buzbuz.smartautoclicker.core.domain.model.action.ToggleEvent
 import com.buzbuz.smartautoclicker.core.domain.model.action.toggleevent.EventToggle
@@ -125,6 +129,16 @@ class FixEventChildrenCopyDialog(
 
     private fun onMissingReferenceClicked(item: FixCopyUiItem.Item.EventChildren, reference: MissingCopyReference) {
         when (reference) {
+            is MissingCopyReference.ActionEventReference -> {
+                val choices = dialogArguments.resultingEventList.filter {
+                    reference.slot == ActionEventReferenceSlot.FALLBACK || it is ScreenEvent
+                }
+                MaterialAlertDialogBuilder(context).setTitle(R.string.action_reference_replace)
+                    .setItems(choices.map { it.name }.toTypedArray()) { _, index ->
+                        viewModel.updateActionEventReference(item, reference, choices[index])
+                    }
+                    .setNegativeButton(android.R.string.cancel, null).create().showAsOverlay()
+            }
             is MissingCopyReference.EventToggleReference -> {
                 val action = (item as? FixCopyUiItem.Item.EventChildren.ActionItem)?.uiAction?.action ?: return
                 if (action !is ToggleEvent) return

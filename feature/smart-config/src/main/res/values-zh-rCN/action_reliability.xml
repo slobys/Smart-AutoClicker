@@ -1,0 +1,12 @@
+<resources>
+    <string name="action_reference_replace">选择替代的目标事件</string>
+    <string name="action_verification_off">关闭 · 保持普通动作</string>
+    <string name="action_verification_target">目标：%1$s</string>
+    <string name="action_verification_missing">目标已丢失，请重新选择</string>
+    <string name="action_verification_pick">选择用于确认的屏幕事件</string>
+    <string name="action_verification_timeout">确认超时（毫秒，400–300000）</string>
+    <string name="action_search_interval">每次滑动后等待（毫秒，200–30000）</string>
+    <string name="action_search_max">最多滑动次数（1–50）</string>
+    <string name="action_verification_help">点击后确认：只点击一次，连续两帧确认目标出现才继续。确认失败会停止场景，不自动重复点击。只检查目标事件的条件，不执行其动作。</string>
+    <string name="action_search_help">智能滑动查找：先检查目标，再按指定起止点滑动，每次滑动后重新检查，达到次数上限即失败。只检查目标事件的条件。找到后需要点击时，可调用该事件的子流程，使用识别位置点击。</string>
+</resources>

@@ -85,6 +85,25 @@ class SwipeViewModel @Inject constructor(
     fun getEditedSwipe(): Swipe? =
         editionRepository.editionState.getEditedAction<Swipe>()
 
+    val verificationAction: Flow<Swipe> = configuredSwipe
+
+    fun getVerificationEvents(): List<com.buzbuz.smartautoclicker.core.domain.model.event.ScreenEvent> =
+        editionRepository.editionState.getAllEditedEvents()
+            .filterIsInstance<com.buzbuz.smartautoclicker.core.domain.model.event.ScreenEvent>()
+            .filter { it.conditions.isNotEmpty() }
+
+    fun setVerificationTarget(id: com.buzbuz.smartautoclicker.core.base.identifier.Identifier?) {
+        getEditedSwipe()?.let { editionRepository.updateEditedAction(it.copy(verificationEventId = id)) }
+    }
+
+    fun setVerificationTimeout(timeout: Long) {
+        getEditedSwipe()?.let { editionRepository.updateEditedAction(it.copy(verificationTimeoutMs = timeout)) }
+    }
+
+    fun setSearchMaxSwipes(count: Int) {
+        getEditedSwipe()?.let { editionRepository.updateEditedAction(it.copy(searchMaxSwipes = count)) }
+    }
+
     fun hasUnsavedModifications(): Boolean =
         editedActionHasChanged.value
 

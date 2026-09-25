@@ -100,6 +100,24 @@ class Migration22to26Tests {
     }
 
     @Test
+    fun migrate26To27_preservesActionsAndDisablesOptionalVerification() {
+        helper.createDatabase(dbPath, 26).use { database ->
+            database.insertScenario(id = 1L, name = "Legacy scenario")
+            database.insertEvent(id = 2L, scenarioId = 1L, name = "Legacy event")
+            database.insertPauseAction(id = 3L, eventId = 2L, durationMs = 900_000L)
+        }
+        helper.runMigrationsAndValidate(dbPath, 27, true).use { database ->
+            database.query("SELECT pauseDuration, verification_event_id, verification_timeout_ms, search_max_swipes FROM $ACTION_TABLE WHERE id = 3").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(900_000L, cursor.getLong(0))
+                assertTrue(cursor.isNull(1))
+                assertTrue(cursor.isNull(2))
+                assertTrue(cursor.isNull(3))
+            }
+        }
+    }
+
+    @Test
     fun migrate24To26_preservesScenarioOrganization() {
         helper.createDatabase(dbPath, 24).use { database ->
             database.insertScenario(
