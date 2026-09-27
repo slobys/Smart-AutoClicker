@@ -321,6 +321,27 @@ class DetectorEngineRecoveryTests {
         )
     }
 
+    @Test
+    fun routeSessionExcludesDetectionUntilReleased() = runTest {
+        createEngine()
+        assertEquals(false, engine.acquireRouteSession())
+        engine.startScreenRecord(0, intent, null)
+        runCurrent()
+        assertEquals(true, engine.acquireRouteSession())
+        assertEquals(false, engine.acquireRouteSession())
+        beginDetection()
+        runCurrent()
+        assertEquals(DetectorState.RECORDING, engine.state.value)
+        verify(exactly = 0) { detector.init() }
+        engine.releaseRouteSession()
+        beginDetection()
+        runCurrent()
+        assertEquals(DetectorState.DETECTING, engine.state.value)
+        assertEquals(false, engine.acquireRouteSession())
+        engine.stopScreenRecord()
+        runCurrent()
+    }
+
     private fun TestScope.startDetecting() {
         createEngine()
         engine.startScreenRecord(0, intent, null)

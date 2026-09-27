@@ -208,6 +208,17 @@ class DetectorEngine @Inject constructor(
         recordingStartupJob?.start()
     }
 
+    /** Route OCR must not compete with normal detection for the reusable screen frame. */
+    private var routeSessionActive = false
+
+    @Synchronized internal fun acquireRouteSession(): Boolean {
+        if (routeSessionActive || _state.value != DetectorState.RECORDING) return false
+        routeSessionActive = true
+        return true
+    }
+
+    @Synchronized internal fun releaseRouteSession() { routeSessionActive = false }
+
     /**
      * Start the screen detection.
      *
@@ -226,7 +237,7 @@ class DetectorEngine @Inject constructor(
         generateReport: Boolean,
         imageDetectorFactory: () -> ImageDetector? = NativeDetector::newInstance,
     ) {
-        if (_state.value != DetectorState.RECORDING) {
+        if (routeSessionActive || _state.value != DetectorState.RECORDING) {
             Log.w(TAG, "startDetection: Screen record is not started.")
             return
         }

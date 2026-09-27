@@ -81,6 +81,14 @@ class MoreContent(appContext: Context) : NavBarDialogContent(appContext) {
                 setOnClickListener(viewModel::toggleIsDebugReportEnabled)
                 setOnClickListener { debounceUserInteraction { showCountersConfigDialog() } }
             }
+            fieldRoutes.apply {
+                setTitle(context.getString(R.string.routes_title))
+                setDescription(context.getString(R.string.routes_desc))
+                setOnClickListener { debounceUserInteraction {
+                    dialogController.overlayManager.navigateTo(context,
+                        com.buzbuz.smartautoclicker.feature.smart.config.ui.routes.RouteDialog(), hideCurrent = true)
+                } }
+            }
         }
 
         return viewBinding.root
