@@ -178,11 +178,9 @@ class DisplayRecorder @Inject internal constructor(
     suspend fun stopScreenRecord() = mutex.withLock {
         Log.d(TAG, "Stop screen record")
 
-        virtualDisplay?.apply {
-            release()
-            virtualDisplay = null
-        }
-        imageReaderProxy.close()
+        val display = virtualDisplay.also { virtualDisplay = null }
+        try { display?.release() }
+        finally { imageReaderProxy.close() }
     }
 
     /**
@@ -194,10 +192,9 @@ class DisplayRecorder @Inject internal constructor(
     suspend fun stopProjection() {
         Log.d(TAG, "Stop media projection")
 
-        stopScreenRecord()
-
-        mutex.withLock {
-            mediaProjectionProxy.stopMediaProjection()
+        try { stopScreenRecord() }
+        finally {
+            mutex.withLock { mediaProjectionProxy.stopMediaProjection() }
         }
     }
 }

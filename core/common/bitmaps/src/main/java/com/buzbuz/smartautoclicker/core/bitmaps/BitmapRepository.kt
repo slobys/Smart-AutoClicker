@@ -56,6 +56,14 @@ interface BitmapRepository : Dumpable {
      */
     fun getDisplayRecorderBitmap(width: Int, height: Int): Bitmap
 
+    /** Drop our reference when capture stops/resizes. Never recycle a bitmap still held by a caller. */
+    fun releaseDisplayRecorderBitmap()
+
+    /** Release reloadable templates under memory pressure; keep the active capture buffer reusable. */
+    fun trimMemory(level: Int)
+
+    fun memoryUsage(): BitmapMemoryUsage
+
     /**
      * Delete the specified bitmaps from the persistent memory.
      *
@@ -77,6 +85,8 @@ interface BitmapRepository : Dumpable {
     /** Clear the cache of bitmaps. */
     fun clearCache()
 }
+
+data class BitmapMemoryUsage(val templateBytes: Long, val templateLimitBytes: Long, val captureBytes: Long)
 
 /** The prefix appended to all bitmap file names. */
 const val CONDITION_FILE_PREFIX = "Condition_"

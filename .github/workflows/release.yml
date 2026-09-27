@@ -86,11 +86,18 @@ jobs:
       run: |
         set -euo pipefail
 
+        release_title="Klick'r ${RELEASE_TAG} · slobys 二次开发版"
+        notes_file="documentation/releases/${RELEASE_TAG}.md"
+        notes_args=(--generate-notes)
+        if [[ -f "$notes_file" ]]; then
+          notes_args=(--notes-file "$notes_file")
+        fi
+
         if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
           gh release create "$RELEASE_TAG" \
-            --title "Klick'r $RELEASE_TAG" \
+            --title "$release_title" \
             --draft \
-            --generate-notes \
+            "${notes_args[@]}" \
             --verify-tag
         fi
 
@@ -135,7 +142,11 @@ jobs:
           exit 1
         }
 
+        if [[ -f "$notes_file" ]]; then
+          gh release edit "$RELEASE_TAG" --notes-file "$notes_file"
+        fi
+
         gh release edit "$RELEASE_TAG" \
-          --title "Klick'r $RELEASE_TAG" \
+          --title "$release_title" \
           --draft=false \
           --prerelease=false

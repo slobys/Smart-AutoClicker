@@ -135,7 +135,6 @@ class SmartAutoClickerService : AccessibilityService() {
 
     override fun onUnbind(intent: Intent?): Boolean {
         localServiceConnection.getLocalService()?.apply {
-            stopScenario()
             release()
         }
         localServiceConnection.onAccessibilityServiceStopped()

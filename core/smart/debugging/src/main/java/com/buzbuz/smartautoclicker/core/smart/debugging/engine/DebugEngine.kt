@@ -41,16 +41,13 @@ import com.buzbuz.smartautoclicker.core.smart.debugging.engine.recorder.DebugRep
 import com.buzbuz.smartautoclicker.core.smart.debugging.engine.recorder.EventOccurrencesRecorder
 import com.buzbuz.smartautoclicker.core.smart.debugging.engine.recorder.EventStateRecorder
 import com.buzbuz.smartautoclicker.core.smart.debugging.data.mapping.toCountersInitProtobuf
+import com.buzbuz.smartautoclicker.core.smart.debugging.data.mapping.toProtobuf
 import com.buzbuz.smartautoclicker.core.smart.debugging.engine.recorder.ScreenConditionOccurrenceRecorder
 
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -62,7 +59,7 @@ import kotlin.time.Duration.Companion.milliseconds
 @Singleton
 internal class DebugEngine @Inject constructor(
     @Dispatcher(IO) ioDispatcher: CoroutineDispatcher,
-    private val debugReportLocalDataSource: DebugReportLocalDataSource,
+    debugReportLocalDataSource: DebugReportLocalDataSource,
     private val overviewRecorder: DebugReportOverviewRecorder,
     private val eventOccurrencesRecorder: EventOccurrencesRecorder,
     private val screenConditionOccurrenceRecorder: ScreenConditionOccurrenceRecorder,
@@ -70,9 +67,7 @@ internal class DebugEngine @Inject constructor(
     private val eventStateRecorder: EventStateRecorder,
 ) : SmartProcessingListener {
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private val coroutineScopeIo: CoroutineScope =
-        CoroutineScope(SupervisorJob() + ioDispatcher.limitedParallelism(1))
+    private val reportWriter = BoundedReportWriter(ioDispatcher, debugReportLocalDataSource)
 
     private var isReportEnabled: Boolean = false
     private var shouldGenerateLiveEvents: Boolean = false
@@ -87,169 +82,170 @@ internal class DebugEngine @Inject constructor(
     val lastEventProcessed: StateFlow<DebugLiveEventOccurrence?> = _lastEventProcessed
 
 
-    override fun onSessionStarted(
+    @Synchronized override fun onSessionStarted(
         scenario: Scenario,
         counters: List<Counter>,
         generateLiveEvents: Boolean,
         generateReport: Boolean,
     ) {
-        coroutineScopeIo.launch {
-            isReportEnabled = generateReport
-            shouldGenerateLiveEvents = generateLiveEvents
-            _isDebuggingSession.value = true
+        resetRecorders()
+        _lastEventProcessed.value = null
+        isReportEnabled = generateReport
+        shouldGenerateLiveEvents = generateLiveEvents
+        _isDebuggingSession.value = true
 
-            if (shouldWriteReport) {
-                overviewRecorder.onSessionStart(scenario)
-                counterValuesRecorder.onSessionStarted(counters)
+        if (shouldWriteReport) {
+            overviewRecorder.onSessionStart(scenario)
+            counterValuesRecorder.onSessionStarted(counters)
 
-                debugReportLocalDataSource.startReportWrite()
-                writeCountersInitToReport(counters)
-            }
+            reportWriter.start(counters.toCountersInitProtobuf())
         }
     }
 
     // Processing started on current frame
-    override fun onEventsListProcessingStarted(eventType: EventType) {
-        coroutineScopeIo.launch {
-            if (!shouldWriteReport) return@launch
+    @Synchronized override fun onEventsListProcessingStarted(eventType: EventType) {
+        if (!shouldWriteReport) return
 
-            overviewRecorder.onFrameProcessingStarted()
-        }
+        overviewRecorder.onFrameProcessingStarted()
     }
 
     // Processing started for current Event
-    override fun onEventProcessingStarted(event: Event) {
-        coroutineScopeIo.launch {
-            eventOccurrencesRecorder.onEventProcessingStarted()
-            screenConditionOccurrenceRecorder.onEventProcessingStarted()
+    @Synchronized override fun onEventProcessingStarted(event: Event) {
+        if (!_isDebuggingSession.value) return
+        eventOccurrencesRecorder.onEventProcessingStarted()
+        screenConditionOccurrenceRecorder.onEventProcessingStarted()
 
-            if (!shouldWriteReport) return@launch
-            counterValuesRecorder.onEventProcessingStarted()
-            eventStateRecorder.onEventProcessingStarted()
-        }
+        if (!shouldWriteReport) return
+        counterValuesRecorder.onEventProcessingStarted()
+        eventStateRecorder.onEventProcessingStarted()
     }
 
-    override fun onEventProcessingCompleted(event: Event, fulfilled: Boolean, results: List<ProcessedConditionResult>) {
-        coroutineScopeIo.launch {
-            if (fulfilled) eventOccurrencesRecorder.onEventFulfilled(event)
-            if (!shouldGenerateLiveEvents) return@launch
+    @Synchronized override fun onEventProcessingCompleted(event: Event, fulfilled: Boolean, results: List<ProcessedConditionResult>) {
+        if (!_isDebuggingSession.value) return
+        if (fulfilled) eventOccurrencesRecorder.onEventFulfilled(event)
+        if (!shouldGenerateLiveEvents) return
 
-            _lastEventProcessed.update {
-                @Suppress("UNCHECKED_CAST")
-                when (event) {
-                    is ScreenEvent -> getLiveScreenEventOccurrence(
-                        event = event,
-                        fulfilled = fulfilled,
-                        results = results as List<ProcessedConditionResult.Screen>,
-                    )
-                    is TriggerEvent -> getLiveTriggerEventOccurrence(
-                        event = event,
-                        fulfilled = fulfilled,
-                        results = results as List<ProcessedConditionResult.Trigger>,
-                    )
-                }
+        _lastEventProcessed.update {
+            @Suppress("UNCHECKED_CAST")
+            when (event) {
+                is ScreenEvent -> getLiveScreenEventOccurrence(
+                    event = event,
+                    fulfilled = fulfilled,
+                    results = results as List<ProcessedConditionResult.Screen>,
+                )
+                is TriggerEvent -> getLiveTriggerEventOccurrence(
+                    event = event,
+                    fulfilled = fulfilled,
+                    results = results as List<ProcessedConditionResult.Trigger>,
+                )
             }
         }
     }
 
     // Processing ended for current Event
-    override fun onEventActionsExecuted(event: Event, results: List<ProcessedConditionResult>) {
-        coroutineScopeIo.launch {
-            if (!shouldWriteReport) return@launch
+    @Synchronized override fun onEventActionsExecuted(event: Event, results: List<ProcessedConditionResult>) {
+        if (!shouldWriteReport) return
 
-            overviewRecorder.onActionsExecuted(event)
+        overviewRecorder.onActionsExecuted(event)
 
-            @Suppress("UNCHECKED_CAST")
-            when (event) {
-                is ScreenEvent -> {
-                    writeImageEventToReport(event)
-                    screenConditionOccurrenceRecorder.reset()
-                }
-
-                is TriggerEvent ->
-                    writeTriggerEventToReport(event, results as List<ProcessedConditionResult.Trigger>)
+        @Suppress("UNCHECKED_CAST")
+        when (event) {
+            is ScreenEvent -> {
+                writeImageEventToReport(event)
+                screenConditionOccurrenceRecorder.reset()
             }
+
+            is TriggerEvent ->
+                writeTriggerEventToReport(event, results as List<ProcessedConditionResult.Trigger>)
         }
     }
 
     // Processing ended on current frame
-    override fun onEventsProcessingCompleted(eventType: EventType) {
-        coroutineScopeIo.launch {
-            if (!shouldWriteReport) return@launch
+    @Synchronized override fun onEventsProcessingCompleted(eventType: EventType) {
+        if (!shouldWriteReport) return
 
-            overviewRecorder.onFrameProcessingStopped()
-        }
+        overviewRecorder.onFrameProcessingStopped()
     }
 
-    override fun onEventsProcessingCancelled() {
-        coroutineScopeIo.launch {
-            if (!shouldWriteReport) return@launch
+    @Synchronized override fun onEventsProcessingCancelled() {
+        if (!shouldWriteReport) return
 
-            overviewRecorder.onFrameProcessingStopped()
-            screenConditionOccurrenceRecorder.reset()
-            eventOccurrencesRecorder.reset()
-        }
+        overviewRecorder.onFrameProcessingStopped()
+        screenConditionOccurrenceRecorder.reset()
+        eventOccurrencesRecorder.reset()
     }
 
     // Image Condition is processed
-    override fun onScreenConditionProcessingStarted() {
-        coroutineScopeIo.launch {
-            if (!shouldWriteReport) return@launch
+    @Synchronized override fun onScreenConditionProcessingStarted() {
+        if (!shouldWriteReport) return
 
-            screenConditionOccurrenceRecorder.onImageConditionProcessingStarted()
-        }
+        screenConditionOccurrenceRecorder.onImageConditionProcessingStarted()
     }
 
     // Called anyway,even if not matched
-    override fun onScreenConditionProcessingCompleted(result: ProcessedConditionResult.Screen) {
-        coroutineScopeIo.launch {
-            if (!shouldWriteReport) return@launch
-
-            screenConditionOccurrenceRecorder.onImageConditionProcessingCompleted(result)
+    @Synchronized override fun onScreenConditionProcessingCompleted(result: ProcessedConditionResult.Screen) {
+        if (!shouldWriteReport) return
+        if (screenConditionOccurrenceRecorder.screenConditionResults.size >= MAX_EVENT_DETAILS) {
+            disableOverloadedReport()
+            return
         }
+
+        screenConditionOccurrenceRecorder.onImageConditionProcessingCompleted(result)
     }
 
-    override fun onCounterValueChanged(counterName: String, previousValue: Double, newValue: Double) {
-        coroutineScopeIo.launch {
-            if (!shouldWriteReport) return@launch
-            counterValuesRecorder.onCounterValueChanged(counterName, previousValue, newValue)
+    @Synchronized override fun onCounterValueChanged(counterName: String, previousValue: Double, newValue: Double) {
+        if (!shouldWriteReport) return
+        if (counterValuesRecorder.eventCounterChanges.size >= MAX_EVENT_DETAILS) {
+            disableOverloadedReport()
+            return
         }
+        counterValuesRecorder.onCounterValueChanged(counterName, previousValue, newValue)
     }
 
-    override fun onEventStateChanged(event: Event, newValue: Boolean) {
-        coroutineScopeIo.launch {
-            if (!shouldWriteReport) return@launch
-            eventStateRecorder.onEventStateChanged(event, newValue)
+    @Synchronized override fun onEventStateChanged(event: Event, newValue: Boolean) {
+        if (!shouldWriteReport) return
+        if (eventStateRecorder.changes.size >= MAX_EVENT_DETAILS) {
+            disableOverloadedReport()
+            return
         }
+        eventStateRecorder.onEventStateChanged(event, newValue)
     }
 
-    override fun onSessionEnded() {
-        coroutineScopeIo.launch {
-            if (shouldWriteReport) {
-                debugReportLocalDataSource.stopReportWrite(
-                    overview = DebugReportOverview(
-                        scenarioId = overviewRecorder.scenarioId,
-                        duration = overviewRecorder.sessionDurationMs.milliseconds,
-                        frameCount = overviewRecorder.frameCount,
-                        averageFrameProcessingDuration = overviewRecorder.averageFrameProcessingDurationMs.milliseconds,
-                        imageEventFulfilledCount = overviewRecorder.imageEventFulfilledCount,
-                        triggerEventFulfilledCount = overviewRecorder.triggerEventFulfilledCount,
-                        counterNames = counterValuesRecorder.counterNames,
-                    )
+    @Synchronized override fun onSessionEnded() {
+        if (shouldWriteReport) {
+            reportWriter.finish(
+                overview = DebugReportOverview(
+                    scenarioId = overviewRecorder.scenarioId,
+                    duration = overviewRecorder.sessionDurationMs.milliseconds,
+                    frameCount = overviewRecorder.frameCount,
+                    averageFrameProcessingDuration = overviewRecorder.averageFrameProcessingDurationMs.milliseconds,
+                    imageEventFulfilledCount = overviewRecorder.imageEventFulfilledCount,
+                    triggerEventFulfilledCount = overviewRecorder.triggerEventFulfilledCount,
+                    counterNames = counterValuesRecorder.counterNames.toSet(),
                 )
-
-                overviewRecorder.reset()
-                counterValuesRecorder.reset()
-                eventStateRecorder.reset()
-            }
-
-            eventOccurrencesRecorder.reset()
-            screenConditionOccurrenceRecorder.reset()
-            _lastEventProcessed.value = null
-            _isDebuggingSession.value = false
-            isReportEnabled = false
-            shouldGenerateLiveEvents = false
+            )
         }
+        resetRecorders()
+        _lastEventProcessed.value = null
+        _isDebuggingSession.value = false
+        isReportEnabled = false
+        shouldGenerateLiveEvents = false
+    }
+
+    private fun resetRecorders() {
+        overviewRecorder.reset()
+        counterValuesRecorder.reset()
+        eventStateRecorder.reset()
+        eventOccurrencesRecorder.reset()
+        screenConditionOccurrenceRecorder.reset()
+    }
+
+    private fun disableOverloadedReport() {
+        isReportEnabled = false
+        reportWriter.cancel()
+        screenConditionOccurrenceRecorder.reset()
+        counterValuesRecorder.reset()
+        eventStateRecorder.reset()
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -289,26 +285,22 @@ internal class DebugEngine @Inject constructor(
             },
         )
 
-    private suspend fun writeCountersInitToReport(counters: List<Counter>) {
-        debugReportLocalDataSource.writeMessageToReport(counters.toCountersInitProtobuf())
-    }
-
-    private suspend fun writeImageEventToReport(event: ScreenEvent) {
-        debugReportLocalDataSource.writeEventOccurrenceToReport(
-            occurrence = DebugReportEventOccurrence.ScreenEvent(
+    private fun writeImageEventToReport(event: ScreenEvent) {
+        isReportEnabled = reportWriter.write(
+            DebugReportEventOccurrence.ScreenEvent(
                 eventId = event.id.databaseId,
                 frameNumber = overviewRecorder.frameCount,
                 relativeTimestampMs = overviewRecorder.sessionDurationMs,
                 conditionsResults = screenConditionOccurrenceRecorder.screenConditionResults.toList(),
                 counterChanges = counterValuesRecorder.eventCounterChanges.toList(),
                 eventStateChanges = eventStateRecorder.changes.toList(),
-            )
+            ).toProtobuf()
         )
     }
 
-    private suspend fun writeTriggerEventToReport(event: TriggerEvent, results: List<ProcessedConditionResult.Trigger>) {
-        debugReportLocalDataSource.writeEventOccurrenceToReport(
-            occurrence = DebugReportEventOccurrence.TriggerEvent(
+    private fun writeTriggerEventToReport(event: TriggerEvent, results: List<ProcessedConditionResult.Trigger>) {
+        isReportEnabled = reportWriter.write(
+            DebugReportEventOccurrence.TriggerEvent(
                 eventId = event.id.databaseId,
                 relativeTimestampMs = overviewRecorder.sessionDurationMs,
                 counterChanges = counterValuesRecorder.eventCounterChanges.toList(),
@@ -319,7 +311,7 @@ internal class DebugEngine @Inject constructor(
                         isFulFilled = result.isFulfilled,
                     )
                 }
-            )
+            ).toProtobuf()
         )
     }
 }
@@ -346,3 +338,5 @@ private fun ProcessedConditionResult.Screen.getDetectionArea(): Rect? {
         pos.y + halfSize.height,
     )
 }
+
+private const val MAX_EVENT_DETAILS = 512

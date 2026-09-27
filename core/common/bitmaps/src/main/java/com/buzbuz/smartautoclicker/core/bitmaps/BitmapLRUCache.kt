@@ -22,12 +22,13 @@ import javax.inject.Inject
 
 
 internal class BitmapLRUCache @Inject constructor() : LruCache<String, Bitmap>(
-    ((Runtime.getRuntime().maxMemory() / 1024).toInt() * CACHE_SIZE_RATIO).toInt()
+    cacheBudgetKb(Runtime.getRuntime().maxMemory())
 ) {
 
     override fun sizeOf(key: String, bitmap: Bitmap): Int {
         // The cache size will be measured in kilobytes rather than number of items.
-        return bitmap.byteCount / 1024
+        // Round up: thousands of tiny templates must not become zero-cost cache entries.
+        return ((bitmap.allocationByteCount.toLong() + 1023) / 1024).coerceAtLeast(1).toInt()
     }
 
     fun putImageConditionBitmap(path: String, width: Int, height: Int, bitmap: Bitmap) {
@@ -37,20 +38,10 @@ internal class BitmapLRUCache @Inject constructor() : LruCache<String, Bitmap>(
     fun getImageConditionBitmap(path: String, width: Int, height: Int): Bitmap? =
         get(getImageConditionKey(path, width, height))
 
-    fun getDisplayRecorderBitmapOrDefault(width: Int, height: Int, insert: () -> Bitmap?) =
-        getOrDefault(getDisplayRecorderKey(width, height), insert)
-
-    private fun getOrDefault(key: String, insert: () -> Bitmap?) =
-        get(key) ?: insert()?.also { newBitmap ->
-            put(key, newBitmap)
-        }
-
-    private fun getDisplayRecorderKey(width: Int, height: Int): String =
-        "key:DISPLAY_RECORDER:$width:$height"
-
     private fun getImageConditionKey(path: String, width: Int, height: Int): String =
         "key:IMAGE_CONDITION:$path:$width:$height"
 }
 
-/** The ratio of the total application size for the size of the bitmap cache in the memory. */
-private const val CACHE_SIZE_RATIO = 0.5
+/** Leave room for screenshots, OCR models and native matching buffers, even on large-heap devices. */
+internal fun cacheBudgetKb(maxHeapBytes: Long): Int =
+    (maxHeapBytes / 8 / 1024).coerceIn(1, 32 * 1024).toInt()

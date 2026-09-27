@@ -44,6 +44,7 @@ import kotlinx.coroutines.runBlocking
 
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -56,6 +57,7 @@ import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when` as mockWhen
 import org.mockito.MockitoAnnotations
+import org.mockito.kotlin.doThrow
 
 import org.robolectric.annotation.Config
 
@@ -230,5 +232,52 @@ class DisplayRecorderTests {
         projectionCbCaptor.value.onStop()
 
         verify(mockStoppedListener).onStopped()
+    }
+
+    @Test
+    fun virtualDisplayReleaseFailureStillClosesReaderAndProjection() = runBlocking {
+        displayRecorder.startProjection(TEST_DATA_RESULT_CODE, TEST_DATA_PROJECTION_DATA_INTENT,
+            mockStoppedListener::onStopped)
+        displayRecorder.startScreenRecord(TEST_DATA_DISPLAY_SIZE)
+        doThrow(IllegalStateException("dead display")).`when`(mockVirtualDisplay).release()
+        try { displayRecorder.stopProjection(); fail("Expected release failure") }
+        catch (_: IllegalStateException) { }
+        verify(mockImageReader).close()
+        verify(mockMediaProjection).stop()
+        displayRecorder.stopProjection()
+        verify(mockVirtualDisplay, times(1)).release()
+        verify(mockMediaProjection, times(1)).stop()
+    }
+
+    @Test
+    fun imageReaderCloseFailureStillReleasesProjection() = runBlocking {
+        displayRecorder.startProjection(TEST_DATA_RESULT_CODE, TEST_DATA_PROJECTION_DATA_INTENT,
+            mockStoppedListener::onStopped)
+        displayRecorder.startScreenRecord(TEST_DATA_DISPLAY_SIZE)
+        doThrow(IllegalStateException("dead image reader")).`when`(mockImageReader).close()
+        try { displayRecorder.stopProjection(); fail("Expected close failure") }
+        catch (_: IllegalStateException) { }
+        verify(mockMediaProjection).stop()
+        displayRecorder.stopProjection()
+        verify(mockImageReader, times(1)).close()
+    }
+
+    @Test
+    fun staleCallbackAfterStopDoesNotNotifyNewListener() = runBlocking {
+        displayRecorder.startProjection(TEST_DATA_RESULT_CODE, TEST_DATA_PROJECTION_DATA_INTENT,
+            mockStoppedListener::onStopped)
+        val callbacks = ArgumentCaptor.forClass(MediaProjection.Callback::class.java)
+        verify(mockMediaProjection).registerCallback(callbacks.capture(), anyNotNull())
+        val stale = callbacks.value
+        displayRecorder.stopProjection()
+        // Android supplies a new projection after a new permission request.
+        val newProjection = org.mockito.Mockito.mock(MediaProjection::class.java)
+        mockWhen(mockMediaProjectionManager.getMediaProjection(TEST_DATA_RESULT_CODE, TEST_DATA_PROJECTION_DATA_INTENT))
+            .thenReturn(newProjection)
+        displayRecorder.startProjection(TEST_DATA_RESULT_CODE, TEST_DATA_PROJECTION_DATA_INTENT,
+            mockStoppedListener::onStopped)
+        stale.onStop()
+        verify(mockStoppedListener, never()).onStopped()
+        displayRecorder.stopProjection()
     }
 }

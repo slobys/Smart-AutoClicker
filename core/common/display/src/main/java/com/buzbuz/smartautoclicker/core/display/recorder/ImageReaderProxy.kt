@@ -48,16 +48,18 @@ internal class ImageReaderProxy @Inject constructor(
 
     fun resize(size: Point) {
         lastFrame = null
+        bitmapRepository.releaseDisplayRecorderBitmap()
         copyImageRow = IntArray(size.x)
         imageReader?.close()
         imageReader = ImageReader.newInstance(size.x, size.y, PixelFormat.RGBA_8888, 2)
     }
 
     fun close() {
-        imageReader?.close()
-        imageReader = null
+        val reader = imageReader.also { imageReader = null }
         lastFrame = null
+        bitmapRepository.releaseDisplayRecorderBitmap()
         copyImageRow = null
+        reader?.close()
     }
 
     /**

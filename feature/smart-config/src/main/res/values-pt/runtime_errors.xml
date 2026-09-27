@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_safely_stopped_title">Cenário interrompido com segurança</string>
+    <string name="runtime_safely_stopped_message">A captura de ecrã terminou ou ocorreu um erro durante a execução. As ações foram interrompidas; os controlos flutuantes continuam disponíveis. Verifique o estado do jogo antes de tocar em Reproduzir e autorizar novamente a captura de ecrã. Exporte um pacote de diagnóstico a partir do histórico de execuções para consultar a causa registada. A tarefa não será reiniciada automaticamente.</string>
+</resources>

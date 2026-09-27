@@ -17,6 +17,9 @@
 package com.buzbuz.smartautoclicker.core.common.overlays.menu.implementation.common
 
 import android.animation.LayoutTransition
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
 import android.util.Size
 import android.view.View
@@ -58,6 +61,20 @@ internal class OverlayMenuResizeController(
         private set
 
     private val runningTransitions: MutableSet<OverlayTransition> = mutableSetOf()
+    private val handler = Handler(Looper.getMainLooper())
+    private var resizeDeadline = 0L
+    private var released = false
+    private val completionCheck = object : Runnable {
+        override fun run() {
+            if (!isAnimating || released) return
+            // Collapsed/no-op changes do not necessarily start a LayoutTransition, so there may
+            // be no end callback. Never leave the window enlarged and its controls locked forever.
+            if ((runningTransitions.isEmpty() && resizedContainer.layoutTransition?.isRunning != true) ||
+                SystemClock.uptimeMillis() >= resizeDeadline) {
+                finishResize()
+            } else handler.postDelayed(this, RESIZE_CHECK_DELAY_MS)
+        }
+    }
 
     /** Monitor the transitions triggered by animateLayoutChanges on the [resizedContainer]. */
     private val transitionListener = object : LayoutTransition.TransitionListener {
@@ -68,7 +85,7 @@ internal class OverlayMenuResizeController(
             view: View?,
             transitionType: Int
         ) {
-            if (view == null) return
+            if (view == null || !isAnimating || released) return
 
             Log.d(TAG, "Layout changes animations start for ${view.id}")
             runningTransitions.add(OverlayTransition(view.id, transitionType))
@@ -80,7 +97,7 @@ internal class OverlayMenuResizeController(
             view: View?,
             transitionType: Int
         ) {
-            if (view == null) return
+            if (view == null || !isAnimating || released) return
 
             Log.d(TAG, "Layout changes animations complete for ${view.id}")
             runningTransitions.remove(OverlayTransition(view.id, transitionType))
@@ -88,10 +105,7 @@ internal class OverlayMenuResizeController(
             if (runningTransitions.isEmpty()) {
                 Log.d(TAG, "All layout changes animations completed")
 
-                // The view resize animation is over, restore the window size to wrap the content.
-                windowResizer(measureMenuSize())
-
-                isAnimating = false
+                finishResize()
             }
         }
     }
@@ -105,12 +119,18 @@ internal class OverlayMenuResizeController(
      * Setup the window size and execute the changes.
      */
     fun animateLayoutChanges(layoutChanges: () -> Unit) {
+        if (released) return
         if (isAnimating) {
             Log.d(TAG, "Starting layout changes animations, was already animating...")
             layoutChanges()
             return
         }
         isAnimating = true
+        val transition = resizedContainer.layoutTransition
+        val longestAnimation = (LayoutTransition.CHANGE_APPEARING..LayoutTransition.CHANGING).maxOf { type ->
+            (transition?.getStartDelay(type) ?: 0L) + (transition?.getDuration(type) ?: 0L)
+        }
+        resizeDeadline = SystemClock.uptimeMillis() + maxOf(1_000L, longestAnimation + 500L)
 
         Log.d(TAG, "Starting layout changes animations")
 
@@ -119,10 +139,22 @@ internal class OverlayMenuResizeController(
 
         // Execute layout changes that will cause a resize
         layoutChanges()
+        handler.postDelayed(completionCheck, RESIZE_CHECK_DELAY_MS)
+    }
+
+    private fun finishResize() {
+        handler.removeCallbacks(completionCheck)
+        runningTransitions.clear()
+        isAnimating = false
+        windowResizer(measureMenuSize())
     }
 
     /** Release this controller. */
     fun release() {
+        released = true
+        handler.removeCallbacks(completionCheck)
+        runningTransitions.clear()
+        isAnimating = false
         resizedContainer.layoutTransition?.removeTransitionListener(transitionListener)
     }
 
@@ -192,3 +224,4 @@ private data class OverlayTransition(
 )
 
 private const val TAG = "OverlayMenuResizeController"
+private const val RESIZE_CHECK_DELAY_MS = 32L

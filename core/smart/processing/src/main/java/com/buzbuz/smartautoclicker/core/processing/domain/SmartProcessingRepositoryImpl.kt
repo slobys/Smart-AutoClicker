@@ -40,6 +40,8 @@ import com.buzbuz.smartautoclicker.core.processing.data.DetectorState
 import com.buzbuz.smartautoclicker.core.processing.domain.model.DetectionState
 import com.buzbuz.smartautoclicker.core.processing.domain.model.DebugExecutionState
 import com.buzbuz.smartautoclicker.core.processing.domain.model.ActionFailureSnapshot
+import com.buzbuz.smartautoclicker.core.processing.domain.model.RuntimeFailure
+import com.buzbuz.smartautoclicker.core.processing.domain.model.RuntimeStopReason
 import com.buzbuz.smartautoclicker.core.processing.domain.model.toDetectionState
 import com.buzbuz.smartautoclicker.core.processing.domain.trying.ActionTry
 import com.buzbuz.smartautoclicker.core.processing.domain.trying.ScreenConditionTry
@@ -107,6 +109,7 @@ internal class SmartProcessingRepositoryImpl @Inject constructor(
 
     override val debugExecutionState: StateFlow<DebugExecutionState> = detectorEngine.debugExecutionState
     override val lastActionFailure: StateFlow<ActionFailureSnapshot?> = detectorEngine.lastActionFailure
+    override val runtimeFailure: StateFlow<RuntimeFailure?> = detectorEngine.runtimeFailure
 
     private val shouldKeepScreenOn: Flow<Boolean> = _scenarioId
         .combine(detectionState) { id, state ->
@@ -159,6 +162,8 @@ internal class SmartProcessingRepositoryImpl @Inject constructor(
     }
 
     override suspend fun startDetection(context: Context, liveDebugging: Boolean, generateReport: Boolean, autoStopDuration: Duration?) {
+        autoStopJob?.cancel()
+        autoStopJob = null
         val id = scenarioId.value?.databaseId ?: return
         val scenario = scenarioRepository.getScenario(id) ?: return
         val events = scenarioRepository.getScreenEvents(id)
@@ -176,10 +181,9 @@ internal class SmartProcessingRepositoryImpl @Inject constructor(
         )
 
         autoStopDuration?.let { duration ->
-            autoStopJob?.cancel()
             autoStopJob = coroutineScopeIo.launch {
                 delay(duration)
-                stopDetection()
+                detectorEngine.stopDetection(RuntimeStopReason.AUTO_STOP)
             }
         }
     }
@@ -198,12 +202,16 @@ internal class SmartProcessingRepositoryImpl @Inject constructor(
 
     override fun stepDebugExecution() = detectorEngine.stepDebugExecution()
 
-    override fun stopScreenRecord() {
+    override fun stopScreenRecord(reason: RuntimeStopReason) {
+        autoStopJob?.cancel()
+        autoStopJob = null
         projectionErrorHandler = null
-        detectorEngine.stopScreenRecord()
+        detectorEngine.stopScreenRecord(reason)
 
         _scenarioId.value = null
     }
+
+    override suspend fun awaitStopped() = detectorEngine.awaitStopped()
 
     override suspend fun tryEvent(context: Context, scenario: Scenario, event: ScreenEvent) {
         val counters = scenarioRepository.getCounters(scenario.id.databaseId)
@@ -251,7 +259,7 @@ internal class SmartProcessingRepositoryImpl @Inject constructor(
     private fun updateWakeLockState(keepScreenOn: Boolean) {
         Log.i(TAG, "updateWakeLockState: keepScreenOn=$keepScreenOn")
         if (keepScreenOn) wakeLock.acquire()
-        else wakeLock.release()
+        else if (wakeLock.isHeld) wakeLock.release()
     }
 
     override fun dump(writer: PrintWriter, prefix: CharSequence) {

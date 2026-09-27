@@ -45,6 +45,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
+import org.json.JSONObject
 
 import com.buzbuz.smartautoclicker.core.smart.debugging.DebugReportOverview as ProtoDebugReportOverview
 import com.buzbuz.smartautoclicker.core.smart.debugging.DebugReportMessage as ProtoDebugReportMessage
@@ -58,12 +59,14 @@ internal class DebugReportLocalDataSource @Inject constructor(
 
     private val overviewFile: File = File(context.cacheDir, DEBUG_REPORT_OVERVIEW_FILE_NAME)
     private val messagesFile: File = File(context.cacheDir, DEBUG_REPORT_MESSAGES_FILE_NAME)
+    private val statusFile: File = File(context.cacheDir, "DebugReportStatus.json")
     private val filesMutex: Mutex = Mutex()
 
     private var messagesOutputStream: OutputStream? = null
     private var pendingMessagesCount: Int = 0
     private var estimatedMessagesBytes: Long = 0L
     private var isSizeLimitWarningLogged: Boolean = false
+    private var hasWriteFailure: Boolean = false
     private val isWritingReport: Boolean
         get() = messagesOutputStream != null
 
@@ -82,7 +85,7 @@ internal class DebugReportLocalDataSource @Inject constructor(
             // Check if the previous report is correctly closed and close it if needed
             if (messagesOutputStream != null) {
                 Log.w(LOG_TAG, "Previous debug report was not finished")
-                messagesOutputStream?.close()
+                messagesOutputStream?.safeClose()
                 messagesOutputStream = null
             }
 
@@ -98,6 +101,8 @@ internal class DebugReportLocalDataSource @Inject constructor(
             pendingMessagesCount = 0
             estimatedMessagesBytes = 0L
             isSizeLimitWarningLogged = false
+            hasWriteFailure = messagesOutputStream == null
+            writeStatus(if (hasWriteFailure) "io_failure" else "recording")
         }
     }
 
@@ -136,16 +141,27 @@ internal class DebugReportLocalDataSource @Inject constructor(
             Log.i(LOG_TAG, "Stop debug report writing")
 
             // We only write on this file here, no need to keep the output stream
-            overviewFile.safeBufferedOutputStream()?.use { outputStream ->
+            val overviewStream = overviewFile.safeBufferedOutputStream()
+            if (overviewStream == null) hasWriteFailure = true
+            overviewStream?.use { outputStream ->
                 outputStream.safeWriteDelimited(overview.toProtobuf())
             }
 
             // We no longer will be receiving any messages for this detection session, close the output stream
-            messagesOutputStream?.safeClose()
+            if (messagesOutputStream?.safeClose() == false) hasWriteFailure = true
             messagesOutputStream = null
             pendingMessagesCount = 0
 
-            _isReportAvailable.update { true }
+            if (hasWriteFailure) {
+                messagesFile.safeDelete()
+                overviewFile.safeDelete()
+            }
+            _isReportAvailable.value = !hasWriteFailure
+            writeStatus(when {
+                hasWriteFailure -> "io_failure"
+                isSizeLimitWarningLogged -> "size_limit"
+                else -> "completed"
+            })
         }
     }
 
@@ -224,6 +240,29 @@ internal class DebugReportLocalDataSource @Inject constructor(
             flush()
         } catch (ioEx: IOException) {
             Log.e(LOG_TAG, "Cannot write to file, IOException", ioEx)
+            hasWriteFailure = true
+        }
+    }
+
+    /** An overloaded/failed writer must not publish a partial report with missing counter deltas. */
+    suspend fun cancelReportWrite(reason: String = "queue_overload") {
+        filesMutex.withLock {
+            messagesOutputStream?.safeClose()
+            messagesOutputStream = null
+            pendingMessagesCount = 0
+            messagesFile.safeDelete()
+            overviewFile.safeDelete()
+            _isReportAvailable.value = false
+            writeStatus(reason)
+        }
+    }
+
+    private fun writeStatus(reason: String) {
+        try {
+            statusFile.writeText(JSONObject().put("reason", reason)
+                .put("timestamp", System.currentTimeMillis()).toString())
+        } catch (error: IOException) {
+            Log.w(LOG_TAG, "Cannot persist debug report status", error)
         }
     }
 
@@ -235,6 +274,7 @@ internal class DebugReportLocalDataSource @Inject constructor(
      * debugging session from filling the application cache indefinitely.
      */
     private fun OutputStream.safeWriteReportMessage(message: MessageLite) {
+        if (hasWriteFailure) return
         val estimatedMessageBytes = message.serializedSize.toLong() + MAX_DELIMITED_PREFIX_BYTES
         if (estimatedMessagesBytes + estimatedMessageBytes > MAX_DEBUG_REPORT_MESSAGES_BYTES) {
             if (!isSizeLimitWarningLogged) {
@@ -255,16 +295,19 @@ internal class DebugReportLocalDataSource @Inject constructor(
             }
         } catch (ioEx: IOException) {
             Log.e(LOG_TAG, "Cannot write to file, IOException", ioEx)
+            hasWriteFailure = true
+            writeStatus("io_failure")
         }
     }
 
-    private fun OutputStream.safeClose() {
+    private fun OutputStream.safeClose(): Boolean =
         try {
             close()
+            true
         } catch (ioEx: IOException) {
             Log.e(LOG_TAG, "Cannot close file, IOException", ioEx)
+            false
         }
-    }
 
     private fun InputStream.safeParseDebugReportOverview(): ProtoDebugReportOverview? {
         try {

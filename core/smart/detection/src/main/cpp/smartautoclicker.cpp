@@ -35,7 +35,12 @@ extern "C" {
             JNIEnv *env,
             jobject self
     ) {
-        return reinterpret_cast<jlong>(new Detector());
+        try {
+            return reinterpret_cast<jlong>(new Detector());
+        } catch (...) {
+            throwRuntimeException(env, "Unable to initialize native detector");
+            return 0;
+        }
     }
 
     JNIEXPORT jboolean JNICALL Java_com_buzbuz_smartautoclicker_core_detection_NativeDetector_loadDetectionModels(
@@ -87,12 +92,24 @@ extern "C" {
         if (nativeMetricsTag == nullptr) return;
 
         auto detector = getDetectorFromJavaRef(env, self);
-        if (!detector) return;
+        if (!detector) {
+            env->ReleaseStringUTFChars(metricsTag, nativeMetricsTag);
+            return;
+        }
 
         std::unique_ptr<cv::Mat> screenMat = loadMatFromRGBA8888Bitmap(env, screenBitmap);
-        if (!screenMat) return;
+        if (!screenMat) {
+            env->ReleaseStringUTFChars(metricsTag, nativeMetricsTag);
+            return;
+        }
 
-        detector->setScreenImage(std::move(screenMat), nativeMetricsTag);
+        try {
+            detector->setScreenImage(std::move(screenMat), nativeMetricsTag);
+        } catch (...) {
+            // Kotlin only owns the bitmap lock after setScreenImage returns successfully.
+            releaseBitmapLock(env, screenBitmap);
+            throwRuntimeException(env, "Unable to prepare screen image for detection");
+        }
         env->ReleaseStringUTFChars(metricsTag, nativeMetricsTag);
     }
 
@@ -123,8 +140,10 @@ extern "C" {
                     cv::Rect(x, y, width, height),
                     threshold));
         } catch (...) {
+            // AndroidBitmap_unlockPixels itself uses JNI: release before installing a Java exception.
             releaseBitmapLock(env, conditionBitmap);
             throwRuntimeException(env, "Invalid detection arguments for image detection");
+            return nullptr;
         }
 
         releaseBitmapLock(env, conditionBitmap);

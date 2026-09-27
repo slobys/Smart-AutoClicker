@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_safely_stopped_title">Scenario arrestato in sicurezza</string>
+    <string name="runtime_safely_stopped_message">La cattura dello schermo è terminata o si è verificato un errore durante l’esecuzione. Le azioni sono state interrotte; i controlli mobili restano disponibili. Controlla lo stato del gioco prima di premere Riproduci e autorizzare nuovamente la cattura dello schermo. Esporta un pacchetto diagnostico dalla cronologia delle esecuzioni per consultare la causa registrata. L’attività non verrà riavviata automaticamente.</string>
+</resources>

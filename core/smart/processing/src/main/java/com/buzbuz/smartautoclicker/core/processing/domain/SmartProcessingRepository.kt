@@ -27,6 +27,8 @@ import com.buzbuz.smartautoclicker.core.domain.model.scenario.Scenario
 import com.buzbuz.smartautoclicker.core.processing.domain.model.DetectionState
 import com.buzbuz.smartautoclicker.core.processing.domain.model.DebugExecutionState
 import com.buzbuz.smartautoclicker.core.processing.domain.model.ActionFailureSnapshot
+import com.buzbuz.smartautoclicker.core.processing.domain.model.RuntimeFailure
+import com.buzbuz.smartautoclicker.core.processing.domain.model.RuntimeStopReason
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.time.Duration
@@ -50,6 +52,7 @@ interface SmartProcessingRepository : Dumpable {
     val debugExecutionState: StateFlow<DebugExecutionState>
 
     val lastActionFailure: StateFlow<ActionFailureSnapshot?>
+    val runtimeFailure: StateFlow<RuntimeFailure?>
 
 
     /** @return the unique identifier of the scenario that will be/is processed. */
@@ -118,7 +121,10 @@ interface SmartProcessingRepository : Dumpable {
      * Ignored if the state is [DetectionState.INACTIVE]. Also stops the processing if the state is
      * [DetectionState.DETECTING].
      */
-    fun stopScreenRecord()
+    fun stopScreenRecord(reason: RuntimeStopReason = RuntimeStopReason.SESSION_CLOSED)
+
+    /** Wait for workers to finish before their bitmaps/service resources are destroyed. */
+    suspend fun awaitStopped()
 
     /**
      * Creates a dedicated scenario containing only the [ScreenEvent] to be tested.

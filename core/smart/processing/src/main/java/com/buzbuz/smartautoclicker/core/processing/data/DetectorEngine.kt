@@ -45,11 +45,17 @@ import com.buzbuz.smartautoclicker.core.processing.data.scaling.ScalingManager
 import com.buzbuz.smartautoclicker.core.settings.domain.SettingsRepository
 import com.buzbuz.smartautoclicker.core.processing.domain.SmartProcessingListener
 import com.buzbuz.smartautoclicker.core.processing.domain.model.DebugExecutionState
+import com.buzbuz.smartautoclicker.core.processing.domain.model.RuntimeFailure
+import com.buzbuz.smartautoclicker.core.processing.domain.model.RuntimeStopReason
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
@@ -95,15 +101,28 @@ class DetectorEngine @Inject constructor(
     private val runtimeDebugger = RuntimeDebugger()
     internal val debugExecutionState: StateFlow<DebugExecutionState> = runtimeDebugger.state
     internal val lastActionFailure = actionFailureRecorder.lastFailure
+    private val _runtimeFailure = MutableStateFlow<RuntimeFailure?>(null)
+    internal val runtimeFailure: StateFlow<RuntimeFailure?> = _runtimeFailure
 
     /** Coroutine scope for the image processing. */
     private var processingScope: CoroutineScope? = null
+    private var recordingStartupJob: Job? = null
+    private var recordingGeneration = 0L
+    private var pendingStop: StopRequest? = null
+
+    private data class StopRequest(
+        val releaseProjection: Boolean,
+        val reason: RuntimeStopReason,
+        val failure: RuntimeFailure? = null,
+        val finalState: DetectorState = DetectorState.CREATED,
+    )
     /** Coroutine job for the image currently processed. */
     private var processingJob: Job? = null
     /** Coroutine job for the cleaning of the detection once stopped. */
     private var processingShutdownJob: Job? = null
     /** Coroutine job for the debounced orientation change handler. */
     private var orientationChangeJob: Job? = null
+    private var memoryMonitorJob: Job? = null
 
     /**
      * When true, [processScreenImages] will exit its loop after the current frame finishes rather
@@ -128,7 +147,7 @@ class DetectorEngine @Inject constructor(
      * This requires the media projection permission code and its data intent, they both can be retrieved using the
      * results of the activity intent provided by [MediaProjectionManager.createScreenCaptureIntent] (this Intent shows
      * the dialog warning about screen recording privacy). Any attempt to call this method without the correct screen
-     * capture intent result will lead to a crash.
+     * capture intent result will fail safely and report a runtime error.
      *
      * Once started, you can use [startDetection]. Once you are done, call [stopScreenRecord].
      *
@@ -139,12 +158,12 @@ class DetectorEngine @Inject constructor(
      * @param onRecordingStopped called when the screen recording is no longer running and a new request for media
      * projection should be done.
      */
-    internal fun startScreenRecord(
+    @Synchronized internal fun startScreenRecord(
         resultCode: Int,
         data: Intent,
         onRecordingStopped: (() -> Unit)?,
     ) {
-        if (_state.value != DetectorState.CREATED) {
+        if (processingScope != null) {
             Log.w(TAG, "startScreenRecord: Screen record is already started")
             return
         }
@@ -159,25 +178,34 @@ class DetectorEngine @Inject constructor(
 
         Log.i(TAG, "startScreenRecord")
 
-        processingScope = CoroutineScope(ioDispatcher.limitedParallelism(1))
-
-        displayConfigManager.addOrientationListener(screenOrientationListener)
-
-        processingScope?.launch {
+        _runtimeFailure.value = null
+        val generation = ++recordingGeneration
+        processingScope = CoroutineScope(SupervisorJob() + ioDispatcher.limitedParallelism(1))
+        recordingStartupJob = processingScope?.launch(start = CoroutineStart.LAZY) {
+          guardExecution("screen_capture_start", RuntimeStopReason.STARTUP_ERROR) {
+            displayConfigManager.addOrientationListener(screenOrientationListener)
             displayRecorder.apply {
                 startProjection(resultCode, data) {
-                    Log.w(TAG, "projection lost")
-                    this@DetectorEngine.stopScreenRecord()
+                    synchronized(this@DetectorEngine) {
+                        if (generation != recordingGeneration || processingScope == null) return@startProjection
+                        requestStop(StopRequest(true, RuntimeStopReason.PROJECTION_LOST,
+                            RuntimeFailure.from("projection_lost", IllegalStateException("Screen capture permission ended"))))
+                    }
                     onRecordingStopped?.invoke()
                 }
+                coroutineContext.ensureActive()
                 startScreenRecord(displaySize)
             }
-
-            _state.emit(
-                if (!displayRecorder.validateScreenCapture()) DetectorState.ERROR_SCREEN_IMAGE_CAPTURE_FAILED
-                else DetectorState.RECORDING
-            )
+            if (!displayRecorder.validateScreenCapture()) {
+                requestStop(StopRequest(true, RuntimeStopReason.STARTUP_ERROR,
+                    RuntimeFailure.from("screen_capture_validation", IllegalStateException("No readable screen frame")),
+                    DetectorState.ERROR_SCREEN_IMAGE_CAPTURE_FAILED))
+            } else synchronized(this@DetectorEngine) {
+                if (pendingStop == null) _state.value = DetectorState.RECORDING
+            }
+          }
         }
+        recordingStartupJob?.start()
     }
 
     /**
@@ -188,7 +216,7 @@ class DetectorEngine @Inject constructor(
      * callback.
      * [state] should be RECORDING to capture. Detection can be stopped with [stopDetection] or [stopScreenRecord].
      */
-    internal fun startDetection(
+    @Synchronized internal fun startDetection(
         context: Context,
         scenario: Scenario,
         screenEvents: List<ScreenEvent>,
@@ -203,18 +231,21 @@ class DetectorEngine @Inject constructor(
             return
         }
 
-        val detector = imageDetectorFactory()
-        if (detector == null) {
-            Log.e(TAG, "startDetection: native library not found.")
-            _state.value = DetectorState.ERROR_NATIVE_DETECTOR_LIB_NOT_FOUND
-            return
-        }
-
         _state.value = DetectorState.TRANSITIONING
+        _runtimeFailure.value = null
 
         Log.i(TAG, "startDetection")
 
         processingScope?.launchProcessingJob {
+            actionFailureRecorder.beginSession(scenario.name)
+            startMemoryMonitor()
+            val detector = imageDetectorFactory()
+            if (detector == null) {
+                requestStop(StopRequest(true, RuntimeStopReason.STARTUP_ERROR,
+                    RuntimeFailure.from("native_detector_init", IllegalStateException("Native detector unavailable")),
+                    DetectorState.ERROR_NATIVE_DETECTOR_LIB_NOT_FOUND))
+                return@launchProcessingJob
+            }
             // Setup native detector
             imageDetector = detector
             detector.init()
@@ -223,7 +254,9 @@ class DetectorEngine @Inject constructor(
             val requiredAlphabets = screenEvents.getAllOCRAlphabets()
             if (requiredAlphabets.isNotEmpty()) {
                 if (!detector.loadOcrModels(requiredAlphabets)) {
-                    _state.value = DetectorState.ERROR_OCR_MODEL_NOT_FOUND
+                    requestStop(StopRequest(true, RuntimeStopReason.STARTUP_ERROR,
+                        RuntimeFailure.from("ocr_model_init", IllegalStateException("OCR model unavailable")),
+                        DetectorState.ERROR_OCR_MODEL_NOT_FOUND))
                     return@launchProcessingJob
                 }
             }
@@ -259,7 +292,6 @@ class DetectorEngine @Inject constructor(
             }
 
             // Instantiate the processor and initialize its detection state.
-            actionFailureRecorder.beginSession(scenario.name)
             scenarioProcessor = ScenarioProcessor(
                 processingTag = appComponentsProvider.originalAppId,
                 imageDetector = detector,
@@ -272,7 +304,7 @@ class DetectorEngine @Inject constructor(
                 screenFrameSupplier = displayRecorder::acquireLatestBitmap,
                 androidExecutor = actionExecutor,
                 unblockWorkaroundEnabled = settingsRepository.isInputBlockWorkaroundEnabled(),
-                onStopRequested = { stopDetection() },
+                onStopRequested = { stopDetection(RuntimeStopReason.SCENARIO_REQUEST) },
                 progressListener  = if (liveDebugging || generateReport) debuggingListener else null,
                 screenEventConfirmationHits = SCREEN_EVENT_CONFIRMATION_HITS,
                 screenEventConfirmationWindow = SCREEN_EVENT_CONFIRMATION_WINDOW,
@@ -291,13 +323,14 @@ class DetectorEngine @Inject constructor(
      * Called when the orientation of the screen changes.
      * As we now have different screen metrics, we need to stop and start the virtual display with the correct one.
      */
-    private fun onScreenOrientationChanged() {
+    @Synchronized private fun onScreenOrientationChanged() {
         if (_state.value != DetectorState.DETECTING && _state.value != DetectorState.RECORDING) return
 
         Log.d(TAG, "onOrientationChanged")
 
         orientationChangeJob?.cancel()
         orientationChangeJob = processingScope?.launch {
+          guardExecution("orientation_change") {
             delay(ORIENTATION_CHANGE_DEBOUNCE_MS.milliseconds)
 
             if (_state.value == DetectorState.DETECTING) {
@@ -318,6 +351,7 @@ class DetectorEngine @Inject constructor(
                     processScreenImages()
                 }
             }
+          }
         }
     }
 
@@ -328,33 +362,9 @@ class DetectorEngine @Inject constructor(
      * image. Note that this will not stop the screen recording, you should still call [stopScreenRecord] to completely
      * release the [DetectorEngine] resources.
      */
-    internal fun stopDetection() {
-        if (_state.value != DetectorState.DETECTING) {
-            Log.w(TAG, "stopDetection: detection is not started.")
-            return
-        }
-        _state.value = DetectorState.TRANSITIONING
-        runtimeDebugger.reset()
-
-        processingShutdownJob = processingScope?.launch {
-            Log.i(TAG, "stopDetection")
-
-            processingJob?.cancelAndJoin()
-            processingJob = null
-            imageDetector?.close()
-            imageDetector = null
-            scenarioProcessor?.onScenarioEnd()
-            scenarioProcessor = null
-            debuggingListener.onSessionEnded()
-            actionFailureRecorder.endSession()
-
-            scalingManager.stopScaling()
-            displayRecorder.resizeDisplay(displayConfigManager.displayConfig.sizePx)
-
-            _state.emit(DetectorState.RECORDING)
-            processingShutdownJob = null
-            minProcessingDurationNs  = DEFAULT_MIN_PROCESSING_DURATION_NS
-        }
+    @Synchronized internal fun stopDetection(reason: RuntimeStopReason = RuntimeStopReason.USER_PAUSE) {
+        if (processingJob == null && pendingStop == null) return
+        requestStop(StopRequest(false, reason))
     }
 
     internal fun requestDebugPauseAtNextEvent() = runtimeDebugger.requestPauseAtNextEvent()
@@ -371,34 +381,135 @@ class DetectorEngine @Inject constructor(
      * First, calls [stopDetection] if the detection was active. Then, stop the screen recording and release any related
      * resources.
      */
-    internal fun stopScreenRecord() {
-        if (_state.value == DetectorState.DETECTING) {
-            stopDetection()
-            stopRecording()
-        } else if (_state.value == DetectorState.RECORDING) {
-            stopRecording()
+    internal fun stopScreenRecord(reason: RuntimeStopReason = RuntimeStopReason.SESSION_CLOSED) {
+        requestStop(StopRequest(true, reason))
+    }
+
+    internal suspend fun awaitStopped() {
+        synchronized(this) { processingShutdownJob }?.join()
+    }
+
+    /** Stops are accepted even during startup/cleanup. Full release and the first failure take precedence. */
+    @Synchronized private fun requestStop(request: StopRequest) {
+        val scope = processingScope ?: return
+        val previous = pendingStop
+        pendingStop = when {
+            previous == null -> request
+            previous.failure != null -> previous.copy(releaseProjection = previous.releaseProjection || request.releaseProjection)
+            request.failure != null -> request.copy(releaseProjection = previous.releaseProjection || request.releaseProjection)
+            previous.releaseProjection -> previous
+            else -> request
+        }
+        _state.value = DetectorState.TRANSITIONING
+        runtimeDebugger.reset()
+        // Cancellation is immediate; cleanup runs in a separate sibling job and joins before freeing native data.
+        orientationChangeJob?.cancel()
+        recordingStartupJob?.cancel()
+        processingJob?.cancel()
+        memoryMonitorJob?.cancel()
+        if (processingShutdownJob != null) return
+        processingShutdownJob = scope.launch(start = CoroutineStart.LAZY) { cleanUpRuntime(scope) }
+        processingShutdownJob?.start()
+    }
+
+    private suspend fun cleanUpRuntime(scope: CoroutineScope) {
+        var cleanupCompleted = true
+        suspend fun clean(stage: String, block: suspend () -> Unit) {
+            try { block() }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (error: Exception) {
+                cleanupCompleted = false
+                Log.e(TAG, "Cleanup failed: $stage", error)
+                requestStop(StopRequest(true, RuntimeStopReason.CLEANUP_ERROR, RuntimeFailure.from(stage, error)))
+            }
+        }
+        clean("join_orientation") { orientationChangeJob?.cancelAndJoin() }
+        clean("join_startup") { recordingStartupJob?.cancelAndJoin() }
+        clean("join_processing") { processingJob?.cancelAndJoin() }
+        clean("join_memory_monitor") { memoryMonitorJob?.cancelAndJoin() }
+        memoryMonitorJob = null
+        orientationChangeJob = null
+        recordingStartupJob = null
+        processingJob = null
+        orientationChangeRequested = false
+        val processor = scenarioProcessor.also { scenarioProcessor = null }
+        val detector = imageDetector.also { imageDetector = null }
+        clean("scenario_end") { processor?.onScenarioEnd() }
+        clean("detector_close") { detector?.close() }
+        clean("template_cache_clear") { bitmapRepository.clearCache() }
+        clean("debug_session_end") { debuggingListener.onSessionEnded() }
+        clean("scaling_stop") { scalingManager.stopScaling() }
+        minProcessingDurationNs = DEFAULT_MIN_PROCESSING_DURATION_NS
+
+        if (synchronized(this) { pendingStop?.releaseProjection == false }) {
+            clean("restore_display_size") { displayRecorder.resizeDisplay(displayConfigManager.displayConfig.sizePx) }
+        }
+        var projectionReleased = false
+        var historyEnded = false
+        while (true) {
+            val request = synchronized(this) { checkNotNull(pendingStop) }
+            if (request.releaseProjection && !projectionReleased) {
+                // Never resize a display we are about to destroy (particularly after projection loss).
+                clean("remove_orientation_listener") { displayConfigManager.removeOrientationListener(screenOrientationListener) }
+                clean("projection_stop") { displayRecorder.stopProjection() }
+                projectionReleased = true
+            }
+            clean("history_end") {
+                actionFailureRecorder.endSession(request.reason, request.failure, cleanupCompleted, historyEnded)
+            }
+            historyEnded = true
+            val finished = synchronized(this) {
+                if (pendingStop != request) false
+                else {
+                    pendingStop = null
+                    processingShutdownJob = null
+                    if (request.releaseProjection) {
+                        processingScope = null
+                        recordingGeneration++
+                    }
+                    _runtimeFailure.value = request.failure
+                    _state.value = if (request.releaseProjection) request.finalState else DetectorState.RECORDING
+                    true
+                }
+            }
+            if (finished) {
+                if (request.releaseProjection) scope.cancel()
+                return
+            }
         }
     }
 
-    private fun stopRecording() {
-        Log.i(TAG, "stopScreenRecord")
-        _state.value = DetectorState.TRANSITIONING
+    private suspend fun guardExecution(
+        stage: String,
+        reason: RuntimeStopReason = RuntimeStopReason.EXECUTION_ERROR,
+        block: suspend () -> Unit,
+    ) {
+        try { block() }
+        catch (cancelled: CancellationException) { throw cancelled }
+        catch (error: Exception) {
+            Log.e(TAG, "Runtime failed: $stage", error)
+            requestStop(StopRequest(true, reason, RuntimeFailure.from(stage, error)))
+        }
+    }
 
-        processingScope?.launch {
-            processingShutdownJob?.join()
-
-            displayConfigManager.removeOrientationListener(screenOrientationListener)
-            displayRecorder.stopProjection()
-            _state.emit(DetectorState.CREATED)
-
-            processingScope?.cancel()
-            processingScope = null
+    @Synchronized private fun startMemoryMonitor() {
+        if (pendingStop != null) return
+        memoryMonitorJob?.cancel()
+        // One sampler per run, including long waits and debugger pauses. Never enqueue per-frame jobs.
+        memoryMonitorJob = processingScope?.launch {
+            while (isActive) {
+                actionFailureRecorder.recordMemorySample(_state.value.name, bitmapRepository)
+                delay(30_000)
+            }
         }
     }
 
     /** Process the latest images provided by the [DisplayRecorder]. */
     private suspend fun processScreenImages() {
-        _state.emit(DetectorState.DETECTING)
+        synchronized(this) {
+            if (pendingStop != null) return
+            _state.value = DetectorState.DETECTING
+        }
 
         var processingDurationNs: Long
         while (processingJob?.isActive == true && !orientationChangeRequested) {
@@ -428,11 +539,11 @@ class DetectorEngine @Inject constructor(
      *
      * @param block the coroutine code which will be invoked in the context of the provided scope.
      */
-    private fun CoroutineScope.launchProcessingJob(block: suspend CoroutineScope.() -> Unit) {
+    @Synchronized private fun CoroutineScope.launchProcessingJob(block: suspend CoroutineScope.() -> Unit) {
+        if (pendingStop != null) return
         processingJob = launch(
             start = CoroutineStart.LAZY,
-            block = block,
-        )
+        ) { guardExecution("detection") { block() } }
         processingJob?.start()
     }
 
@@ -467,7 +578,7 @@ internal enum class DetectorState {
     CREATED,
     /**
      * The engine is transitioning between two states.
-     * During this state, all call to the engine will be ignored.
+     * New starts are ignored, but stop requests still cancel startup or upgrade an ongoing cleanup.
      */
     TRANSITIONING,
     /** The screen is being recorded. */

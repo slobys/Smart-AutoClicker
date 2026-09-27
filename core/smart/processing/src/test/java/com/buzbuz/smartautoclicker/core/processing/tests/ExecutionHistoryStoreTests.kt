@@ -1,6 +1,8 @@
 package com.buzbuz.smartautoclicker.core.processing.tests
 
 import android.content.Context
+import android.app.ActivityManager
+import android.app.ApplicationExitInfo
 import android.os.Build
 import com.buzbuz.smartautoclicker.core.base.identifier.Identifier
 import com.buzbuz.smartautoclicker.core.domain.model.AND
@@ -8,6 +10,8 @@ import com.buzbuz.smartautoclicker.core.domain.model.action.Pause
 import com.buzbuz.smartautoclicker.core.domain.model.event.ScreenEvent
 import com.buzbuz.smartautoclicker.core.processing.data.ExecutionHistoryStore
 import com.buzbuz.smartautoclicker.core.processing.domain.model.ActionExecutionResult
+import com.buzbuz.smartautoclicker.core.processing.domain.model.RuntimeFailure
+import com.buzbuz.smartautoclicker.core.processing.domain.model.RuntimeStopReason
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.json.JSONObject
@@ -82,8 +86,9 @@ class ExecutionHistoryStoreTests {
         ZipInputStream(output.toByteArray().inputStream()).use { zip ->
             while (true) { val entry = zip.nextEntry ?: break; names += entry.name; zip.closeEntry() }
         }
-        assertEquals(6, names.size)
+        assertEquals(7, names.size)
         assertTrue(names.contains("session.json"))
+        assertTrue(names.contains("diagnostics.json"))
         assertFalse(names.contains("not-exported.txt"))
     }
 
@@ -107,5 +112,128 @@ class ExecutionHistoryStoreTests {
         store.record(event, action, ActionExecutionResult.Failed("失败"), 1, null)
         store.end()
         assertTrue(store.listSessions().isEmpty())
+    }
+
+    @Test fun runtimeFailurePersistsStageStackAndCleanupOutcome() = runTest {
+        val store = ExecutionHistoryStore(context, StandardTestDispatcher(testScheduler))
+        store.begin("异常停止")
+        store.end(RuntimeStopReason.EXECUTION_ERROR,
+            RuntimeFailure.from("detection", IllegalStateException("Image buffer invalid")), false)
+        val restarted = ExecutionHistoryStore(context, StandardTestDispatcher(testScheduler))
+        val session = JSONObject(restarted.readSession(restarted.listSessions().single().id)!!)
+        val stop = session.getJSONObject("termination")
+        assertEquals("EXECUTION_ERROR", stop.getString("reason"))
+        assertEquals("detection", stop.getString("stage"))
+        assertTrue(stop.getString("stackTrace").contains("Image buffer invalid"))
+        assertFalse(stop.getBoolean("cleanupCompleted"))
+    }
+
+    @Test fun escalatedStopUpdatesOnlyTheMostRecentSession() = runTest {
+        val store = ExecutionHistoryStore(context, StandardTestDispatcher(testScheduler))
+        store.begin("第一次")
+        val first = store.listSessions().single().id
+        store.end()
+        store.end(RuntimeStopReason.PROJECTION_LOST, updatePrevious = true)
+        assertEquals("PROJECTION_LOST", JSONObject(store.readSession(first)!!)
+            .getJSONObject("termination").getString("reason"))
+        store.begin("第二次")
+        store.end(RuntimeStopReason.SCENARIO_REQUEST)
+        assertEquals("PROJECTION_LOST", JSONObject(store.readSession(first)!!)
+            .getJSONObject("termination").getString("reason"))
+    }
+
+    @Test fun olderAndroidExportsAnExplicitUnsupportedExitStatus() = runTest {
+        val store = ExecutionHistoryStore(context, StandardTestDispatcher(testScheduler))
+        store.begin("兼容")
+        store.end()
+        val json = exportedDiagnostics(store)
+        assertEquals("unsupported_before_android_11", json.getString("systemExitHistoryStatus"))
+        assertEquals(0, json.getJSONArray("systemExitHistory").length())
+    }
+
+    @Test fun laterStartupFailureDoesNotOverwriteACompletedSession() = runTest {
+        val store = ExecutionHistoryStore(context, StandardTestDispatcher(testScheduler))
+        store.begin("已正常结束")
+        val first = store.listSessions().single().id
+        store.end(RuntimeStopReason.SCENARIO_REQUEST)
+        store.end(RuntimeStopReason.STARTUP_ERROR,
+            RuntimeFailure.from("screen_capture_start", IllegalStateException("Permission expired")))
+        assertEquals("SCENARIO_REQUEST", JSONObject(store.readSession(first)!!)
+            .getJSONObject("termination").getString("reason"))
+        val latest = exportedDiagnostics(store).getJSONObject("latestRuntime")
+        assertTrue(latest.isNull("sessionId"))
+        assertEquals("STARTUP_ERROR", latest.getJSONObject("termination").getString("reason"))
+    }
+
+    @Test @Config(sdk = [Build.VERSION_CODES.R])
+    fun android11ExportsOnlyFiveExitRecordsForOwnPackage() = runTest {
+        val manager: ActivityManager = mock()
+        val exit: ApplicationExitInfo = mock {
+            on { reason } doReturn ApplicationExitInfo.REASON_LOW_MEMORY
+            on { timestamp } doReturn 1234L
+            on { description } doReturn "low memory"
+        }
+        val ownContext: Context = mock {
+            on { filesDir } doReturn temporary.root
+            on { packageName } doReturn "test.klickr"
+            on { getSystemService(Context.ACTIVITY_SERVICE) } doReturn manager
+        }
+        whenever(manager.getHistoricalProcessExitReasons("test.klickr", 0, 5)).thenReturn(List(7) { exit })
+        val store = ExecutionHistoryStore(ownContext, StandardTestDispatcher(testScheduler))
+        store.begin("系统记录")
+        store.end()
+        val json = exportedDiagnostics(store)
+        assertEquals("available", json.getString("systemExitHistoryStatus"))
+        assertEquals(5, json.getJSONArray("systemExitHistory").length())
+        assertEquals(ApplicationExitInfo.REASON_LOW_MEMORY,
+            json.getJSONArray("systemExitHistory").getJSONObject(0).getInt("reasonCode"))
+        verify(manager).getHistoricalProcessExitReasons("test.klickr", 0, 5)
+    }
+
+    private suspend fun exportedDiagnostics(store: ExecutionHistoryStore): JSONObject {
+        val output = ByteArrayOutputStream()
+        store.exportSession(store.listSessions().single().id, output)
+        ZipInputStream(output.toByteArray().inputStream()).use { zip ->
+            while (true) {
+                val entry = zip.nextEntry ?: error("Missing diagnostics.json")
+                if (entry.name == "diagnostics.json") return JSONObject(zip.readBytes().toString(Charsets.UTF_8))
+                zip.closeEntry()
+            }
+        }
+    }
+
+    @Test fun memorySamplesPersistWithoutActionsAndAreBoundedAcrossRestart() = runTest {
+        val store = ExecutionHistoryStore(context, StandardTestDispatcher(testScheduler))
+        store.begin("等待目标出现")
+        repeat(130) { index ->
+            store.recordMemorySample(JSONObject().put("timestamp", index).put("pssKb", 12345)
+                .put("state", "DETECTING").put("systemLowMemory", false))
+        }
+        // Simulate process death without end(): samples must already be durable.
+        val restarted = ExecutionHistoryStore(context, StandardTestDispatcher(testScheduler))
+        val session = JSONObject(restarted.readSession(restarted.listSessions().single().id)!!)
+        val samples = session.getJSONArray("memorySamples")
+        assertEquals(120, samples.length())
+        assertEquals(10, samples.getJSONObject(0).getInt("timestamp"))
+        assertEquals(129, samples.getJSONObject(119).getInt("timestamp"))
+        assertEquals(0, session.getJSONArray("actions").length())
+        assertFalse(session.has("endedAt"))
+        assertTrue(session.has("pid"))
+    }
+
+    @Test fun endedAndNewSessionsDoNotShareMemorySamples() = runTest {
+        val store = ExecutionHistoryStore(context, StandardTestDispatcher(testScheduler))
+        store.begin("第一轮")
+        val firstId = store.listSessions().single().id
+        store.recordMemorySample(JSONObject().put("timestamp", 1))
+        store.end()
+        store.recordMemorySample(JSONObject().put("timestamp", 2))
+        store.begin("第二轮")
+        val secondId = store.listSessions().first { it.id != firstId }.id
+        store.recordMemorySample(JSONObject().put("timestamp", 3))
+        assertEquals(1, JSONObject(store.readSession(firstId)!!).getJSONArray("memorySamples").length())
+        val current = JSONObject(store.readSession(secondId)!!).getJSONArray("memorySamples")
+        assertEquals(1, current.length())
+        assertEquals(3, current.getJSONObject(0).getInt("timestamp"))
     }
 }

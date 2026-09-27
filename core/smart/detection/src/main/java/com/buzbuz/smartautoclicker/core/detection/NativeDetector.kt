@@ -42,13 +42,15 @@ class NativeDetector private constructor() : ImageDetector {
 
     /** Native pointer of the detector object. */
     @Keep
-    private var nativePtr: Long = -1
+    private var nativePtr: Long = 0
 
     private var isClosed: Boolean = false
     private var screenDimensions: Point = Point(0, 0)
 
     override fun init() {
+        check(!isClosed && nativePtr == 0L) { "Detector is already initialized or closed" }
         nativePtr = newDetector()
+        check(nativePtr != 0L) { "Native detector initialization failed" }
     }
 
     override fun close() {
@@ -56,6 +58,7 @@ class NativeDetector private constructor() : ImageDetector {
 
         isClosed = true
         deleteDetector()
+        nativePtr = 0
     }
 
     override fun loadTextDetectionModels(detectionModelPath: String, recognitionModels: Map<String, String>): Boolean {

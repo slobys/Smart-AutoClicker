@@ -7,11 +7,14 @@ import android.util.Log
 import com.buzbuz.smartautoclicker.core.base.di.Dispatcher
 import com.buzbuz.smartautoclicker.core.base.di.HiltCoroutineDispatchers.IO
 import com.buzbuz.smartautoclicker.core.display.recorder.DisplayRecorder
+import com.buzbuz.smartautoclicker.core.bitmaps.BitmapRepository
 import com.buzbuz.smartautoclicker.core.domain.model.action.Action
 import com.buzbuz.smartautoclicker.core.domain.model.event.Event
 import com.buzbuz.smartautoclicker.core.processing.domain.model.ActionExecutionResult
 import com.buzbuz.smartautoclicker.core.processing.domain.model.ActionFailureSnapshot
 import com.buzbuz.smartautoclicker.core.processing.domain.model.isFailure
+import com.buzbuz.smartautoclicker.core.processing.domain.model.RuntimeFailure
+import com.buzbuz.smartautoclicker.core.processing.domain.model.RuntimeStopReason
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CancellationException
@@ -33,9 +36,25 @@ class ActionFailureRecorder @Inject constructor(
 ) {
     private val _lastFailure = MutableStateFlow<ActionFailureSnapshot?>(null)
     val lastFailure: StateFlow<ActionFailureSnapshot?> = _lastFailure
+    private val memorySampler = RuntimeMemorySampler(context)
+
+    suspend fun recordMemorySample(state: String, bitmaps: BitmapRepository) = withContext(ioDispatcher) {
+        try {
+            history.recordMemorySample(memorySampler.sample(state, bitmaps))
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            Log.w(TAG, "Unable to sample runtime memory", error)
+        }
+    }
 
     suspend fun beginSession(name: String) { _lastFailure.value = null; history.begin(name) }
-    suspend fun endSession() = history.end()
+    suspend fun endSession(
+        reason: RuntimeStopReason = RuntimeStopReason.USER_PAUSE,
+        failure: RuntimeFailure? = null,
+        cleanupCompleted: Boolean = true,
+        updatePrevious: Boolean = false,
+    ) = history.end(reason, failure, cleanupCompleted, updatePrevious)
 
     suspend fun onActionCompleted(event: Event, action: Action, result: ActionExecutionResult, durationMs: Long) {
         val failure = _lastFailure.value

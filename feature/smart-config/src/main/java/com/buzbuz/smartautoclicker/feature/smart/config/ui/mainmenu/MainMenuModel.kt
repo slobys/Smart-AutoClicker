@@ -124,6 +124,8 @@ class MainMenuModel @Inject constructor(
         .map { it == DetectionState.ERROR_SCREEN_IMAGE_CAPTURE_FAILED }
         .distinctUntilChanged()
 
+    val runtimeFailure = smartProcessingRepository.runtimeFailure
+
     /** Load an advertisement, if needed. Should be called before showing the paywall to reduce user waiting time. */
     fun loadAdIfNeeded(context: Context) {
         revenueRepository.loadAdIfNeeded(context)

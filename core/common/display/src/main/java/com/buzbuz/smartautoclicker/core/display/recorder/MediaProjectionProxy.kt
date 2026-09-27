@@ -39,7 +39,8 @@ internal class MediaProjectionProxy @Inject constructor() {
      * Can only be not null if the user have granted the permission displayed by
      * [MediaProjectionManager.createScreenCaptureIntent].
      */
-    private var projection: MediaProjection? = null
+    @Volatile private var projection: MediaProjection? = null
+    private var projectionCallback: MediaProjection.Callback? = null
     /**
      * The number of retries to get a media projection.
      * Samsung devices are really slow to start the foreground service and as there is no way to ensure it is
@@ -58,14 +59,26 @@ internal class MediaProjectionProxy @Inject constructor() {
 
         onStopListener = stopListener
 
-        projection = getMediaProjectionWithRetryDelay(context.getAndroidMediaProjectionManager(), resultCode, data)
-            ?.apply { registerCallback(projectionCallback, Handler(Looper.getMainLooper())) }
+        getProjectionRetries = 0
+        val current = getMediaProjectionWithRetryDelay(context.getAndroidMediaProjectionManager(), resultCode, data)
+        projection = current
 
         if (projection == null) {
             onStopListener = null
             getProjectionRetries = 0
             return false
         }
+
+        // Capture this projection, not a mutable listener reused by a later session.
+        val callback = object : MediaProjection.Callback() {
+            override fun onStop() {
+                if (projection !== current) return
+                Log.i(TAG, "Projection stopped by Android")
+                stopListener()
+            }
+        }
+        projectionCallback = callback
+        current?.registerCallback(callback, Handler(Looper.getMainLooper()))
 
         return true
     }
@@ -89,12 +102,12 @@ internal class MediaProjectionProxy @Inject constructor() {
     fun stopMediaProjection() {
         Log.i(TAG, "Stop MediaProjection")
 
-        projection?.apply {
-            unregisterCallback(projectionCallback)
-            stop()
-        }
-        projection = null
+        val current = projection.also { projection = null }
+        val callback = projectionCallback.also { projectionCallback = null }
         onStopListener = null
+        getProjectionRetries = 0
+        try { if (callback != null) current?.unregisterCallback(callback) }
+        finally { current?.stop() }
     }
 
     private suspend fun getMediaProjectionWithRetryDelay(
@@ -118,15 +131,6 @@ internal class MediaProjectionProxy @Inject constructor() {
         }
     }
 
-    /** Called when the user have stopped the projection by clicking on the 'Cast' icon in the status bar. */
-    private val projectionCallback = object : MediaProjection.Callback() {
-
-        override fun onStop() {
-            Log.i(TAG, "Projection stopped by the user")
-            // We only notify, we let the detector take care of calling stopScreenRecord
-            onStopListener?.invoke()
-        }
-    }
 }
 
 private fun Context.getAndroidMediaProjectionManager(): MediaProjectionManager =

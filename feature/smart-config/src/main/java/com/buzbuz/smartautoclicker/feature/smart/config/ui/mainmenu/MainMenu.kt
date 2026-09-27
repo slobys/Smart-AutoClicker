@@ -48,6 +48,7 @@ import com.buzbuz.smartautoclicker.core.common.tutorial.domain.model.Tip
 import com.buzbuz.smartautoclicker.core.common.tutorial.domain.model.monitoring.MonitoredOverlayType
 import com.buzbuz.smartautoclicker.core.processing.domain.model.DebugExecutionState
 import com.buzbuz.smartautoclicker.core.processing.domain.model.ActionFailureSnapshot
+import com.buzbuz.smartautoclicker.core.processing.domain.model.RuntimeFailure
 import com.buzbuz.smartautoclicker.core.ui.utils.AnimatedStatesImageButtonController
 import com.buzbuz.smartautoclicker.core.ui.utils.getDynamicColorsContext
 import com.buzbuz.smartautoclicker.feature.smart.config.R
@@ -114,6 +115,7 @@ class MainMenu(
     private var lastLiveDebugUiState: LiveDebuggingUiState? = null
     private var debugExecutionState: DebugExecutionState = DebugExecutionState.Running
     private var lastActionFailure: ActionFailureSnapshot? = null
+    private var lastShownRuntimeFailure: RuntimeFailure? = null
     private var detectionIsRunning: Boolean = false
     private var liveDebuggingIsEnabled: Boolean = false
 
@@ -216,6 +218,7 @@ class MainMenu(
                 launch { viewModel.detectionState.collect(::updateDetectionState) }
                 launch { viewModel.nativeLibError.collect(::showNativeLibErrorDialogIfNeeded) }
                 launch { viewModel.screenCaptureError.collect(::showScreenCaptureErrorDialogIfNeeded) }
+                launch { viewModel.runtimeFailure.collect(::showRuntimeFailureIfNeeded) }
                 launch { canSwitchScenario.collect(::updateScenarioSwitchButtonEnabledState) }
                 launch { debuggingViewModel.isDebugging.collect(::updateDebugOverlayViewVisibility) }
                 launch { debuggingViewModel.debugExecutionState.collect(::updateDebugExecutionState) }
@@ -777,9 +780,7 @@ class MainMenu(
         MaterialAlertDialogBuilder(context.getDynamicColorsContext(R.style.AppTheme))
             .setTitle(R.string.dialog_overlay_title_warning)
             .setMessage(R.string.error_dialog_message_error_native_lib)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                onStopClicked()
-            }
+            .setPositiveButton(android.R.string.ok, null)
             .create()
             .showAsOverlay()
     }
@@ -790,9 +791,20 @@ class MainMenu(
         MaterialAlertDialogBuilder(context.getDynamicColorsContext(R.style.AppTheme))
             .setTitle(R.string.dialog_overlay_title_warning)
             .setMessage(R.string.error_dialog_message_screen_capture_unsupported)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                onStopClicked()
-            }
+            .setPositiveButton(android.R.string.ok, null)
+            .create()
+            .showAsOverlay()
+    }
+
+    private fun showRuntimeFailureIfNeeded(failure: RuntimeFailure?) {
+        if (failure == null || failure == lastShownRuntimeFailure) return
+        lastShownRuntimeFailure = failure
+        // These startup errors already have a more specific dialog.
+        if (failure.stage == "native_detector_init" || failure.stage == "screen_capture_validation") return
+        MaterialAlertDialogBuilder(context.getDynamicColorsContext(R.style.AppTheme))
+            .setTitle(R.string.runtime_safely_stopped_title)
+            .setMessage(R.string.runtime_safely_stopped_message)
+            .setPositiveButton(android.R.string.ok, null)
             .create()
             .showAsOverlay()
     }

@@ -17,6 +17,7 @@
 package com.buzbuz.smartautoclicker.core.bitmaps
 
 import android.graphics.Bitmap
+import android.content.ComponentCallbacks2
 import android.util.Log
 import androidx.core.graphics.createBitmap
 import com.buzbuz.smartautoclicker.core.base.addDumpTabulationLvl
@@ -31,6 +32,8 @@ internal class BitmapRepositoryImpl @Inject constructor(
 ) : BitmapRepository {
 
     private val conditionBitmapLoadMutex = Mutex()
+    // One reusable capture buffer, independent of template-cache eviction and screen orientation history.
+    private var displayRecorderBitmap: Bitmap? = null
 
     override suspend fun saveImageConditionBitmap(bitmap: Bitmap, prefix: String): String {
         val path = conditionBitmapsDataSource.saveBitmap(bitmap, prefix)
@@ -50,10 +53,32 @@ internal class BitmapRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun getDisplayRecorderBitmap(width: Int, height: Int): Bitmap =
-        bitmapLRUCache.getDisplayRecorderBitmapOrDefault(width, height) {
-            createBitmap(width, height)
-        } ?: throw IllegalStateException("Can't create display recorder bitmap with size $width/$height")
+    @Synchronized override fun getDisplayRecorderBitmap(width: Int, height: Int): Bitmap {
+        displayRecorderBitmap?.takeIf { !it.isRecycled && it.width == width && it.height == height }?.let { return it }
+        displayRecorderBitmap = null
+        return createBitmap(width, height).also { displayRecorderBitmap = it }
+    }
+
+    @Synchronized override fun releaseDisplayRecorderBitmap() {
+        displayRecorderBitmap = null
+    }
+
+    @Suppress("DEPRECATION")
+    override fun trimMemory(level: Int) {
+        when {
+            level >= ComponentCallbacks2.TRIM_MEMORY_BACKGROUND ||
+                level == ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL -> bitmapLRUCache.evictAll()
+            level == ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN -> bitmapLRUCache.trimToSize(bitmapLRUCache.maxSize() / 2)
+            level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW -> bitmapLRUCache.trimToSize(bitmapLRUCache.maxSize() / 4)
+            level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_MODERATE -> bitmapLRUCache.trimToSize(bitmapLRUCache.maxSize() / 2)
+        }
+    }
+
+    @Synchronized override fun memoryUsage() = BitmapMemoryUsage(
+        bitmapLRUCache.size().toLong() * 1024,
+        bitmapLRUCache.maxSize().toLong() * 1024,
+        displayRecorderBitmap?.allocationByteCount?.toLong() ?: 0,
+    )
 
     override suspend fun deleteImageConditionBitmaps(paths: List<String>) {
         conditionBitmapsDataSource.deleteBitmaps(paths)
@@ -74,12 +99,14 @@ internal class BitmapRepositoryImpl @Inject constructor(
 
     override fun dump(writer: PrintWriter, prefix: CharSequence) {
         val contentPrefix = prefix.addDumpTabulationLvl()
+        val memory = memoryUsage()
 
         writer.apply {
             append(prefix).println("* BitmapManager:")
             append(contentPrefix)
                 .append("- cacheSize=[${bitmapLRUCache.size()}/${bitmapLRUCache.maxSize()}]; ")
                 .append("hit/miss=[${bitmapLRUCache.hitCount()}/${bitmapLRUCache.missCount()}]; ")
+                .append("captureBytes=${memory.captureBytes}; ")
                 .println()
         }
     }

@@ -35,6 +35,7 @@ import com.buzbuz.smartautoclicker.core.dumb.domain.model.DumbScenario
 import com.buzbuz.smartautoclicker.core.dumb.engine.DumbEngine
 import com.buzbuz.smartautoclicker.core.processing.domain.SmartProcessingRepository
 import com.buzbuz.smartautoclicker.core.processing.domain.model.DetectionState
+import com.buzbuz.smartautoclicker.core.processing.domain.model.RuntimeStopReason
 import com.buzbuz.smartautoclicker.core.settings.domain.SettingsRepository
 import com.buzbuz.smartautoclicker.core.smart.debugging.domain.DebuggingRepository
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.mainmenu.MainMenu
@@ -48,6 +49,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -82,6 +85,8 @@ class LocalService(
     private val serviceScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     /** Coroutine job for the delayed start of engine & ui. */
     private var startJob: Job? = null
+    private var stopJob: Job? = null
+    private var releaseRequested = false
     /** Coroutine job for the paywall result upon start from notification. */
     private var paywallResultJob: Job? = null
     /** Coroutine job serialising runtime script switches. */
@@ -143,6 +148,7 @@ class LocalService(
     }
 
     override fun startDumbScenario(dumbScenario: DumbScenario) {
+        if (releaseRequested) return
         if (!sessionState.beginStart(RuntimeScenarioTarget.Dumb(dumbScenario).toKey(), hasMediaProjection = false)) return
         onStart(dumbScenario.id.databaseId, false, null)
 
@@ -171,6 +177,7 @@ class LocalService(
      * @param scenario the identifier of the scenario of clicks to be used for detection.
      */
     override fun startSmartScenario(resultCode: Int, data: Intent, scenario: Scenario) {
+        if (releaseRequested) return
         if (!sessionState.beginStart(RuntimeScenarioTarget.Smart(scenario).toKey(), hasMediaProjection = true)) return
 
         onStart(
@@ -197,21 +204,39 @@ class LocalService(
 
     override fun stopScenario() {
         if (!sessionState.beginStop(isPermissionHandoff = false)) return
-        scenarioSwitchJob?.cancel()
-        scenarioSwitchJob = null
+        scheduleStop()
+    }
 
-        serviceScope.launch {
-            startJob?.join()
+    private fun scheduleStop() {
+        if (stopJob != null) return
+        startJob?.cancel()
+        scenarioSwitchJob?.cancel()
+        paywallResultJob?.cancel()
+        // Request cancellation before waiting for overlay animations or the transition mutex.
+        smartProcessingRepository.stopScreenRecord(
+            if (releaseRequested) RuntimeStopReason.SERVICE_DISCONNECTED else RuntimeStopReason.SESSION_CLOSED)
+        stopJob = serviceScope.launch(start = CoroutineStart.LAZY) {
+            startJob?.cancelAndJoin()
+            scenarioSwitchJob?.cancelAndJoin()
+            scenarioSwitchJob = null
             startJob = null
-            transitionMutex.withLock {
-                stopScenarioInternal(isScenarioHandoff = false)
+            try {
+                transitionMutex.withLock { stopScenarioInternal(isScenarioHandoff = false) }
+            } finally {
                 sessionState.completeStop()
+                stopJob = null
+                if (releaseRequested) serviceScope.cancel()
             }
         }
+        stopJob?.start()
     }
 
     override fun release() {
-        serviceScope.cancel()
+        releaseRequested = true
+        // Do not cancel the scope that owns asynchronous cleanup before cleanup can run.
+        smartProcessingRepository.stopScreenRecord(RuntimeStopReason.SERVICE_DISCONNECTED)
+        sessionState.beginStop(isPermissionHandoff = false)
+        scheduleStop()
     }
 
     internal fun onKeyEvent(event: KeyEvent?): Boolean {
@@ -440,12 +465,20 @@ class LocalService(
     }
 
     private suspend fun stopScenarioInternal(isScenarioHandoff: Boolean) {
-        dumbRuntime.release()
-        overlayCoordinator.closeAll()
-        smartRuntime.stopScreenRecord()
-
-        onStop(isScenarioHandoff)
-        notificationController.destroyNotification()
+        suspend fun clean(stage: String, block: suspend () -> Unit) {
+            try { block() }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (error: Exception) { Log.e(TAG, "Failed to clean up $stage", error) }
+        }
+        clean("dumb runtime") { dumbRuntime.release() }
+        clean("smart runtime") {
+            smartProcessingRepository.stopScreenRecord(
+                if (releaseRequested) RuntimeStopReason.SERVICE_DISCONNECTED else RuntimeStopReason.SESSION_CLOSED)
+            smartProcessingRepository.awaitStopped()
+        }
+        clean("overlays") { overlayCoordinator.closeAll() }
+        clean("service state") { onStop(isScenarioHandoff) }
+        clean("notification") { notificationController.destroyNotification() }
     }
 }
 private const val TAG = "LocalService"

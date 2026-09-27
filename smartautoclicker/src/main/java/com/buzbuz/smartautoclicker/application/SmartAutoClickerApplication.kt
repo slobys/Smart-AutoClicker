@@ -19,6 +19,7 @@ package com.buzbuz.smartautoclicker.application
 import android.app.Application
 import com.buzbuz.smartautoclicker.ComponentConfig
 import com.buzbuz.smartautoclicker.core.base.data.AppComponentsManager
+import com.buzbuz.smartautoclicker.core.bitmaps.BitmapRepository
 import com.google.android.material.color.DynamicColors
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
@@ -27,6 +28,18 @@ import javax.inject.Inject
 class SmartAutoClickerApplication : Application() {
 
     @Inject lateinit var appComponentsManager: AppComponentsManager
+    @Inject lateinit var bitmapRepository: BitmapRepository
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        bitmapRepository.trimMemory(level)
+    }
+
+    @Suppress("DEPRECATION")
+    override fun onLowMemory() {
+        super.onLowMemory()
+        bitmapRepository.clearCache()
+    }
 
     override fun onCreate() {
         super.onCreate()

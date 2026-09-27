@@ -73,6 +73,7 @@ internal class SmartScenarioRuntime(
 }
 
 internal fun DetectionState.isRuntimeError(): Boolean = when (this) {
+    DetectionState.INACTIVE,
     DetectionState.ERROR_NO_NATIVE_LIB,
     DetectionState.ERROR_OCR_MODEL_NOT_FOUND,
     DetectionState.ERROR_SCREEN_IMAGE_CAPTURE_FAILED -> true

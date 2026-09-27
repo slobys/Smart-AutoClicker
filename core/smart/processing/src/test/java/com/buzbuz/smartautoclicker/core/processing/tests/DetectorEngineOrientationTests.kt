@@ -171,11 +171,9 @@ class DetectorEngineOrientationTests {
 
         engine.startScreenRecord(0, mockIntent, null)
 
-        // The orientation listener is registered synchronously before the coroutine launch
+        advanceUntilIdle() // Register the listener and finish screen capture startup.
         val listenerCaptor = argumentCaptor<(Context) -> Unit>()
         verify(mockDisplayConfigManager).addOrientationListener(listenerCaptor.capture())
-
-        advanceUntilIdle() // Complete startProjection + startScreenRecord → state = RECORDING
 
         return listenerCaptor.firstValue
     }
