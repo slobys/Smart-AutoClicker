@@ -86,7 +86,7 @@ jobs:
       run: |
         set -euo pipefail
 
-        release_title="Klick'r ${RELEASE_TAG} · slobys 二次开发版"
+        release_title="Klick'r ${RELEASE_TAG}"
         notes_file="documentation/releases/${RELEASE_TAG}.md"
         notes_args=(--generate-notes)
         if [[ -f "$notes_file" ]]; then
