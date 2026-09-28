@@ -66,6 +66,7 @@ class ActionTypeSelectionDialog(
                 else viewModel.stopViewCounterMonitoring()
 
             ActionTypeChoice.Copy,
+            ActionTypeChoice.Route,
             ActionTypeChoice.Intent,
             ActionTypeChoice.Notification,
             ActionTypeChoice.Pause,

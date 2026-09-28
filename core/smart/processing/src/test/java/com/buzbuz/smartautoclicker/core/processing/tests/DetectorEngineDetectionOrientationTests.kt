@@ -36,6 +36,9 @@ import com.buzbuz.smartautoclicker.core.display.config.DisplayConfigManager
 import com.buzbuz.smartautoclicker.core.processing.data.ActionFailureRecorder
 import com.buzbuz.smartautoclicker.core.display.recorder.DisplayRecorder
 import com.buzbuz.smartautoclicker.core.domain.model.scenario.Scenario
+import com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute
+import com.buzbuz.smartautoclicker.core.processing.routes.RouteRuntime
+import com.buzbuz.smartautoclicker.core.processing.domain.model.ActionExecutionResult
 import com.buzbuz.smartautoclicker.core.processing.data.DetectorEngine
 import com.buzbuz.smartautoclicker.core.processing.data.DetectorState
 import com.buzbuz.smartautoclicker.core.processing.data.scaling.ScalingManager
@@ -45,6 +48,7 @@ import com.buzbuz.smartautoclicker.core.settings.domain.SettingsRepository
 import io.mockk.MockKAnnotations
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
@@ -113,6 +117,7 @@ class DetectorEngineDetectionOrientationTests {
     @RelaxedMockK private lateinit var mockImageDetector: ImageDetector
     @RelaxedMockK private lateinit var mockContext: Context
     @RelaxedMockK private lateinit var mockIntent: Intent
+    @RelaxedMockK private lateinit var mockRouteRuntime: RouteRuntime
 
     @Before
     fun setUp() {
@@ -234,6 +239,38 @@ class DetectorEngineDetectionOrientationTests {
         stopDetection(engine)
     }
 
+    @Test fun `route gets physical pixels then restores scaled scenario capture`() = runTest {
+        val scaled = Point(338, 600)
+        every { mockScalingManager.startScaling(any(), any()) } returns scaled
+        every { mockScalingManager.refreshScaling() } returns scaled
+        coEvery { mockRouteRuntime.runAction(any(), any()) } returns ActionExecutionResult.Success
+        val (engine, _) = startDetectionAndCaptureOrientationListener()
+        try {
+            assertEquals(ActionExecutionResult.Success, engine.executeRouteAction(mockk<ExecuteRoute>()) {})
+            coVerifyOrder {
+                mockDisplayRecorder.resizeDisplay(scaled)
+                mockDisplayRecorder.resizeDisplay(TEST_DISPLAY_SIZE)
+                mockRouteRuntime.runAction(any(), any())
+                mockDisplayRecorder.resizeDisplay(scaled)
+            }
+        } finally { stopDetection(engine) }
+    }
+
+    @Test fun `route exception also restores scaled capture`() = runTest {
+        val scaled = Point(338, 600)
+        every { mockScalingManager.refreshScaling() } returns scaled
+        coEvery { mockRouteRuntime.runAction(any(), any()) } throws IllegalStateException("route failure")
+        val (engine, _) = startDetectionAndCaptureOrientationListener()
+        try {
+            try { engine.executeRouteAction(mockk<ExecuteRoute>()) {}; org.junit.Assert.fail("Expected failure") }
+            catch (_: IllegalStateException) { }
+            coVerifyOrder {
+                mockRouteRuntime.runAction(any(), any())
+                mockDisplayRecorder.resizeDisplay(scaled)
+            }
+        } finally { stopDetection(engine) }
+    }
+
     // ---- helpers ----
 
     private fun TestScope.startDetectionAndCaptureOrientationListener(): Pair<DetectorEngine, (Context) -> Unit> {
@@ -249,6 +286,7 @@ class DetectorEngineDetectionOrientationTests {
             appComponentsProvider = mockAppComponentsProvider,
             debuggingListener = mockDebuggingListener,
             ocrModelsRepository = mockOcrModelsRepository,
+            routeRuntime = javax.inject.Provider { mockRouteRuntime },
         )
 
         var capturedListener: ((Context) -> Unit)? = null

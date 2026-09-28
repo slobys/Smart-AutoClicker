@@ -37,6 +37,7 @@ import com.buzbuz.smartautoclicker.core.detection.NativeDetector
 import com.buzbuz.smartautoclicker.core.display.config.DisplayConfigManager
 import com.buzbuz.smartautoclicker.core.domain.ext.getAllOCRAlphabets
 import com.buzbuz.smartautoclicker.core.domain.model.counter.Counter
+import com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute
 import com.buzbuz.smartautoclicker.core.domain.model.event.ScreenEvent
 import com.buzbuz.smartautoclicker.core.domain.model.event.TriggerEvent
 import com.buzbuz.smartautoclicker.core.domain.model.scenario.Scenario
@@ -45,6 +46,7 @@ import com.buzbuz.smartautoclicker.core.processing.data.scaling.ScalingManager
 import com.buzbuz.smartautoclicker.core.settings.domain.SettingsRepository
 import com.buzbuz.smartautoclicker.core.processing.domain.SmartProcessingListener
 import com.buzbuz.smartautoclicker.core.processing.domain.model.DebugExecutionState
+import com.buzbuz.smartautoclicker.core.processing.domain.model.ActionExecutionResult
 import com.buzbuz.smartautoclicker.core.processing.domain.model.RuntimeFailure
 import com.buzbuz.smartautoclicker.core.processing.domain.model.RuntimeStopReason
 
@@ -90,6 +92,7 @@ class DetectorEngine @Inject constructor(
     private val appComponentsProvider: AppComponentsProvider,
     private val debuggingListener: SmartProcessingListener,
     private val ocrModelsRepository: OCRModelsRepository,
+    private val routeRuntime: javax.inject.Provider<com.buzbuz.smartautoclicker.core.processing.routes.RouteRuntime>? = null,
 ) {
 
     /** Process the events conditions to detect them on the screen. */
@@ -321,12 +324,29 @@ class DetectorEngine @Inject constructor(
                 screenEventConfirmationWindow = SCREEN_EVENT_CONFIRMATION_WINDOW,
                 singleFrameConfidenceMargin = SINGLE_FRAME_CONFIDENCE_MARGIN,
                 beforeEventActions = runtimeDebugger::awaitBeforeActions,
+                beforeRouteRead = runtimeDebugger::awaitWithinAction,
                 onActionResult = actionFailureRecorder::onActionResult,
                 onActionCompleted = actionFailureRecorder::onActionCompleted,
+                routeExecutor = ::executeRouteAction,
             )
             scenarioProcessor?.onScenarioStart(context)
 
             processScreenImages()
+        }
+    }
+
+    /** The sequential processor releases its borrowed frame before entering this method.
+     * Route areas are saved in physical pixels, unlike downscaled scenario detection areas.
+     */
+    internal suspend fun executeRouteAction(action: ExecuteRoute, beforeRead: suspend () -> Unit): ActionExecutionResult {
+        val runtime = routeRuntime?.get() ?: return ActionExecutionResult.Failed("Route runtime unavailable")
+        try {
+            displayRecorder.resizeDisplay(displayConfigManager.displayConfig.sizePx)
+            return runtime.runAction(action, beforeRead)
+        } finally {
+            // Cancellation/projection loss is restored or released by cleanUpRuntime after joining us.
+            if (kotlinx.coroutines.currentCoroutineContext().isActive && _state.value == DetectorState.DETECTING && pendingStop == null)
+                displayRecorder.resizeDisplay(scalingManager.refreshScaling())
         }
     }
 

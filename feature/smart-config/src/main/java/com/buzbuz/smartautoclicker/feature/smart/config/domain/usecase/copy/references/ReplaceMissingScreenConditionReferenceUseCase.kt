@@ -90,6 +90,7 @@ class ReplaceMissingScreenConditionReferenceUseCase @Inject constructor() {
             is SetText,
             is Swipe,
             is SystemAction,
+            is com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute,
             is ToggleEvent -> {
                 Log.e(TAG, "Can't replace, action type is not supported.")
                 return null

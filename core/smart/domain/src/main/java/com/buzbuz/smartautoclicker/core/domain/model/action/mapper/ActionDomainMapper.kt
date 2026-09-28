@@ -36,6 +36,11 @@ internal fun CompleteActionEntity.toDomain(cleanIds: Boolean = false): Action = 
     ActionType.NOTIFICATION -> toDomainNotification(cleanIds)
     ActionType.SYSTEM -> toDomainSystem(cleanIds)
     ActionType.TEXT -> toDomainSetText(cleanIds)
+    ActionType.ROUTE -> com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute(
+        id = Identifier(id = action.id, asTemporary = cleanIds),
+        eventId = Identifier(id = action.eventId, asTemporary = cleanIds), name = action.name, priority = action.priority,
+        routeId = action.routeId.orEmpty(), timeoutMs = action.routeTimeoutMs ?: 300_000,
+    )
 }
 
 private fun CompleteActionEntity.toDomainClick(cleanIds: Boolean = false) = Click(

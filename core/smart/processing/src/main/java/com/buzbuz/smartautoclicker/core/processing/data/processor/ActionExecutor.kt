@@ -83,6 +83,9 @@ internal class ActionExecutor(
     private val onActionResult: suspend (Event, Action, ActionExecutionResult) -> Unit = { _, _, _ -> },
     private val onStopRequested: () -> Unit = {},
     private val onActionCompleted: suspend (Event, Action, ActionExecutionResult, Long) -> Unit = { _, _, _, _ -> },
+    private val routeExecutor: suspend (Event, com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute) -> ActionExecutionResult = { _, _ ->
+        ActionExecutionResult.Failed("Route execution unavailable")
+    },
 ) {
 
     init { androidExecutor.resetState() }
@@ -171,6 +174,10 @@ internal class ActionExecutor(
         is Notification -> executeNotification(event, action)
         is SystemAction -> executeSystemAction(action)
         is SetText -> executeSetText(action)
+        is com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute -> {
+            (if (!action.isComplete()) ActionExecutionResult.Failed("Invalid route action")
+            else routeExecutor(event, action)).also { if (it.isFailure) stopAfterAction = true }
+        }
     }
 
     private suspend fun executeClick(event: Event, click: Click, results: ConditionsResults?): ActionExecutionResult {
@@ -541,6 +548,7 @@ private fun Boolean.toExecutionResult(reason: String): ActionExecutionResult =
 
 private fun Action.watchdogTimeoutMs(): Long? = when (this) {
     is Pause, is ToggleEvent -> null
+    is com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute -> null // Route timeout belongs to its runner.
     is Click, is Swipe -> null // Individual gestures have their own deadline; checks/waits have theirs.
     else -> DEFAULT_ACTION_TIMEOUT_MS
 }

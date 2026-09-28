@@ -408,6 +408,10 @@ class EditedItemsBuilder internal constructor(
             priority = 0,
         )
 
+    fun createNewExecuteRoute(name: String) = com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute(
+        id = actionsIdCreator.generateNewIdentifier(), eventId = getEditedEventIdOrThrow(), name = name, priority = 0,
+    )
+
     fun createNewActionFrom(from: Action, eventId: Identifier = getEditedEventIdOrThrow()): Action = when (from) {
         is Click -> createNewClickFrom(from, eventId)
         is Swipe -> createNewSwipeFrom(from, eventId)
@@ -418,6 +422,9 @@ class EditedItemsBuilder internal constructor(
         is Notification -> createNewNotificationFrom(from, eventId)
         is SystemAction -> createNewSystemActionFrom(from, eventId)
         is SetText -> createNewSetTextFrom(from, eventId)
+        is com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute -> from.copy(
+            id = actionsIdCreator.generateNewIdentifier(), eventId = eventId,
+        )
     }
 
     private fun createNewClickFrom(from: Click, eventId: Identifier): Click {

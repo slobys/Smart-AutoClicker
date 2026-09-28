@@ -41,8 +41,15 @@ class RouteViewModel @Inject constructor(val store: RouteStore, val runtime: Rou
     fun configured(): Boolean {
         val r = route ?: return false
         if (!r.valid()) return false
-        val areas = listOf(r.xArea, r.yArea, r.mapArea)
+        val areas = if (r.positionMode == RoutePositionMode.MINIMAP) listOf(requireNotNull(r.minimap).area, r.mapArea)
+            else listOf(r.xArea, r.yArea, r.mapArea)
         return areas.indices.all { i -> areas.indices.all { j -> i == j || !areas[i].overlaps(areas[j]) } }
+    }
+
+    fun setMode(mode: RoutePositionMode) {
+        if (route?.positionMode == mode) return
+        route = route?.copy(positionMode = mode, points = emptyList(), recordingComplete = false, minimap = null)
+        clearCalibration()
     }
 
     private fun RouteArea.overlaps(other: RouteArea) =

@@ -183,6 +183,7 @@ class DebugReportTimelineViewModel @Inject constructor(
         when (this) {
             is Click -> R.drawable.ic_click
             is Swipe -> R.drawable.ic_swipe
+            is com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute -> R.drawable.ic_swipe
             is Pause -> R.drawable.ic_wait
             is Intent -> R.drawable.ic_intent
             is ToggleEvent ->  R.drawable.ic_toggle_event

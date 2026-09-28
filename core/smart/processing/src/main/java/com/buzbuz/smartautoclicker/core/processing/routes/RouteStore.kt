@@ -18,14 +18,29 @@ import javax.inject.Singleton
 class RouteStore @Inject constructor(@ApplicationContext context: Context) {
     private val directory = File(context.filesDir, "routes")
 
+    data class Summary(val id: String, val name: String, val pointCount: Int, val recordingComplete: Boolean, val ready: Boolean)
+
+    /** Do not retain 50 routes' keyframes just to show a picker. Decode one bounded file at a time. */
+    suspend fun summaries(): List<Summary> = withContext(Dispatchers.IO) {
+        synchronized(this@RouteStore) {
+            directory.listFiles().orEmpty().filter { it.extension == "json" && it.nameWithoutExtension.matches(ROUTE_ID) }
+                .take(50).mapNotNull { file ->
+                    try {
+                        val route = readRoute(file)
+                        Summary(route.id, route.name, route.points.size, route.recordingComplete,
+                            route.recordingComplete && route.points.size >= 2 && route.calibration != null &&
+                                (route.positionMode != RoutePositionMode.MINIMAP || route.minimap?.tested == true))
+                    } catch (ex: Exception) { Log.w("RouteStore", "Unreadable route ${file.name}", ex); null }
+                }.sortedBy { it.name }
+        }
+    }
+
     suspend fun list(): List<RecordedRoute> = withContext(Dispatchers.IO) {
         synchronized(this@RouteStore) {
             directory.listFiles().orEmpty().filter { it.extension == "json" && it.nameWithoutExtension.matches(ROUTE_ID) }
                 .take(50).mapNotNull { file ->
-                    try { decode(AtomicFile(file).openRead().use { stream ->
-                        val bytes = stream.readBytesBounded()
-                        bytes.toString(Charsets.UTF_8)
-                    }) } catch (ex: Exception) { Log.w("RouteStore", "Unreadable route ${file.name}", ex); null }
+                    try { readRoute(file) }
+                    catch (ex: Exception) { Log.w("RouteStore", "Unreadable route ${file.name}", ex); null }
                 }.sortedBy { it.name }
         }
     }
@@ -50,6 +65,20 @@ class RouteStore @Inject constructor(@ApplicationContext context: Context) {
         synchronized(this@RouteStore) { AtomicFile(File(directory, "$id.json")).delete() }
     }
 
+    suspend fun load(id: String): RecordedRoute? = withContext(Dispatchers.IO) {
+        require(id.matches(ROUTE_ID))
+        synchronized(this@RouteStore) {
+            val file = File(directory, "$id.json")
+            if (!file.exists() && !File(directory, "$id.json.bak").exists()) return@synchronized null
+            readRoute(file)
+        }
+    }
+
+    private fun readRoute(file: File): RecordedRoute =
+        decode(AtomicFile(file).openRead().use { it.readBytesBounded().toString(Charsets.UTF_8) }).also {
+            require(it.id == file.nameWithoutExtension) { "Route file identity does not match its reference" }
+        }
+
     private fun java.io.InputStream.readBytesBounded(): ByteArray {
         val buffer = java.io.ByteArrayOutputStream()
         val chunk = ByteArray(8192)
@@ -65,19 +94,26 @@ class RouteStore @Inject constructor(@ApplicationContext context: Context) {
     companion object {
         private const val MAX_BYTES = 2 * 1024 * 1024
         internal fun encode(r: RecordedRoute): String = JSONObject().apply {
-            put("version", 1); put("id", r.id); put("name", r.name)
+            put("version", 2); put("id", r.id); put("name", r.name)
             put("width", r.screenWidth); put("height", r.screenHeight)
             put("x", r.xArea.json()); put("y", r.yArea.json()); put("map", r.mapArea.json())
             put("mapPng", r.mapPng); put("anchor", r.anchor.json()); put("control", r.control.name)
             put("tolerance", r.tolerance); put("complete", r.recordingComplete)
             put("points", JSONArray().apply { r.points.forEach { put(it.json()) } })
+            put("positionMode", r.positionMode.name); put("joystickDurationMs", r.joystickDurationMs)
+            r.minimap?.let { m -> put("minimap", JSONObject().apply {
+                put("area", m.area.json()); put("markerRadius", m.markerRadius); put("tested", m.tested)
+                put("keyframes", JSONArray().apply { m.keyframes.forEach { k ->
+                    put(JSONObject().put("position", k.position.json()).put("gray", k.gray))
+                } })
+            }) }
             r.calibration?.let { c -> put("calibration", JSONArray().put(c.first.json()).put(c.second.json())) }
         }.toString()
 
         internal fun decode(text: String): RecordedRoute {
             require(text.length <= MAX_BYTES)
             val j = JSONObject(text)
-            require(j.getInt("version") == 1)
+            require(j.getInt("version") in 1..2)
             val points = j.getJSONArray("points")
             require(points.length() <= MAX_ROUTE_POINTS)
             return RecordedRoute(
@@ -86,6 +122,16 @@ class RouteStore @Inject constructor(@ApplicationContext context: Context) {
                 j.getString("mapPng"), j.getJSONArray("anchor").point(), RouteControl.valueOf(j.getString("control")),
                 j.optJSONArray("calibration")?.let { RouteCalibration(it.getJSONArray(0).sample(), it.getJSONArray(1).sample()) },
                 j.getDouble("tolerance"), List(points.length()) { points.getJSONArray(it).point() }, j.getBoolean("complete"),
+                RoutePositionMode.valueOf(j.optString("positionMode", RoutePositionMode.COORDINATES.name)),
+                j.optJSONObject("minimap")?.let { m ->
+                    val keys = m.getJSONArray("keyframes")
+                    require(keys.length() in 1..MAX_ROUTE_KEYFRAMES)
+                    RouteMinimap(m.getJSONArray("area").area(), m.getInt("markerRadius"),
+                        List(keys.length()) { n -> keys.getJSONObject(n).let {
+                            RouteKeyframe(it.getJSONArray("position").point(), it.getString("gray"))
+                        } }, m.getBoolean("tested"))
+                },
+                j.optLong("joystickDurationMs", 500),
             ).also { require(it.valid()) }
         }
         private fun RoutePoint.json() = JSONArray().put(x).put(y)

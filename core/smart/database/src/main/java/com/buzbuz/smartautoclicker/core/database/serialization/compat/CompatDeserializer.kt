@@ -490,8 +490,18 @@ internal open class CompatDeserializer : Deserializer {
             ActionType.NOTIFICATION -> deserializeActionNotification(jsonAction)
             ActionType.SYSTEM -> deserializeActionSystem(jsonAction)
             ActionType.TEXT -> deserializeActionSetText(jsonAction)
+            ActionType.ROUTE -> deserializeActionRoute(jsonAction)
             null -> null
         }
+
+    private fun deserializeActionRoute(json: JsonObject): ActionEntity? {
+        val id = json.getLong("id", true) ?: return null
+        val eventId = json.getLong("eventId", true) ?: return null
+        // Preserve a missing local reference so execution fails visibly, never omit the action.
+        return ActionEntity(id = id, eventId = eventId, name = json.getString("name") ?: "Route",
+            priority = json.getInt("priority")?.coerceAtLeast(0) ?: 0, type = ActionType.ROUTE,
+            routeId = json.getString("routeId") ?: "", routeTimeoutMs = json.getLong("routeTimeoutMs") ?: 300_000)
+    }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
     open fun deserializeActionClick(

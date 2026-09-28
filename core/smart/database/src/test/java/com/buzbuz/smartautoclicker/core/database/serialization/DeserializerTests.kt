@@ -87,4 +87,14 @@ class DeserializerTests {
         // Then
         assertEquals(DEFAULT_COMPLETE_SCENARIO, deserializedScenario)
     }
+
+    @Test fun routeActionRoundTripPreservesLocalReferenceAndTimeout() {
+        val routeAction = CompleteActionEntity(action = ActionEntity(12, 1, 0, "Route", ActionType.ROUTE,
+            routeId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", routeTimeoutMs = 180_000),
+            intentExtras = emptyList(), eventsToggle = emptyList())
+        val scenario = DEFAULT_COMPLETE_SCENARIO.copy(events = listOf(
+            DEFAULT_COMPLETE_SCENARIO.events.first().copy(actions = listOf(routeAction))))
+        val restored = DeserializerFactory.create(DATABASE_VERSION)?.deserializeCompleteScenario(scenario.encodeToJsonObject())
+        assertEquals(scenario, restored)
+    }
 }

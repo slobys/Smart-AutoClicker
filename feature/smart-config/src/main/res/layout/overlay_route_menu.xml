@@ -6,15 +6,20 @@
         style="@style/AppTheme.Overlay.FloatingMenu.CardView">
         <LinearLayout android:layout_width="280dp" android:layout_height="wrap_content"
             android:orientation="vertical">
-            <FrameLayout android:layout_width="match_parent" android:layout_height="96dp">
-                <TextView android:id="@+id/route_status" android:layout_width="match_parent"
+            <FrameLayout android:layout_width="match_parent" android:layout_height="112dp">
+                <androidx.appcompat.widget.AppCompatTextView android:id="@+id/route_status" android:layout_width="match_parent"
                     android:layout_height="match_parent" android:padding="12dp" android:textSize="14sp"
-                    android:textColor="#FFFFFF" android:gravity="center_vertical" android:maxLines="4"
+                    android:textColor="#FFFFFF" android:gravity="center_vertical" android:maxLines="5"
+                    app:autoSizeTextType="uniform" app:autoSizeMinTextSize="11sp"
+                    app:autoSizeMaxTextSize="14sp" app:autoSizeStepGranularity="1sp"
                     android:accessibilityLiveRegion="polite" android:text="@string/route_message_preparing" />
                 <View android:id="@+id/route_heartbeat" android:layout_width="6dp" android:layout_height="6dp"
                     android:layout_gravity="top|end" android:layout_margin="4dp"
                     android:background="@drawable/route_heartbeat" android:importantForAccessibility="no" />
             </FrameLayout>
+            <com.buzbuz.smartautoclicker.feature.smart.config.ui.routes.RouteTraceView
+                android:id="@+id/route_trace" android:layout_width="match_parent" android:layout_height="88dp"
+                android:visibility="gone" android:contentDescription="@string/route_trace_description" />
             <LinearLayout android:id="@+id/menu_items" android:layout_width="match_parent"
                 android:layout_height="wrap_content" android:orientation="horizontal">
                 <Button android:id="@+id/route_pause" android:layout_width="0dp" android:layout_weight="1"

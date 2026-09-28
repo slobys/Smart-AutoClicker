@@ -65,6 +65,7 @@ class IsActionRelatedToUnreachableItemUseCase @Inject constructor(
             is Swipe,
             is Intent,
             is SystemAction -> false
+            is com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute -> false
         }
     }
 

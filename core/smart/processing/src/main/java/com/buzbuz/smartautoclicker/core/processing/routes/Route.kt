@@ -19,6 +19,23 @@ data class RouteArea(val left: Int, val top: Int, val right: Int, val bottom: In
 }
 
 enum class RouteControl { GROUND_TAP, JOYSTICK }
+enum class RoutePositionMode { COORDINATES, MINIMAP }
+
+/** Bounded grayscale landmarks; never store a whole gameplay video. */
+data class RouteKeyframe(val position: RoutePoint, val gray: String)
+data class RouteMinimap(
+    val area: RouteArea,
+    val markerRadius: Int = 16,
+    val keyframes: List<RouteKeyframe> = emptyList(),
+    val tested: Boolean = false,
+) {
+    fun valid(width: Int, height: Int) = area.valid(width, height) &&
+        area.right - area.left in 96..512 && area.bottom - area.top in 96..512 &&
+        markerRadius in 8..40 && keyframes.size in 1..MAX_ROUTE_KEYFRAMES &&
+        keyframes.all { it.position.valid() && it.gray.length == MINIMAP_BYTES_BASE64 }
+}
+const val MAX_ROUTE_KEYFRAMES = 32
+const val MINIMAP_BYTES_BASE64 = 192 * 192 / 3 * 4
 
 /** One short, explicitly requested movement: screen offset and observed map displacement. */
 data class RouteCalibrationSample(val screenDelta: RoutePoint, val mapDelta: RoutePoint)
@@ -62,14 +79,19 @@ data class RecordedRoute(
     val tolerance: Double = 2.0,
     val points: List<RoutePoint> = emptyList(),
     val recordingComplete: Boolean = false,
+    val positionMode: RoutePositionMode = RoutePositionMode.COORDINATES,
+    val minimap: RouteMinimap? = null,
+    val joystickDurationMs: Long = 500,
 ) {
     fun valid(): Boolean = id.matches(ROUTE_ID) && name.isNotBlank() && name.length <= 60 &&
         screenWidth in 100..8192 && screenHeight in 100..8192 &&
-        listOf(xArea, yArea, mapArea).all { it.valid(screenWidth, screenHeight) } &&
+        (positionMode != RoutePositionMode.COORDINATES || listOf(xArea, yArea).all { it.valid(screenWidth, screenHeight) }) &&
+        mapArea.valid(screenWidth, screenHeight) &&
+        (positionMode != RoutePositionMode.MINIMAP || minimap?.valid(screenWidth, screenHeight) == true) &&
         mapPng.length in 1..350_000 && anchor.valid() && anchor.x in 0.0..<screenWidth.toDouble() &&
         anchor.y in 0.0..<screenHeight.toDouble() && tolerance.isFinite() && tolerance in 1.0..5.0 &&
         (calibration == null || calibration.valid()) && points.size <= MAX_ROUTE_POINTS &&
-        points.all { it.valid() && it.x >= 0 && it.y >= 0 }
+        points.all { it.valid() && it.x >= 0 && it.y >= 0 } && joystickDurationMs in 100..800
 }
 
 const val MAX_ROUTE_POINTS = 2_000

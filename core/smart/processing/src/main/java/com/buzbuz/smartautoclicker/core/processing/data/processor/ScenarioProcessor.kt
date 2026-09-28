@@ -78,6 +78,10 @@ internal class ScenarioProcessor(
     private val onActionResult: suspend (Event, Action, ActionExecutionResult) -> Unit = { _, _, _ -> },
     private val monotonicTimeMs: () -> Long = { System.nanoTime() / 1_000_000L },
     private val onActionCompleted: suspend (Event, Action, ActionExecutionResult, Long) -> Unit = { _, _, _, _ -> },
+    private val beforeRouteRead: suspend (Long, String) -> Unit = { _, _ -> },
+    private val routeExecutor: suspend (com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute, suspend () -> Unit) -> ActionExecutionResult = { _, _ ->
+        ActionExecutionResult.Failed("Route execution unavailable")
+    },
 ) {
 
     private companion object {
@@ -123,6 +127,11 @@ internal class ScenarioProcessor(
         onActionResult = onActionResult,
         onActionCompleted = onActionCompleted,
         onStopRequested = onStopRequested,
+        routeExecutor = { event, action ->
+            // No borrowed frame may remain locked while the route acquires fresh captures.
+            releaseActiveScreenFrame()
+            routeExecutor(action) { beforeRouteRead(event.id.databaseId, event.name) }
+        },
     )
     /** Filters one-frame visual glitches before actions are executed. */
     private val screenEventStabilityTracker = ScreenEventStabilityTracker(

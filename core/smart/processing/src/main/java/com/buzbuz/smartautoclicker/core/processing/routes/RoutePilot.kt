@@ -8,9 +8,10 @@ import kotlinx.coroutines.ensureActive
 enum class RouteMessage {
     PREPARING, READING, RECORDING, REPLAYING, PAUSED, COMPLETE, SAVED_DRAFT, DONE,
     WRONG_START, STUCK, TIMEOUT, LOST_POSITION, BAD_CALIBRATION, RESOLUTION_CHANGED,
-    SERVICE_STOPPED, MODELS_MISSING, GESTURE_FAILED, LIMIT_REACHED, FAILED,
+    SERVICE_STOPPED, MODELS_MISSING, GESTURE_FAILED, LIMIT_REACHED, FAILED, LOCALIZATION_PASSED, LOCALIZATION_WEAK,
 }
-data class RouteProgress(val message: RouteMessage, val position: RoutePoint? = null, val count: Int = 0)
+data class RouteProgress(val message: RouteMessage, val position: RoutePoint? = null, val count: Int = 0,
+    val confidence: Double? = null, val trace: List<RoutePoint> = emptyList(), val observations: Int? = null)
 
 class RouteRunControl {
     @Volatile var stopped = false
@@ -19,13 +20,37 @@ class RouteRunControl {
 }
 
 internal interface RoutePort {
+    val epoch: Long get() = 0L
     fun now(): Long
     /** Null means no reliable observation; never interpreted as arrival or as coordinate zero. */
     suspend fun read(): RoutePoint?
     suspend fun move(offset: RoutePoint): Boolean
+    suspend fun move(motion: RouteMotion): Boolean = move(motion.offset)
 }
 
 class RouteFailure(val reason: RouteMessage) : Exception(reason.name)
+
+/** At least 20 observations and 12 px travelled with >=80% valid samples. Never dispatches input. */
+internal suspend fun testMinimap(port: RoutePort, control: RouteRunControl, report: (RouteProgress) -> Unit): Boolean {
+    val start = port.now()
+    var first: RoutePoint? = null
+    var good = 0; var total = 0; var travelled = 0.0
+    while (!control.stopped && port.now() - start < 120_000) {
+        delay(400)
+        val p = port.read()
+        total++
+        if (p != null) {
+            good++
+            if (first == null) first = p
+            travelled = maxOf(travelled, first.distance(p))
+        }
+        val passed = good >= 20 && good.toDouble() / total >= .8 && travelled >= 12
+        report(RouteProgress(if (passed) RouteMessage.LOCALIZATION_PASSED else RouteMessage.READING, p, observations = good))
+        if (passed) return true
+    }
+    report(RouteProgress(RouteMessage.LOCALIZATION_WEAK, observations = good))
+    return false
+}
 
 /** Pure control loop, tested without a game, OCR, or wall-clock sleeps. */
 internal class RoutePilot(
@@ -42,7 +67,10 @@ internal class RoutePilot(
         var last: RoutePoint? = null
         while (!control.stopped && points.size < MAX_ROUTE_POINTS) {
             tick()
-            val position = port.read()
+            val position = try { port.read() } catch (failure: RouteFailure) {
+                checkpoint(route.copy(points = points.toList(), recordingComplete = false))
+                throw failure
+            }
             if (position == null) {
                 report(RouteProgress(RouteMessage.READING, count = points.size))
                 if (port.now() - lastGood > 5_000) {
@@ -112,6 +140,7 @@ internal class RoutePilot(
         var lastGood = port.now()
         var lastMove = port.now() - 2_000
         var wasPaused = false
+        var observationEpoch = port.epoch
         while (!control.stopped) {
             tick()
             if (control.paused) { wasPaused = true; continue }
@@ -119,6 +148,10 @@ internal class RoutePilot(
                 follower.resume(port.now()); previous = null; lastGood = port.now(); wasPaused = false
             }
             val position = port.read()
+            if (observationEpoch != port.epoch) {
+                observationEpoch = port.epoch
+                follower.resume(port.now()); previous = null; lastGood = port.now()
+            }
             if (position == null) {
                 follower.breakConfirmation(); previous = null
                 if (port.now() - lastGood > 3_000) pause(RouteMessage.LOST_POSITION, follower.index)
@@ -140,7 +173,7 @@ internal class RoutePilot(
                     if (previous?.distance(position)?.let { it <= 1.0 } == true && port.now() - lastMove >= 1_500) {
                         currentCoroutineContext().ensureActive()
                         if (!control.paused && !control.stopped) {
-                            if (!port.move(calibration.screenOffset(decision.target - position))) pause(RouteMessage.GESTURE_FAILED, follower.index)
+                            if (!port.move(routeMotion(route, decision.target - position))) pause(RouteMessage.GESTURE_FAILED, follower.index)
                             lastMove = port.now()
                             previous = null
                             continue

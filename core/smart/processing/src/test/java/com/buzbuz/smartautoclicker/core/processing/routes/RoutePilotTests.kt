@@ -11,6 +11,7 @@ import org.junit.Test
 
 class RoutePilotTests {
     private class FakePort(val clock: () -> Long) : RoutePort {
+        override var epoch: Long = 0
         var position: RoutePoint? = RoutePoint(10.0, 10.0)
         var movements = 0
         var reads = 0
@@ -95,5 +96,16 @@ class RoutePilotTests {
         val port = FakePort { testScheduler.currentTime }; val c = RouteRunControl()
         port.afterRead = { if (port.reads >= 10) c.stopped = true }
         RoutePilot(port, c) {}.preview(); assertEquals(0, port.movements)
+    }
+    @Test fun debuggerResumeRequiresFreshArrivalConfirmations() = runTest {
+        val port = FakePort { testScheduler.currentTime }
+        val control = RouteRunControl()
+        val route = exampleRoute().copy(points = listOf(RoutePoint(10.0, 10.0), RoutePoint(10.0, 10.0)))
+        var completedAt = 0
+        port.afterRead = { if (port.reads == 2) port.epoch++ }
+        RoutePilot(port, control) { if (it.message == RouteMessage.COMPLETE) completedAt = port.reads }.replay(route)
+        // A hit before a pause must not combine with one after the pause to advance a waypoint.
+        assertTrue(completedAt >= 5)
+        assertEquals(0, port.movements)
     }
 }

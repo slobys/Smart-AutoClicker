@@ -118,6 +118,26 @@ class Migration22to26Tests {
     }
 
     @Test
+    fun migrate27To28_preservesActionsAndAddsNullableRouteReference() {
+        helper.createDatabase(dbPath, 27).use { database ->
+            database.insertScenario(id = 1, name = "Route migration", isFavorite = true, groupName = "Routes")
+            database.insertEvent(id = 2, scenarioId = 1, name = "Old event", isBreakpoint = true)
+            database.insertPauseAction(id = 3, eventId = 2, durationMs = 800)
+        }
+        helper.runMigrationsAndValidate(dbPath, 28, true).use { database ->
+            database.query("SELECT pauseDuration, route_id, route_timeout_ms FROM $ACTION_TABLE WHERE id = 3").use { cursor ->
+                assertTrue(cursor.moveToFirst()); assertEquals(800L, cursor.getLong(0))
+                assertTrue(cursor.isNull(1)); assertTrue(cursor.isNull(2))
+            }
+            database.execSQL("INSERT INTO $ACTION_TABLE (id, eventId, priority, name, type, route_id, route_timeout_ms) VALUES (4, 2, 1, 'Route', 'ROUTE', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 300000)")
+            database.query("SELECT route_id, route_timeout_ms FROM $ACTION_TABLE WHERE id = 4").use { cursor ->
+                assertTrue(cursor.moveToFirst()); assertEquals("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", cursor.getString(0))
+                assertEquals(300000L, cursor.getLong(1))
+            }
+        }
+    }
+
+    @Test
     fun migrate24To26_preservesScenarioOrganization() {
         helper.createDatabase(dbPath, 24).use { database ->
             database.insertScenario(

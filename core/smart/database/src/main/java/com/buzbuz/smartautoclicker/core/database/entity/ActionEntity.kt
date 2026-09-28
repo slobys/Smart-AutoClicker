@@ -175,6 +175,9 @@ data class ActionEntity(
     @ColumnInfo(name = "verification_event_id") var verificationEventId: Long? = null,
     @ColumnInfo(name = "verification_timeout_ms") val verificationTimeoutMs: Long? = null,
     @ColumnInfo(name = "search_max_swipes") val searchMaxSwipes: Int? = null,
+    // ActionType.ROUTE. Local UUID, never a filesystem path.
+    @ColumnInfo(name = "route_id") val routeId: String? = null,
+    @ColumnInfo(name = "route_timeout_ms") val routeTimeoutMs: Long? = null,
 ) : EntityWithId
 
 /**

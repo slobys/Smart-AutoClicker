@@ -132,6 +132,7 @@ class SmartActionsBriefViewModel @Inject constructor(
                 add(ActionTypeChoice.Click)
                 add(ActionTypeChoice.Swipe)
                 add(ActionTypeChoice.Pause)
+                add(ActionTypeChoice.Route)
                 add(ActionTypeChoice.SetText)
                 add(ActionTypeChoice.System)
                 add(ActionTypeChoice.ChangeCounter)
@@ -182,6 +183,7 @@ class SmartActionsBriefViewModel @Inject constructor(
         ActionTypeChoice.Notification -> editionRepository.editedItemsBuilder.createNewNotification(context)
         ActionTypeChoice.System -> editionRepository.editedItemsBuilder.createNewSystemAction(context)
         ActionTypeChoice.SetText -> editionRepository.editedItemsBuilder.createNewSetText(context)
+        ActionTypeChoice.Route -> editionRepository.editedItemsBuilder.createNewExecuteRoute(context.getString(com.buzbuz.smartautoclicker.feature.smart.config.R.string.route_action_title))
         ActionTypeChoice.Copy -> throw IllegalArgumentException("Unsupported action type for creation $choice")
     }
 

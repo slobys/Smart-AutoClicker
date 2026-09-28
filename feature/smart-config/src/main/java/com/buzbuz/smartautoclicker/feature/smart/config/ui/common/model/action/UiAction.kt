@@ -59,6 +59,7 @@ internal fun Action.getIconRes(): Int = when (this) {
     is Notification -> getNotificationIconRes()
     is SystemAction -> getSystemActionIconRes()
     is SetText -> getSetTextIconRes()
+    is com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute -> getSwipeIconRes()
 }
 
 internal fun Action.getActionDescription(context: Context, parent: Event?, inError: Boolean): String = when (this) {
@@ -71,4 +72,5 @@ internal fun Action.getActionDescription(context: Context, parent: Event?, inErr
     is Notification -> getDescription(context, inError)
     is SystemAction -> getDescription(context, inError)
     is SetText -> getDescription(context, inError)
+    is com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute -> context.getString(com.buzbuz.smartautoclicker.feature.smart.config.R.string.route_action_desc)
 }

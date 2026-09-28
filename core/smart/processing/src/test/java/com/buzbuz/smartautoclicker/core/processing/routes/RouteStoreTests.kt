@@ -34,6 +34,17 @@ class RouteStoreTests {
         File(directory.root, "routes/${UUID.randomUUID()}.json").writeText("broken")
         assertEquals(listOf(exampleRoute()), store.list())
     }
+    @Test fun mismatchedIdentityCannotExecuteAnotherRoute() = runTest {
+        val store = RouteStore(context)
+        val route = exampleRoute()
+        store.save(route)
+        File(directory.root, "routes/${route.id}.json").writeText(
+            RouteStore.encode(route.copy(id = UUID.randomUUID().toString())),
+        )
+        try { store.load(route.id); fail("Wrong route identity") } catch (_: IllegalArgumentException) { }
+        assertTrue(store.list().isEmpty())
+        assertTrue(store.summaries().isEmpty())
+    }
     @Test fun rejectsUnsupportedVersionAndTooManyPoints() {
         val json = JSONObject(RouteStore.encode(exampleRoute())).put("version", 9)
         assertThrows(IllegalArgumentException::class.java) { RouteStore.decode(json.toString()) }

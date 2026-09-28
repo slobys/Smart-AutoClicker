@@ -73,6 +73,7 @@ class GetActionMissingReferencesUseCase @Inject constructor(
             is Pause,
             is Swipe,
             is SystemAction -> emptyList()
+            is com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute -> emptyList()
         }
 
         val eventReferences = action.eventReferences().mapNotNull { (slot, id) ->

@@ -23,12 +23,14 @@ internal class RuntimeDebugger {
     val state: StateFlow<DebugExecutionState> = _state.asStateFlow()
 
     private var pauseAtNextEvent: Boolean = false
+    private var pauseWithinAction: Boolean = false
     private var pausedGate: CompletableDeferred<Unit>? = null
 
     fun requestPauseAtNextEvent(): Unit = synchronized(lock) {
         if (pausedGate != null) return@synchronized
 
         pauseAtNextEvent = true
+        pauseWithinAction = true
         _state.value = DebugExecutionState.WaitingForEvent
     }
 
@@ -36,6 +38,7 @@ internal class RuntimeDebugger {
         if (pausedGate != null) return@synchronized
 
         pauseAtNextEvent = false
+        pauseWithinAction = false
         _state.value = DebugExecutionState.Running
     }
 
@@ -44,11 +47,22 @@ internal class RuntimeDebugger {
         eventName: String,
         conditionDurationMs: Long,
         isBreakpoint: Boolean = false,
+    ) = awaitCheckpoint(eventId, eventName, conditionDurationMs, isBreakpoint, withinActionOnly = false)
+
+    /** Long route actions honour explicit pause requests without consuming an event-step token. */
+    suspend fun awaitWithinAction(eventId: Long, eventName: String) =
+        awaitCheckpoint(eventId, eventName, 0L, false, withinActionOnly = true)
+
+    private suspend fun awaitCheckpoint(
+        eventId: Long, eventName: String, conditionDurationMs: Long,
+        isBreakpoint: Boolean, withinActionOnly: Boolean,
     ) {
         val gate = synchronized(lock) {
+            if (withinActionOnly && !pauseWithinAction) return
             if (!pauseAtNextEvent && !isBreakpoint) return
 
             pauseAtNextEvent = false
+            pauseWithinAction = false
             CompletableDeferred<Unit>().also { newGate ->
                 pausedGate = newGate
                 _state.value = DebugExecutionState.Paused(eventId, eventName, conditionDurationMs)
@@ -69,6 +83,7 @@ internal class RuntimeDebugger {
 
     fun resume(): Unit = synchronized(lock) {
         pauseAtNextEvent = false
+        pauseWithinAction = false
         _state.value = DebugExecutionState.Running
         pausedGate?.complete(Unit)
         Unit
@@ -78,6 +93,7 @@ internal class RuntimeDebugger {
         val gate = pausedGate ?: return@synchronized
 
         pauseAtNextEvent = true
+        pauseWithinAction = false
         _state.value = DebugExecutionState.WaitingForEvent
         gate.complete(Unit)
     }
@@ -85,6 +101,7 @@ internal class RuntimeDebugger {
     /** Releases a suspended processor before cancellation and clears all debugger state. */
     fun reset(): Unit = synchronized(lock) {
         pauseAtNextEvent = false
+        pauseWithinAction = false
         _state.value = DebugExecutionState.Running
         pausedGate?.complete(Unit)
         pausedGate = null

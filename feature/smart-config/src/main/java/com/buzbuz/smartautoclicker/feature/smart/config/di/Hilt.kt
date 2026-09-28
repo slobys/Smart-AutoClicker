@@ -75,6 +75,7 @@ import dagger.hilt.InstallIn
 @InstallIn(OverlayComponent::class)
 interface ScenarioConfigViewModelsEntryPoint {
     fun routeViewModel(): com.buzbuz.smartautoclicker.feature.smart.config.ui.routes.RouteViewModel
+    fun executeRouteViewModel(): com.buzbuz.smartautoclicker.feature.smart.config.ui.routes.ExecuteRouteViewModel
 
     fun actionCopyViewModel(): ActionCopyViewModel
     fun actionTypeSelectionViewModel(): ActionTypeSelectionViewModel

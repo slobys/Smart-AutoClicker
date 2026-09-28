@@ -99,6 +99,8 @@ sealed class ActionTypeChoice(
     )
 
     /** System Action choice (back, home...). */
+    data object Route : ActionTypeChoice(R.string.route_action_title, R.string.route_action_desc, getSwipeIconRes())
+
     data object SetText : ActionTypeChoice(
         R.string.item_set_text_title,
         R.string.item_set_text_desc,

@@ -35,6 +35,7 @@ add_library( # Sets the name of the library.
 
         # Provides a relative path to your source file(s).
         main/cpp/smartautoclicker.cpp
+        main/cpp/minimap_matcher.cpp
         main/cpp/detector/detection_result.hpp
         main/cpp/detector/detector.cpp
         main/cpp/detector/detector.hpp

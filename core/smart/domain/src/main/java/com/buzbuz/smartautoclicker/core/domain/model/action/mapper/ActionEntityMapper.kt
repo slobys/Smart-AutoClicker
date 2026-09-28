@@ -47,6 +47,10 @@ internal fun Action.toEntity(): ActionEntity {
         is Notification -> toNotificationEntity()
         is SystemAction -> toSystemActionEntity()
         is SetText -> toSetTextEntity()
+        is com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute -> ActionEntity(
+            id = id.databaseId, eventId = eventId.databaseId, priority = priority, name = name!!,
+            type = ActionType.ROUTE, routeId = routeId, routeTimeoutMs = timeoutMs,
+        )
     }
 }
 

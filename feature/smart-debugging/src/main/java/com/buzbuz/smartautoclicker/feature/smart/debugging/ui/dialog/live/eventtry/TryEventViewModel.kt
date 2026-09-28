@@ -136,6 +136,7 @@ private fun Action.getDebugIcon(): Int =
         is Pause -> R.drawable.ic_wait
         is SetText -> R.drawable.ic_action_set_text
         is Swipe -> R.drawable.ic_swipe
+        is com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute -> R.drawable.ic_swipe
         is SystemAction -> R.drawable.ic_action_system
         is ToggleEvent -> R.drawable.ic_toggle_event
     }

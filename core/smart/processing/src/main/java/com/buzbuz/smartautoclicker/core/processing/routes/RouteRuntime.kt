@@ -14,12 +14,16 @@ import com.buzbuz.smartautoclicker.code.smart.detectionmodels.text.domain.OCRMod
 import com.buzbuz.smartautoclicker.core.common.actions.AndroidActionExecutor
 import com.buzbuz.smartautoclicker.core.common.actions.AndroidGestureResult
 import com.buzbuz.smartautoclicker.core.detection.NativeDetector
+import com.buzbuz.smartautoclicker.core.detection.MinimapMatcher
 import com.buzbuz.smartautoclicker.core.detection.NumberFormatType
 import com.buzbuz.smartautoclicker.core.display.config.DisplayConfigManager
 import com.buzbuz.smartautoclicker.core.display.recorder.DisplayRecorder
 import com.buzbuz.smartautoclicker.core.processing.data.DetectorEngine
 import com.buzbuz.smartautoclicker.core.processing.data.DetectorState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute
+import com.buzbuz.smartautoclicker.core.processing.domain.model.ActionExecutionResult
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
@@ -48,8 +52,9 @@ class RouteRuntime @Inject internal constructor(
 ) {
     private val busy = AtomicBoolean(false)
 
-    private fun checkEnvironment(width: Int, height: Int) {
-        if (engine.state.value != DetectorState.RECORDING) throw RouteFailure(RouteMessage.SERVICE_STOPPED)
+    private fun checkEnvironment(width: Int, height: Int, inScenario: Boolean = false) {
+        val expected = if (inScenario) DetectorState.DETECTING else DetectorState.RECORDING
+        if (engine.state.value != expected) throw RouteFailure(RouteMessage.SERVICE_STOPPED)
         val size = display.displayConfig.sizePx
         if (size.x != width || size.y != height) throw RouteFailure(RouteMessage.RESOLUTION_CHANGED)
     }
@@ -83,27 +88,68 @@ class RouteRuntime @Inject internal constructor(
         control: RouteRunControl,
         calibrationOffset: RoutePoint? = null,
         report: (RouteProgress) -> Unit,
+    ): RouteRunResult = runInternal(route, operation, control, calibrationOffset, false, {}, report)
+
+    /** Called only by the scenario's sequential action loop, after releasing its screenshot.
+     * A route failure stops the parent event, never silently advances to an attack/click.
+     */
+    internal suspend fun runAction(action: ExecuteRoute, beforeRead: suspend () -> Unit): ActionExecutionResult {
+        if (!action.isComplete()) return ActionExecutionResult.Failed("Invalid route reference or timeout")
+        return try {
+            val route = store.load(action.routeId) ?: return ActionExecutionResult.Failed("Local route is missing: ${action.routeId}")
+            if (!route.recordingComplete || route.calibration == null || route.points.size < 2)
+                return ActionExecutionResult.Failed("Route must be recorded and calibrated first")
+            withTimeoutOrNull(action.timeoutMs) {
+                var completed = false
+                runInternal(route, RouteOperation.REPLAY, RouteRunControl(), null, true, beforeRead) { progress ->
+                    if (progress.message == RouteMessage.COMPLETE) completed = true
+                    if (progress.message in setOf(RouteMessage.WRONG_START, RouteMessage.STUCK, RouteMessage.TIMEOUT,
+                            RouteMessage.LOST_POSITION, RouteMessage.GESTURE_FAILED)) throw RouteFailure(progress.message)
+                }
+                if (completed) ActionExecutionResult.Success else ActionExecutionResult.Failed("Route interrupted")
+            } ?: ActionExecutionResult.TimedOut(action.timeoutMs)
+        } catch (cancelled: CancellationException) { throw cancelled }
+        catch (failure: RouteFailure) { ActionExecutionResult.Failed("Route: ${failure.reason}") }
+        catch (failure: Exception) {
+            android.util.Log.w("RouteRuntime", "Route action failed", failure)
+            ActionExecutionResult.Failed("Route data or runtime unavailable")
+        }
+    }
+
+    private suspend fun runInternal(
+        route: RecordedRoute, operation: RouteOperation, control: RouteRunControl,
+        calibrationOffset: RoutePoint?, inScenario: Boolean, beforeRead: suspend () -> Unit,
+        report: (RouteProgress) -> Unit,
     ): RouteRunResult {
         require(route.valid())
         check(busy.compareAndSet(false, true)) { "Route already running" }
         var acquired = false
         try {
-            acquired = engine.acquireRouteSession()
-            if (!acquired) throw RouteFailure(RouteMessage.SERVICE_STOPPED)
+            if (!inScenario) {
+                acquired = engine.acquireRouteSession()
+                if (!acquired) throw RouteFailure(RouteMessage.SERVICE_STOPPED)
+            }
             // Native OCR has thread affinity. Own exactly one worker and release it on every exit path.
             Executors.newSingleThreadExecutor { task -> Thread(task, "route-recorder") }.asCoroutineDispatcher().use { worker ->
                 return withContext(worker) {
-                    checkEnvironment(route.screenWidth, route.screenHeight)
+                    checkEnvironment(route.screenWidth, route.screenHeight, inScenario)
                     report(RouteProgress(RouteMessage.PREPARING))
                     val detector = NativeDetector.newInstance() ?: throw RouteFailure(RouteMessage.FAILED)
                     var template: Bitmap? = null
                     try {
                         detector.init()
-                        val detection = (models.getDetectionModel()?.state as? OCRModelState.Installed)?.path
-                        val recognition = models.getRecognitionModelPath(OCRAlphabet.LATIN)
-                        if (detection == null || recognition == null ||
-                            !detector.loadTextDetectionModels(detection, mapOf(OCRAlphabet.LATIN.name to recognition)))
-                            throw RouteFailure(RouteMessage.MODELS_MISSING)
+                        if (route.positionMode == RoutePositionMode.COORDINATES) {
+                            val detection = (models.getDetectionModel()?.state as? OCRModelState.Installed)?.path
+                            val recognition = models.getRecognitionModelPath(OCRAlphabet.LATIN)
+                            if (detection == null || recognition == null ||
+                                !detector.loadTextDetectionModels(detection, mapOf(OCRAlphabet.LATIN.name to recognition)))
+                                throw RouteFailure(RouteMessage.MODELS_MISSING)
+                        }
+                        val minimap = route.minimap?.takeIf { route.positionMode == RoutePositionMode.MINIMAP }?.let {
+                            if (operation != RouteOperation.PREVIEW && !it.tested) throw RouteFailure(RouteMessage.LOCALIZATION_WEAK)
+                            MinimapLocalizer(it, operation == RouteOperation.RECORD || operation == RouteOperation.PREVIEW,
+                                MinimapMatcher()::match)
+                        }
                         val bytes = Base64.decode(route.mapPng, Base64.NO_WRAP)
                         val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
                         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
@@ -113,16 +159,25 @@ class RouteRuntime @Inject internal constructor(
                         template = map
                         val filter = RouteCoordinateFilter()
                         val port = object : RoutePort {
+                            override var epoch: Long = 0L
+                                private set
                             override fun now() = SystemClock.elapsedRealtime()
                             override suspend fun read(): RoutePoint? {
-                                checkEnvironment(route.screenWidth, route.screenHeight)
+                                val beforeGate = now()
+                                beforeRead()
+                                if (now() - beforeGate > 200) epoch++ // Reconfirm after a debugger pause, never reuse an arrival hit.
+                                checkEnvironment(route.screenWidth, route.screenHeight, inScenario)
                                 val frame = recorder.acquireLatestBitmap() ?: return null
                                 if (frame.width != route.screenWidth || frame.height != route.screenHeight)
                                     throw RouteFailure(RouteMessage.RESOLUTION_CHANGED)
+                                if (control.blockedArea?.let { blocked ->
+                                    blocked.overlaps(route.mapArea) || (route.minimap?.area?.let(blocked::overlaps) == true && minimap != null)
+                                } == true) return null
                                 try {
                                     detector.setScreenBitmap(frame, "route:${route.id}")
                                     if (!detector.detectImage(map, map.width, map.height, route.mapArea.rect(), 15).isDetected)
                                         return filter.accept(null)
+                                    if (minimap != null) return minimap.locate(MinimapFrames.read(frame, requireNotNull(route.minimap).area))
                                     val x = detector.detectNumber(route.xArea.rect(), 15, NumberFormatType.AUTO)
                                     val y = detector.detectNumber(route.yArea.rect(), 15, NumberFormatType.AUTO)
                                     val px = x.numberDetected; val py = y.numberDetected
@@ -131,36 +186,51 @@ class RouteRuntime @Inject internal constructor(
                                     return filter.accept(RoutePoint(px, py))
                                 } finally { detector.releaseScreenBitmap(frame) }
                             }
-                            override suspend fun move(offset: RoutePoint): Boolean = withContext(Dispatchers.Main.immediate) {
+                            override suspend fun move(offset: RoutePoint): Boolean = move(RouteMotion(offset,
+                                if (route.control == RouteControl.JOYSTICK) route.joystickDurationMs else 70))
+                            override suspend fun move(motion: RouteMotion): Boolean = withContext(Dispatchers.Main.immediate) {
                                 currentCoroutineContext().ensureActive()
-                                checkEnvironment(route.screenWidth, route.screenHeight)
+                                checkEnvironment(route.screenWidth, route.screenHeight, inScenario)
                                 if (control.stopped || control.paused) return@withContext false
-                                val target = route.anchor + offset
+                                val target = route.anchor + motion.offset
                                 if (target.x !in 8.0..(route.screenWidth - 8.0) || target.y !in 8.0..(route.screenHeight - 8.0))
                                     return@withContext false
                                 // Never tap our own controls, coordinate fields, or map label.
-                                if (listOfNotNull(route.xArea, route.yArea, route.mapArea, control.blockedArea).any {
+                                val protected = if (minimap == null) listOf(route.xArea, route.yArea) else listOf(requireNotNull(route.minimap).area)
+                                if ((protected + listOfNotNull(route.mapArea, control.blockedArea)).any {
                                     it.contains(target) || (route.control == RouteControl.JOYSTICK && it.contains(route.anchor))
                                 })
                                     return@withContext false
                                 val path = Path().apply {
-                                    if (route.control == RouteControl.JOYSTICK) {
-                                        moveTo(route.anchor.x.toFloat(), route.anchor.y.toFloat())
-                                        lineTo(target.x.toFloat(), target.y.toFloat())
-                                    } else moveTo(target.x.toFloat(), target.y.toFloat())
+                                    // Fixed joystick: touch and hold at its effective deflection.
+                                    // A slow drag from the centre would spend most time inside its deadzone.
+                                    moveTo(target.x.toFloat(), target.y.toFloat())
                                 }
                                 val gesture = GestureDescription.Builder().addStroke(
-                                    GestureDescription.StrokeDescription(path, 0, if (route.control == RouteControl.JOYSTICK) 500 else 70)
+                                    GestureDescription.StrokeDescription(path, 0, motion.durationMs)
                                 ).build()
                                 actions.dispatchGesture(gesture) == AndroidGestureResult.COMPLETED
                             }
                         }
                         delay(700)
-                        val pilot = RoutePilot(port, control, report)
+                        val trace = ArrayDeque<RoutePoint>()
+                        val progress: (RouteProgress) -> Unit = { value ->
+                            value.position?.let { if (trace.lastOrNull()?.distance(it)?.let { d -> d >= 1 } != false) {
+                                if (trace.size >= 120) trace.removeFirst()
+                                trace.addLast(it)
+                            } }
+                            report(if (minimap == null) value else value.copy(confidence = minimap.quality, trace = trace.toList()))
+                        }
+                        val pilot = RoutePilot(port, control, progress)
+                        fun withLandmarks(r: RecordedRoute) = if (minimap == null) r else r.copy(minimap = minimap.snapshot())
                         when (operation) {
-                            RouteOperation.RECORD -> RouteRunResult(route = pilot.record(route, store::save))
+                            RouteOperation.RECORD -> RouteRunResult(route = withLandmarks(pilot.record(route) { store.save(withLandmarks(it)) }))
                             RouteOperation.CALIBRATE -> RouteRunResult(sample = pilot.calibrate(requireNotNull(calibrationOffset)))
-                            RouteOperation.PREVIEW -> { pilot.preview(); RouteRunResult() }
+                            RouteOperation.PREVIEW -> if (minimap == null) { pilot.preview(); RouteRunResult() } else {
+                                val result = testMinimap(port, control, progress)
+                                // Test landmarks are not copied into the route: recording must start at its own origin.
+                                RouteRunResult(route = route.copy(minimap = route.minimap?.copy(tested = result)))
+                            }
                             RouteOperation.REPLAY -> { pilot.replay(route); RouteRunResult() }
                         }
                     } finally {
@@ -169,6 +239,21 @@ class RouteRuntime @Inject internal constructor(
                 }
             }
         } finally { if (acquired) engine.releaseRouteSession(); busy.set(false) }
+    }
+
+    suspend fun captureMinimap(area: RouteArea, width: Int, height: Int, control: RouteRunControl): RouteMinimap {
+        require(area.right - area.left in 96..512 && area.bottom - area.top in 96..512)
+        val png = captureMap(area, width, height, control)
+        return withContext(Dispatchers.Default) {
+            val bytes = Base64.decode(png, Base64.NO_WRAP)
+            val bitmap = requireNotNull(BitmapFactory.decodeByteArray(bytes, 0, bytes.size))
+            try {
+                val gray = MinimapFrames.read(bitmap, RouteArea(0, 0, bitmap.width, bitmap.height))
+                // A constant or repeated texture cannot be used as a navigation reference.
+                if (MinimapMatcher().match(gray, gray, 16) == null) throw RouteFailure(RouteMessage.LOCALIZATION_WEAK)
+                RouteMinimap(area, keyframes = listOf(RouteKeyframe(RoutePoint(50_000.0, 50_000.0), MinimapFrames.encode(gray))))
+            } finally { bitmap.recycle() }
+        }
     }
 }
 

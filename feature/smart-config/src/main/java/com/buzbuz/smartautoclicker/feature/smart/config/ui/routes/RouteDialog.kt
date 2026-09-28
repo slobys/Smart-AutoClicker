@@ -72,9 +72,21 @@ class RouteDialog : OverlayDialog(R.style.ScenarioConfigTheme) {
         paragraph(context.getString(R.string.route_summary, r.points.size,
             context.getString(if (r.recordingComplete) R.string.route_complete_label else R.string.route_draft_label)))
         title(R.string.route_setup)
-        paragraph(R.string.route_setup_help)
-        row(R.string.route_x to { selectArea(0) }, R.string.route_y to { selectArea(1) })
-        paragraph("X: ${areaText(r.xArea)}    Y: ${areaText(r.yArea)}")
+        row(R.string.route_mode_coordinates to { model.setMode(RoutePositionMode.COORDINATES); render() },
+            R.string.route_mode_minimap to { model.setMode(RoutePositionMode.MINIMAP); render() })
+        paragraph(context.getString(R.string.route_selected, context.getString(if (r.positionMode == RoutePositionMode.MINIMAP)
+            R.string.route_mode_minimap else R.string.route_mode_coordinates)))
+        if (r.positionMode == RoutePositionMode.COORDINATES) {
+            paragraph(R.string.route_setup_help)
+            row(R.string.route_x to { selectArea(0) }, R.string.route_y to { selectArea(1) })
+            paragraph("X: ${areaText(r.xArea)}    Y: ${areaText(r.yArea)}")
+        } else {
+            paragraph(R.string.route_minimap_help)
+            button(R.string.route_minimap_select) { selectArea(3) }
+            button(R.string.route_minimap_capture) { captureMinimap() }
+            paragraph(r.minimap?.let { areaText(it.area) } ?: context.getString(R.string.route_pending))
+            paragraph(if (r.minimap?.tested == true) R.string.route_message_localization_passed else R.string.route_minimap_test_help)
+        }
         row(R.string.route_map to { selectArea(2) }, R.string.route_capture to { capture() })
         paragraph(context.getString(if (r.mapPng.isNotEmpty()) R.string.route_capture_ok else R.string.route_pending))
         title(R.string.route_control)
@@ -83,6 +95,23 @@ class RouteDialog : OverlayDialog(R.style.ScenarioConfigTheme) {
             if (r.control == RouteControl.GROUND_TAP) R.string.route_ground else R.string.route_joystick)))
         button(R.string.route_anchor) { selectPoint(r.anchor) { model.route = model.route?.copy(anchor = it); model.clearCalibration() } }
         paragraph(if (r.anchor.x < 0) context.getString(R.string.route_pending) else "${r.anchor.x.toInt()}, ${r.anchor.y.toInt()}")
+        if (r.control == RouteControl.JOYSTICK) {
+            paragraph(R.string.route_joystick_help)
+            val durationField = TextInputLayout(context).apply { hint = context.getString(R.string.route_joystick_duration) }
+            val duration = TextInputEditText(context).apply {
+                inputType = android.text.InputType.TYPE_CLASS_NUMBER; setSingleLine()
+                setText(String.format(java.util.Locale.ROOT, "%d", r.joystickDurationMs))
+                doAfterTextChanged {
+                    val value = it.toString().toLongOrNull()
+                    durationField.error = if (value == null || value !in 100..800) context.getString(R.string.route_joystick_duration) else null
+                    val storedValue = value?.takeIf { it in 100..800 } ?: 0
+                    if (storedValue != model.route?.joystickDurationMs) {
+                        model.route = model.route?.copy(joystickDurationMs = storedValue); model.clearCalibration()
+                    }
+                }
+            }
+            durationField.addView(duration); content.addView(durationField)
+        }
         paragraph(R.string.route_calibration_help)
         row(R.string.route_target_a to { selectTarget(true) }, R.string.route_target_b to { selectTarget(false) })
         row(R.string.route_calibrate_a to { calibrate(true) }, R.string.route_calibrate_b to { calibrate(false) })
@@ -90,7 +119,7 @@ class RouteDialog : OverlayDialog(R.style.ScenarioConfigTheme) {
             context.getString(R.string.route_calibration_pending) + "  A:${if (model.sampleA != null) "✓" else "—"} B:${if (model.sampleB != null) "✓" else "—"}")
         title(R.string.route_actions)
         paragraph(R.string.route_record_help)
-        button(R.string.route_preview) { run(RouteOperation.PREVIEW) }
+        button(if (r.positionMode == RoutePositionMode.MINIMAP) R.string.route_minimap_test else R.string.route_preview) { run(RouteOperation.PREVIEW) }
         row(R.string.route_record to { run(RouteOperation.RECORD) }, R.string.route_replay to { run(RouteOperation.REPLAY) })
         row(R.string.route_save to { save() }, R.string.route_delete to { delete() })
         title(R.string.route_saved)
@@ -98,13 +127,13 @@ class RouteDialog : OverlayDialog(R.style.ScenarioConfigTheme) {
         content.addView(savedList)
         val listForThisRender = savedList
         guarded {
-            val routes = model.store.list()
+            val routes = model.store.summaries()
             if (savedList !== listForThisRender) return@guarded
             savedList.removeAllViews()
             if (routes.isEmpty()) savedList.addView(TextView(context).apply { setText(R.string.route_empty) })
             routes.forEach { saved -> savedList.addView(makeButton(saved.name + " · " + context.getString(R.string.route_summary,
-                saved.points.size, context.getString(if (saved.recordingComplete) R.string.route_complete_label else R.string.route_draft_label))) {
-                    model.load(saved); render()
+                saved.pointCount, context.getString(if (saved.recordingComplete) R.string.route_complete_label else R.string.route_draft_label))) {
+                    guarded { model.store.load(saved.id)?.let(model::load); render() }
                 }) }
         }
     }
@@ -118,6 +147,15 @@ class RouteDialog : OverlayDialog(R.style.ScenarioConfigTheme) {
         overlayManager.navigateTo(context, ConditionAreaSelectorMenu(onAreaSelected = { rect ->
             val area = RouteArea(rect.left, rect.top, rect.right, rect.bottom)
             val r = model.route ?: return@ConditionAreaSelectorMenu
+            if (kind == 3) {
+                if (!area.valid(r.screenWidth, r.screenHeight) || area.right - area.left !in 96..512 || area.bottom - area.top !in 96..512) {
+                    toast(R.string.route_minimap_help); return@ConditionAreaSelectorMenu
+                }
+                // Capture after the selector has gone. The next screen is observe-only.
+                model.route = r.copy(minimap = RouteMinimap(area), points = emptyList(), recordingComplete = false)
+                model.clearCalibration()
+                return@ConditionAreaSelectorMenu
+            }
             model.route = when (kind) {
                 0 -> r.copy(xArea = area, recordingComplete = false)
                 1 -> r.copy(yArea = area, recordingComplete = false)
@@ -133,6 +171,17 @@ class RouteDialog : OverlayDialog(R.style.ScenarioConfigTheme) {
         overlayManager.navigateTo(context, RouteRunMenu(false) { control, report ->
             val png = model.runtime.captureMap(r.mapArea, r.screenWidth, r.screenHeight, control)
             model.route = model.route?.copy(mapPng = png)
+            report(RouteProgress(RouteMessage.DONE))
+        }, hideCurrent = true)
+    }
+
+    private fun captureMinimap() {
+        val r = model.route ?: return
+        val area = r.minimap?.area ?: run { toast(R.string.route_invalid); return }
+        overlayManager.navigateTo(context, RouteRunMenu(false) { control, report ->
+            val config = model.runtime.captureMinimap(area, r.screenWidth, r.screenHeight, control)
+            model.route = r.copy(minimap = config, points = emptyList(), recordingComplete = false, calibration = null)
+            model.clearCalibration()
             report(RouteProgress(RouteMessage.DONE))
         }, hideCurrent = true)
     }
@@ -154,7 +203,7 @@ class RouteDialog : OverlayDialog(R.style.ScenarioConfigTheme) {
         val target = (if (first) model.targetA else model.targetB) ?: run { toast(R.string.route_invalid); return }
         val offset = target - r.anchor
         if (offset.distance(RoutePoint(0.0, 0.0)) !in 16.0..300.0) { toast(R.string.route_message_bad_calibration); return }
-        overlayManager.navigateTo(context, RouteRunMenu(false) { control, report ->
+        overlayManager.navigateTo(context, RouteRunMenu(false, r.positionMode == RoutePositionMode.MINIMAP) { control, report ->
             val result = model.runtime.run(r, RouteOperation.CALIBRATE, control, offset, report)
             if (!model.setSample(first, requireNotNull(result.sample))) throw RouteFailure(RouteMessage.BAD_CALIBRATION)
         }, hideCurrent = true)
@@ -163,6 +212,9 @@ class RouteDialog : OverlayDialog(R.style.ScenarioConfigTheme) {
     private fun run(operation: RouteOperation) {
         if (!model.configured()) { toast(R.string.route_invalid); return }
         var r = model.route ?: return
+        if (operation != RouteOperation.PREVIEW && r.positionMode == RoutePositionMode.MINIMAP && r.minimap?.tested != true) {
+            toast(R.string.route_minimap_test_help); return
+        }
         if (operation == RouteOperation.REPLAY && (r.calibration == null || !r.recordingComplete || r.points.size < 2)) {
             toast(if (r.calibration == null) R.string.route_message_bad_calibration else R.string.route_message_saved_draft); return
         }
@@ -171,11 +223,15 @@ class RouteDialog : OverlayDialog(R.style.ScenarioConfigTheme) {
             model.route = r
         }
         val route = r
-        overlayManager.navigateTo(context, RouteRunMenu(operation == RouteOperation.REPLAY) { control, report ->
+        overlayManager.navigateTo(context, RouteRunMenu(operation == RouteOperation.REPLAY,
+            route.positionMode == RoutePositionMode.MINIMAP) { control, report ->
             val result = model.runtime.run(route, operation, control, report = report)
             result.route?.let {
                 model.route = it
-                report(RouteProgress(if (it.recordingComplete) RouteMessage.DONE else RouteMessage.SAVED_DRAFT, count = it.points.size))
+                if (operation != RouteOperation.PREVIEW)
+                    report(RouteProgress(if (it.recordingComplete) RouteMessage.DONE else RouteMessage.SAVED_DRAFT,
+                        position = it.points.lastOrNull(), count = it.points.size,
+                        trace = if (it.positionMode == RoutePositionMode.MINIMAP) it.points.takeLast(120) else emptyList()))
             }
         }, hideCurrent = true)
     }

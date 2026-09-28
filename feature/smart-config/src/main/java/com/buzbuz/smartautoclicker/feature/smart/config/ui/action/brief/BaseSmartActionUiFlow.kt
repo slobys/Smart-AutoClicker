@@ -103,6 +103,8 @@ internal fun BaseOverlay.showActionConfigDialog(configurator: ActionConfigurator
         is ToggleEvent -> ToggleEventDialog(actionConfigDialogListener)
         is ChangeCounter -> ChangeCounterDialog(actionConfigDialogListener)
         is SetText -> SetTextDialog(actionConfigDialogListener)
+        is com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute ->
+            com.buzbuz.smartautoclicker.feature.smart.config.ui.routes.ExecuteRouteDialog(actionConfigDialogListener)
         is Notification -> {
             if (PermissionPostNotification().checkIfGranted(context)) NotificationDialog(actionConfigDialogListener)
             else newNotificationPermissionStarterOverlay(context)

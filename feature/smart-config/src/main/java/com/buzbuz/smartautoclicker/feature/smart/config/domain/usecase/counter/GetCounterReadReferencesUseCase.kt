@@ -115,6 +115,7 @@ class GetCounterReadReferencesUseCase @Inject constructor(
                     is Intent,
                     is Pause,
                     is SystemAction,
+                    is com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute,
                     is Swipe,
                     is ToggleEvent -> Unit
                 }

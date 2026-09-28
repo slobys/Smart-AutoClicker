@@ -107,6 +107,7 @@ class ReplaceMissingCounterReferenceUseCase @Inject constructor() {
             is Pause,
             is Swipe,
             is SystemAction,
+            is com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute,
             is ToggleEvent -> {
                 Log.e(TAG, "Can't replace counter reference, action type is not supported.")
                 null

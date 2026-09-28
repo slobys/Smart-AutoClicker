@@ -53,6 +53,8 @@ enum class ActionType {
     SYSTEM,
     /** Set the text of a focused view on the screen. */
     TEXT,
+    /** Follow a local, calibrated route synchronously. */
+    ROUTE,
 }
 
 

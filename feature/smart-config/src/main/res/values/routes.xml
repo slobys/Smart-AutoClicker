@@ -17,7 +17,7 @@
     <string name="route_pending">Not configured</string>
     <string name="route_control">2. Movement and calibration</string>
     <string name="route_ground">Tap ground</string>
-    <string name="route_joystick">Short joystick drag</string>
+    <string name="route_joystick">Fixed joystick hold</string>
     <string name="route_anchor">Select character feet / joystick center</string>
     <string name="route_calibration_help">Keep the character stationary. Choose a nearby clear point on one side, then run calibration A: it WILL move the character once. Repeat B in a different direction (roughly perpendicular). For ground taps, the camera must follow the character so their feet stay at the anchor. Recalibrate after changing camera or speed.</string>
     <string name="route_target_a">Select calibration A target</string>
@@ -33,6 +33,7 @@
     <string name="route_replay">Replay route</string>
     <string name="route_save">Save configuration</string>
     <string name="route_delete">Delete loaded route</string>
+    <string name="route_action_delete">Delete action</string>
     <string name="route_delete_confirm">Delete this route? This cannot be undone.</string>
     <string name="route_summary">Points: %1$d · %2$s</string>
     <string name="route_message_done">Operation finished</string>
@@ -49,6 +50,7 @@
     <string name="route_ok">Saved</string>
     <string name="route_capture_ok">Map marker captured</string>
     <string name="route_progress">%1$s\nCoordinate: %2$s · Points: %3$d</string>
+    <string name="route_progress_samples">%1$s\nCoordinate: %2$s · Valid samples: %3$d</string>
     <string name="route_no_coordinate">Unreadable</string>
     <string name="route_message_preparing">Preparing OCR…</string>
     <string name="route_message_reading">Reading coordinates / checking map</string>
@@ -68,4 +70,22 @@
     <string name="route_message_gesture_failed">Paused: gesture failed or overlaps toolbar / coordinate area</string>
     <string name="route_message_limit_reached">Recording limit reached (2,000 points); draft kept</string>
     <string name="route_message_failed">Stopped: operation failed</string>
+    <string name="route_mode_coordinates">Numeric coordinates</string>
+    <string name="route_mode_minimap">Visual minimap</string>
+    <string name="route_minimap_help">Experimental: fixed layout, north-up, fixed zoom, player centred while the map scrolls. Select the map interior (96–512 pixels per side), excluding the border and HUD; the player must be at its centre. Rotating maps, random dungeons and moving player markers are not supported. Select a separate static map name/icon below.</string>
+    <string name="route_minimap_select">Select minimap interior</string>
+    <string name="route_minimap_capture">Capture minimap reference at start</string>
+    <string name="route_minimap_test">Test localization (no movement)</string>
+    <string name="route_minimap_test_help" formatted="false">Capture the reference, then test: walk slowly a short distance. Requires 20 reliable observations, at least 80% success and 12 normalized pixels of travel within 2 minutes. Return to the reference position before recording. No movement is allowed until the test passes.</string>
+    <string name="route_message_localization_passed">Localization test passed</string>
+    <string name="route_message_localization_weak">Insufficient map features / unstable localization; movement disabled</string>
+    <string name="route_trace_description">Recent localization trace, up to 120 points</string>
+    <string name="route_localization_confidence">Landmark match: %1$d%%</string>
+    <string name="route_joystick_duration">Calibration hold (100–800 ms)</string>
+    <string name="route_joystick_help">Fixed joystick only. Choose two perpendicular offsets beyond its deadzone, within its effective radius. Playback keeps that deflection and shortens the hold near waypoints. Change speed or hold duration? Recalibrate. Each gesture releases within 800 ms; no simultaneous attack touches.</string>
+    <string name="route_action_title">Execute route</string>
+    <string name="route_action_desc">Follow a saved route, then continue the next action</string>
+    <string name="route_action_help">Record, test and save the route under Scenario → More → Routes first. This action follows it once, sequentially. On failure the scenario stops. Routes are local and not included in scenario backups; reselect a route after importing on another device. Split a journey into routes to insert battle or door interaction actions between segments. Timeout includes debugger pauses.</string>
+    <string name="route_action_timeout">Total timeout (5–3600 seconds)</string>
+    <string name="route_action_empty">No calibrated, completed routes. Create one in Scenario → More → Routes.</string>
 </resources>

@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 /** Separate from the user's main floating menu: hiding this overlay always cancels its work. */
 class RouteRunMenu(
     private val pausable: Boolean,
+    private val showTrace: Boolean = false,
     private val operation: suspend (RouteRunControl, (RouteProgress) -> Unit) -> Unit,
 ) : OverlayMenu(theme = R.style.ScenarioConfigTheme) {
     private lateinit var binding: OverlayRouteMenuBinding
@@ -30,6 +31,9 @@ class RouteRunMenu(
     override fun onCreateMenu(layoutInflater: LayoutInflater): ViewGroup {
         binding = OverlayRouteMenuBinding.inflate(layoutInflater)
         binding.routePause.visibility = if (pausable) View.VISIBLE else View.GONE
+        // Reserve the trace before the floating window is measured. Changing its height later
+        // would clip the safety buttons in the shared fixed-size WindowManager layout.
+        binding.routeTrace.visibility = if (showTrace) View.VISIBLE else View.GONE
         return binding.root
     }
 
@@ -58,7 +62,8 @@ class RouteRunMenu(
         work = lifecycleScope.launch {
             try {
                 operation(control) { progress.value = it }
-                if (progress.value.message !in setOf(RouteMessage.COMPLETE, RouteMessage.SAVED_DRAFT, RouteMessage.DONE))
+                if (progress.value.message !in setOf(RouteMessage.COMPLETE, RouteMessage.SAVED_DRAFT, RouteMessage.DONE,
+                        RouteMessage.LOCALIZATION_PASSED, RouteMessage.LOCALIZATION_WEAK))
                     progress.value = progress.value.copy(message = RouteMessage.DONE)
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (failure: RouteFailure) { progress.value = RouteProgress(failure.reason) }
@@ -100,9 +105,14 @@ class RouteRunMenu(
     }
 
     private fun showProgress(value: RouteProgress) {
-        binding.routeStatus.text = context.getString(R.string.route_progress, context.getString(value.message.stringId()),
-            value.position?.let { "${it.x.toInt()}, ${it.y.toInt()}" } ?: context.getString(R.string.route_no_coordinate), value.count)
+        binding.routeStatus.text = context.getString(
+            if (value.observations == null) R.string.route_progress else R.string.route_progress_samples,
+            context.getString(value.message.stringId()),
+            value.position?.let { "${it.x.toInt()}, ${it.y.toInt()}" } ?: context.getString(R.string.route_no_coordinate),
+            value.observations ?: value.count)
         binding.routePause.setText(if (control.paused) R.string.route_resume else R.string.route_pause)
+        binding.routeTrace.points = value.trace
+        value.confidence?.let { binding.routeStatus.append("\n" + context.getString(R.string.route_localization_confidence, (it * 100).toInt())) }
         if (finished) binding.routeFinish.isEnabled = true
     }
 
@@ -130,4 +140,6 @@ internal fun RouteMessage.stringId(): Int = when (this) {
     RouteMessage.GESTURE_FAILED -> R.string.route_message_gesture_failed
     RouteMessage.LIMIT_REACHED -> R.string.route_message_limit_reached
     RouteMessage.FAILED -> R.string.route_message_failed
+    RouteMessage.LOCALIZATION_PASSED -> R.string.route_message_localization_passed
+    RouteMessage.LOCALIZATION_WEAK -> R.string.route_message_localization_weak
 }

@@ -123,4 +123,26 @@ class RuntimeDebuggerTests {
         assertTrue(processingJob.isCompleted)
         assertEquals(DebugExecutionState.Running, debugger.state.value)
     }
+
+    @Test fun eventStepDoesNotPauseEveryRouteObservation() = runTest {
+        val debugger = RuntimeDebugger()
+        val job = launch {
+            debugger.awaitBeforeActions(1, "route", 0, isBreakpoint = true)
+            repeat(20) { debugger.awaitWithinAction(1, "route") }
+        }
+        runCurrent(); debugger.step(); advanceUntilIdle()
+        assertTrue(job.isCompleted)
+        val next = launch { debugger.awaitBeforeActions(2, "next", 0) }
+        runCurrent(); assertFalse(next.isCompleted)
+        debugger.resume(); advanceUntilIdle(); assertTrue(next.isCompleted)
+    }
+
+    @Test fun explicitPauseStopsLongActionAtNextObservation() = runTest {
+        val debugger = RuntimeDebugger()
+        debugger.requestPauseAtNextEvent()
+        val job = launch { debugger.awaitWithinAction(1, "route") }
+        runCurrent(); assertFalse(job.isCompleted)
+        assertEquals(DebugExecutionState.Paused(1, "route", 0), debugger.state.value)
+        debugger.resume(); advanceUntilIdle(); assertTrue(job.isCompleted)
+    }
 }

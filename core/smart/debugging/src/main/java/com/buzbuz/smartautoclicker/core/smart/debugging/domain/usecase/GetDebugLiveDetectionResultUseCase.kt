@@ -84,6 +84,7 @@ class GetDebugLiveDetectionResultUseCase @Inject constructor(
                 is Intent,
                 is Notification,
                 is SetText,
+                is com.buzbuz.smartautoclicker.core.domain.model.action.ExecuteRoute,
                 is SystemAction,
                 is ToggleEvent -> 0
             }
