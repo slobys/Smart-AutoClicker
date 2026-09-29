@@ -7,11 +7,12 @@ import kotlinx.coroutines.ensureActive
 
 enum class RouteMessage {
     PREPARING, READING, RECORDING, REPLAYING, PAUSED, COMPLETE, SAVED_DRAFT, DONE,
-    WRONG_START, STUCK, TIMEOUT, LOST_POSITION, BAD_CALIBRATION, RESOLUTION_CHANGED,
+    WRONG_START, POSITION_JUMP, STUCK, TIMEOUT, LOST_POSITION, BAD_CALIBRATION, RESOLUTION_CHANGED,
     SERVICE_STOPPED, MODELS_MISSING, GESTURE_FAILED, LIMIT_REACHED, FAILED, LOCALIZATION_PASSED, LOCALIZATION_WEAK,
 }
 data class RouteProgress(val message: RouteMessage, val position: RoutePoint? = null, val count: Int = 0,
-    val confidence: Double? = null, val trace: List<RoutePoint> = emptyList(), val observations: Int? = null)
+    val confidence: Double? = null, val trace: List<RoutePoint> = emptyList(), val observations: Int? = null,
+    val expectedPosition: RoutePoint? = null, val allowedDistance: Double? = null)
 
 class RouteRunControl {
     @Volatile var stopped = false
@@ -24,6 +25,7 @@ internal interface RoutePort {
     fun now(): Long
     /** Null means no reliable observation; never interpreted as arrival or as coordinate zero. */
     suspend fun read(): RoutePoint?
+    fun resetObservation() = Unit
     suspend fun move(offset: RoutePoint): Boolean
     suspend fun move(motion: RouteMotion): Boolean = move(motion.offset)
 }
@@ -146,11 +148,14 @@ internal class RoutePilot(
             if (control.paused) { wasPaused = true; continue }
             if (wasPaused) {
                 follower.resume(port.now()); previous = null; lastGood = port.now(); wasPaused = false
+                port.resetObservation()
             }
             val position = port.read()
             if (observationEpoch != port.epoch) {
                 observationEpoch = port.epoch
                 follower.resume(port.now()); previous = null; lastGood = port.now()
+                port.resetObservation()
+                continue // Discard the observation spanning a debugger pause.
             }
             if (position == null) {
                 follower.breakConfirmation(); previous = null
@@ -159,21 +164,32 @@ internal class RoutePilot(
                 continue
             }
             // Manual relocation during a pause is not an instruction to cut across the map.
-            if (lastKnown?.distance(position)?.let { it > 15.0 } == true) {
-                pause(RouteMessage.WRONG_START, follower.index); continue
+            if (follower.hasStarted && lastKnown?.distance(position)?.let { it > 15.0 } == true) {
+                pause(RouteMessage.POSITION_JUMP, follower.index, position, lastKnown, 15.0); continue
             }
-            lastGood = port.now(); lastKnown = position
+            lastGood = port.now()
+            // A rejected start is not a valid resume anchor. Otherwise returning from the
+            // endpoint to the real start immediately triggers the relocation guard again.
+            val decision = follower.observe(position, port.now())
+            if (decision is RouteFollower.Decision.Pause) {
+                val wrongStart = decision.reason == RouteFollower.Reason.WRONG_START
+                pause(RouteMessage.valueOf(decision.reason.name), follower.index, position,
+                    if (wrongStart) route.points.first() else null,
+                    if (wrongStart) follower.startTolerance else null)
+                continue
+            }
+            lastKnown = position
             report(RouteProgress(RouteMessage.REPLAYING, position, follower.index))
-            when (val decision = follower.observe(position, port.now())) {
+            when (decision) {
                 RouteFollower.Decision.Complete -> { report(RouteProgress(RouteMessage.COMPLETE, position, follower.index)); return }
                 RouteFollower.Decision.Wait -> Unit
-                is RouteFollower.Decision.Pause -> pause(RouteMessage.valueOf(decision.reason.name), follower.index)
+                is RouteFollower.Decision.Pause -> Unit // Handled above, before updating the resume anchor.
                 is RouteFollower.Decision.Move -> {
                     // Wait for two settled observations; do not replace a movement still in progress.
                     if (previous?.distance(position)?.let { it <= 1.0 } == true && port.now() - lastMove >= 1_500) {
                         currentCoroutineContext().ensureActive()
                         if (!control.paused && !control.stopped) {
-                            if (!port.move(routeMotion(route, decision.target - position))) pause(RouteMessage.GESTURE_FAILED, follower.index)
+                            if (!port.move(routeMotion(route, decision.target - position))) pause(RouteMessage.GESTURE_FAILED, follower.index, position)
                             lastMove = port.now()
                             previous = null
                             continue
@@ -185,8 +201,9 @@ internal class RoutePilot(
         }
     }
 
-    private fun pause(reason: RouteMessage, count: Int) {
+    private fun pause(reason: RouteMessage, count: Int, position: RoutePoint? = null,
+        expectedPosition: RoutePoint? = null, allowedDistance: Double? = null) {
         control.paused = true
-        report(RouteProgress(reason, count = count))
+        report(RouteProgress(reason, position, count, expectedPosition = expectedPosition, allowedDistance = allowedDistance))
     }
 }

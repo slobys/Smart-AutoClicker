@@ -66,10 +66,10 @@ class RouteRunMenu(
                         RouteMessage.LOCALIZATION_PASSED, RouteMessage.LOCALIZATION_WEAK))
                     progress.value = progress.value.copy(message = RouteMessage.DONE)
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: RouteFailure) { progress.value = RouteProgress(failure.reason) }
+            catch (failure: RouteFailure) { progress.value = progress.value.copy(message = failure.reason, position = null) }
             catch (failure: Exception) {
                 android.util.Log.e("RouteRunMenu", "Route operation failed", failure)
-                progress.value = RouteProgress(RouteMessage.FAILED)
+                progress.value = progress.value.copy(message = RouteMessage.FAILED, position = null)
             } finally {
                 finished = true
                 binding.routePause.isEnabled = false
@@ -95,7 +95,8 @@ class RouteRunMenu(
             if (!finished) {
                 control.paused = !control.paused
                 progress.value = if (control.paused) progress.value.copy(message = RouteMessage.PAUSED)
-                    else progress.value.copy(message = RouteMessage.READING)
+                    else progress.value.copy(message = RouteMessage.READING, position = null,
+                        expectedPosition = null, allowedDistance = null)
                 binding.routePause.setText(if (control.paused) R.string.route_resume else R.string.route_pause)
             }
         }
@@ -109,20 +110,32 @@ class RouteRunMenu(
     }
 
     private fun showProgress(value: RouteProgress) {
-        binding.routeStatus.text = context.getString(
-            if (value.observations == null) R.string.route_progress else R.string.route_progress_samples,
-            context.getString(value.message.stringId()),
-            value.position?.let { "${it.x.toInt()}, ${it.y.toInt()}" } ?: context.getString(R.string.route_no_coordinate),
-            value.observations ?: value.count)
+        binding.routeStatus.text = value.statusText(context)
         binding.routePause.setText(if (control.paused) R.string.route_resume else R.string.route_pause)
         binding.routeTrace.points = value.trace
-        value.confidence?.let { binding.routeStatus.append("\n" + context.getString(R.string.route_localization_confidence, (it * 100).toInt())) }
         if (finished) binding.routeFinish.isEnabled = true
     }
 
     override fun back() { control.stopped = true; work?.cancel(); heartbeat?.cancel(); super.back() }
     override fun onStop() { control.stopped = true; work?.cancel(); heartbeat?.cancel(); super.onStop() }
 }
+
+internal fun RouteProgress.statusText(context: android.content.Context): String = buildString {
+    val currentPosition = position
+    append(context.getString(
+        if (observations == null) R.string.route_progress else R.string.route_progress_samples,
+        context.getString(message.stringId()),
+        currentPosition?.coordinateText() ?: context.getString(R.string.route_no_coordinate), observations ?: count))
+    expectedPosition?.let { expected ->
+        append("\n").append(context.getString(R.string.route_return_position, expected.coordinateText()))
+        if (currentPosition != null && allowedDistance != null)
+            append("\n").append(context.getString(R.string.route_return_distance, currentPosition.distance(expected), allowedDistance))
+        append("\n").append(context.getString(R.string.route_return_help))
+    }
+    confidence?.let { append("\n").append(context.getString(R.string.route_localization_confidence, (it * 100).toInt())) }
+}
+
+internal fun RoutePoint.coordinateText(): String = "${x.toInt()}, ${y.toInt()}"
 
 internal fun RouteMessage.stringId(): Int = when (this) {
     RouteMessage.PREPARING -> R.string.route_message_preparing
@@ -134,6 +147,7 @@ internal fun RouteMessage.stringId(): Int = when (this) {
     RouteMessage.DONE -> R.string.route_message_done
     RouteMessage.SAVED_DRAFT -> R.string.route_message_saved_draft
     RouteMessage.WRONG_START -> R.string.route_message_wrong_start
+    RouteMessage.POSITION_JUMP -> R.string.route_message_position_jump
     RouteMessage.STUCK -> R.string.route_message_stuck
     RouteMessage.TIMEOUT -> R.string.route_message_timeout
     RouteMessage.LOST_POSITION -> R.string.route_message_lost_position

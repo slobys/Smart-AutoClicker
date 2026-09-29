@@ -85,7 +85,7 @@
     <string name="route_close">返回</string>
     <string name="route_finish">结束</string>
     <string name="route_pause">暂停</string>
-    <string name="route_resume">继续</string>
+    <string name="route_resume">复查继续</string>
     <string name="route_cancel">取消</string>
     <string name="route_move">拖动悬浮条</string>
     <string name="route_invalid">请先填写名称并完成区域、地图截图与锚点设置。区域不能重叠，名称最多 60 字。</string>
@@ -102,7 +102,12 @@
     <string name="route_message_paused">已暂停，不再发送移动操作</string>
     <string name="route_message_complete">已到达路线终点</string>
     <string name="route_message_saved_draft">草稿已保存，重新录制后才能回放</string>
-    <string name="route_message_wrong_start">已暂停：请回到路线起点／暂停前位置</string>
+    <string name="route_message_wrong_start">未开始移动：当前位置不在路线起点</string>
+    <string name="route_message_position_jump">已暂停：位置跳变，请回到暂停前位置</string>
+    <string name="route_return_position">需返回：%1$s</string>
+    <string name="route_return_distance">相距 %1$.1f，允许 ≤ %2$.1f</string>
+    <string name="route_return_help">手动回到该位置并站稳，点“复查继续”</string>
+    <string name="route_endpoints">录制起点：%1$s → 终点：%2$s\n起点与终点不必相同；不能直接从终点开始回放。</string>
     <string name="route_message_stuck">已暂停：15 秒没有接近目标</string>
     <string name="route_message_timeout">已暂停：到达路径点超时</string>
     <string name="route_message_lost_position">坐标或地图无法确认。回放已暂停；录制保留草稿。</string>

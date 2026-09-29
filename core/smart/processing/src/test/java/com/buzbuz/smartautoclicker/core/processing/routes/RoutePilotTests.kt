@@ -3,6 +3,8 @@
 package com.buzbuz.smartautoclicker.core.processing.routes
 
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.*
@@ -16,9 +18,12 @@ class RoutePilotTests {
         var movements = 0
         var reads = 0
         var moveSucceeds = true
+        var filter: RouteCoordinateFilter? = null
+        var resets = 0
         var afterRead: (() -> Unit)? = null
         override fun now() = clock()
-        override suspend fun read(): RoutePoint? { reads++; afterRead?.invoke(); return position }
+        override suspend fun read(): RoutePoint? { reads++; afterRead?.invoke(); return if (filter == null) position else filter!!.accept(position) }
+        override fun resetObservation() { resets++; filter?.reset() }
         override suspend fun move(offset: RoutePoint): Boolean {
             movements++
             if (moveSucceeds) position = position?.plus(offset * .1)
@@ -38,6 +43,57 @@ class RoutePilotTests {
         val c = RouteRunControl()
         RoutePilot(port, c) { if (it.message == RouteMessage.WRONG_START) c.stopped = true }.replay(exampleRoute())
         assertEquals(0, port.movements); assertTrue(c.paused)
+    }
+    @Test fun returningToStartAfterWrongStartCanResume() = runTest {
+        val port = FakePort { testScheduler.currentTime }.apply {
+            position = RoutePoint(200.0, 200.0)
+            filter = RouteCoordinateFilter()
+        }
+        val control = RouteRunControl()
+        var pauses = 0
+        withTimeout(10_000) {
+            RoutePilot(port, control) { update ->
+                if (update.message == RouteMessage.WRONG_START && ++pauses == 1) launch {
+                    delay(800)
+                    port.position = exampleRoute().points.first()
+                    control.paused = false
+                }
+            }.replay(exampleRoute())
+        }
+        assertEquals(1, pauses)
+        assertEquals(1, port.resets)
+        assertEquals(2, port.movements)
+        assertEquals(exampleRoute().points.last(), port.position)
+    }
+    @Test fun wrongStartReportsActualPositionInsteadOfUnreadable() = runTest {
+        val port = FakePort { testScheduler.currentTime }.apply { position = RoutePoint(200.0, 200.0) }
+        val control = RouteRunControl()
+        var paused: RouteProgress? = null
+        RoutePilot(port, control) {
+            if (it.message == RouteMessage.WRONG_START) { paused = it; control.stopped = true }
+        }.replay(exampleRoute())
+        assertEquals(port.position, paused?.position)
+        assertEquals(exampleRoute().points.first(), paused?.expectedPosition)
+        assertEquals(5.0, paused!!.allowedDistance!!, .001)
+    }
+    @Test fun movingAwayDuringPauseStillCannotCutAcrossTheMap() = runTest {
+        val port = FakePort { testScheduler.currentTime }
+        val control = RouteRunControl()
+        var interrupted = false
+        var guard: RouteProgress? = null
+        withTimeout(10_000) {
+            RoutePilot(port, control) {
+                if (!interrupted && it.message == RouteMessage.REPLAYING && it.count == 1) {
+                    interrupted = true
+                    control.paused = true
+                    launch { delay(800); port.position = RoutePoint(200.0, 200.0); control.paused = false }
+                }
+                if (it.message == RouteMessage.POSITION_JUMP) { guard = it; control.stopped = true }
+            }.replay(exampleRoute())
+        }
+        assertEquals(RoutePoint(200.0, 200.0), guard?.position)
+        assertEquals(exampleRoute().points.first(), guard?.expectedPosition)
+        assertEquals(0, port.movements)
     }
     @Test fun coordinateLossDoesNotGenerateMoves() = runTest {
         val port = FakePort { testScheduler.currentTime }; port.position = null

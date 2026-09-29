@@ -103,7 +103,7 @@ class RouteRuntime @Inject internal constructor(
                 var completed = false
                 runInternal(route, RouteOperation.REPLAY, RouteRunControl(), null, true, beforeRead) { progress ->
                     if (progress.message == RouteMessage.COMPLETE) completed = true
-                    if (progress.message in setOf(RouteMessage.WRONG_START, RouteMessage.STUCK, RouteMessage.TIMEOUT,
+                    if (progress.message in setOf(RouteMessage.WRONG_START, RouteMessage.POSITION_JUMP, RouteMessage.STUCK, RouteMessage.TIMEOUT,
                             RouteMessage.LOST_POSITION, RouteMessage.GESTURE_FAILED)) throw RouteFailure(progress.message)
                 }
                 if (completed) ActionExecutionResult.Success else ActionExecutionResult.Failed("Route interrupted")
@@ -162,6 +162,7 @@ class RouteRuntime @Inject internal constructor(
                             override var epoch: Long = 0L
                                 private set
                             override fun now() = SystemClock.elapsedRealtime()
+                            override fun resetObservation() = filter.reset()
                             override suspend fun read(): RoutePoint? {
                                 val beforeGate = now()
                                 beforeRead()
@@ -171,7 +172,9 @@ class RouteRuntime @Inject internal constructor(
                                 if (frame.width != route.screenWidth || frame.height != route.screenHeight)
                                     throw RouteFailure(RouteMessage.RESOLUTION_CHANGED)
                                 if (control.blockedArea?.let { blocked ->
-                                    blocked.overlaps(route.mapArea) || (route.minimap?.area?.let(blocked::overlaps) == true && minimap != null)
+                                    blocked.overlaps(route.mapArea) ||
+                                        (if (minimap != null) route.minimap?.area?.let(blocked::overlaps) == true
+                                        else blocked.overlaps(route.xArea) || blocked.overlaps(route.yArea))
                                 } == true) return null
                                 try {
                                     detector.setScreenBitmap(frame, "route:${route.id}")

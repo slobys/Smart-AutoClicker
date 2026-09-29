@@ -102,7 +102,7 @@
     <string name="route_message_paused">Paused — no more moves will be sent</string>
     <string name="route_message_complete">Route completed</string>
     <string name="route_message_saved_draft">Draft saved; record again before replay</string>
-    <string name="route_message_wrong_start">Paused: return to the route start / last position</string>
+    <string name="route_message_wrong_start">Not moving: current position is not at the route start</string>
     <string name="route_message_stuck">Paused: no progress for 15 seconds</string>
     <string name="route_message_timeout">Paused: waypoint timed out</string>
     <string name="route_message_lost_position">Coordinates or map lost. Replay paused; recording draft kept.</string>
@@ -131,4 +131,9 @@
     <string name="route_action_help">Record, test and save the route under Scenario → More → Routes first. This action follows it once, sequentially. On failure the scenario stops. Routes are local and not included in scenario backups; reselect a route after importing on another device. Split a journey into routes to insert battle or door interaction actions between segments. Timeout includes debugger pauses.</string>
     <string name="route_action_timeout">Total timeout (5–3600 seconds)</string>
     <string name="route_action_empty">No calibrated, completed routes. Create one in Scenario → More → Routes.</string>
+    <string name="route_message_position_jump">Paused: position changed unexpectedly. Return to the last position.</string>
+    <string name="route_return_position">Return to: %1$s</string>
+    <string name="route_return_distance">Distance %1$.1f; allowed ≤ %2$.1f</string>
+    <string name="route_return_help">Walk back, stand still, then tap Resume to recheck.</string>
+    <string name="route_endpoints">Recorded start: %1$s → End: %2$s\nThe start and end can differ. Replay must begin at the start, not the end.</string>
 </resources>

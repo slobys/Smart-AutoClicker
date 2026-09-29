@@ -18,6 +18,7 @@ package com.buzbuz.smartautoclicker.core.ui.views.viewcomponents
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PointF
@@ -89,6 +90,14 @@ internal class SelectorComponent(
     private var selectorAreaOffset: Int = selectorStyle.selectorAreaOffset
     /** The radius of the corner for the selector. */
     private val cornerRadius = selectorStyle.cornerRadius
+    private val showResizeHandles = selectorStyle.showResizeHandles
+    private val handleRadius = 4f * context.resources.displayMetrics.density
+    private val borderShadow = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = selectorStyle.selectorThickness + 2f * context.resources.displayMetrics.density
+        color = Color.BLACK
+    }
+    private val handlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
 
     /** Paint drawing the selector. */
     private val selectorPaint = Paint().apply {
@@ -104,7 +113,7 @@ internal class SelectorComponent(
         color = selectorStyle.selectorBackgroundColor
     }
     /** The transparency of the background color of the selector. */
-    private val selectorBackgroundAlpha: Int = backgroundPaint.color.shr(24)
+    private val selectorBackgroundAlpha: Int = backgroundPaint.color.ushr(24)
     /** The path for drawing the selector transparent background and content. */
     private val selectorDrawingPath = Path().apply {
         fillType = Path.FillType.EVEN_ODD
@@ -204,8 +213,8 @@ internal class SelectorComponent(
         val minimumArea = defaultMinimumArea
         selectorMinimumSize.apply {
             if (minimumArea != null) {
-                x = minimumArea.width()
-                y = minimumArea.height()
+                x = minimumArea.width() + selectorAreaOffset * 2
+                y = minimumArea.height() + selectorAreaOffset * 2
             } else {
                 val minimumSide = max(
                     min(maxArea.width(), maxArea.height()) * SELECTOR_MINIMUM_SIZE_RATIO,
@@ -226,7 +235,7 @@ internal class SelectorComponent(
             consumed = true
         }
 
-        if  (event.action == ACTION_UP) {
+        if (event.action == ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
             currentGesture = null
             consumed = true
         }
@@ -328,7 +337,23 @@ internal class SelectorComponent(
 
     override fun onDraw(canvas: Canvas) {
         canvas.drawPath(selectorDrawingPath, backgroundPaint)
+        if (showResizeHandles) {
+            borderShadow.alpha = selectorPaint.alpha
+            canvas.drawRoundRect(selectorArea, cornerRadius, cornerRadius, borderShadow)
+        }
         canvas.drawRoundRect(selectorArea, cornerRadius, cornerRadius, selectorPaint)
+        if (showResizeHandles) {
+            handlePaint.alpha = selectorPaint.alpha
+            fun handle(x: Float, y: Float) {
+                canvas.drawCircle(x, y, handleRadius, borderShadow)
+                canvas.drawCircle(x, y, handleRadius, handlePaint)
+            }
+            // Persistent edge handles: the arrow hints may fade, the resize affordances do not.
+            handle(selectorArea.left, selectorArea.centerY())
+            handle(selectorArea.right, selectorArea.centerY())
+            handle(selectorArea.centerX(), selectorArea.top)
+            handle(selectorArea.centerX(), selectorArea.bottom)
+        }
     }
 
     override fun onReset() {
@@ -359,6 +384,7 @@ internal class SelectorComponentStyle(
     val selectorThickness: Float,
     @field:ColorInt val selectorColor: Int,
     @field:ColorInt val selectorBackgroundColor: Int,
+    val showResizeHandles: Boolean = false,
 ) : ViewStyle(displayConfigManager)
 
 /** Minimum size of the selector content in pixels, before applying capture zoom. */

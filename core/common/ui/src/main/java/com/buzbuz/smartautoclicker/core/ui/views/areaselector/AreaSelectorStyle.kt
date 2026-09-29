@@ -34,7 +34,7 @@ internal fun TypedArray.getAnimationsStyle() =
         selectorBackgroundAlpha = getColor(
             R.styleable.AreaSelectorView_colorBackground,
             Color.TRANSPARENT
-        ).shr(24),
+        ).ushr(24),
         hintFadeDuration = getInteger(
             R.styleable.AreaSelectorView_hintsFadeDuration,
             DEFAULT_FADE_DURATION
@@ -88,6 +88,7 @@ internal fun TypedArray.getSelectorComponentStyle(displayConfigManager: DisplayC
             R.styleable.AreaSelectorView_colorBackground,
             Color.TRANSPARENT,
         ),
+        showResizeHandles = true,
     )
 
 internal fun TypedArray.getHintsStyle(displayConfigManager: DisplayConfigManager) =

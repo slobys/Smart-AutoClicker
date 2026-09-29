@@ -105,6 +105,8 @@ class RouteDialog : OverlayDialog(R.style.ScenarioConfigTheme) {
         field.addView(name); content.addView(field)
         paragraph(context.getString(R.string.route_summary, r.points.size,
             context.getString(if (r.recordingComplete) R.string.route_complete_label else R.string.route_draft_label)))
+        if (r.positionMode == RoutePositionMode.COORDINATES && r.points.isNotEmpty())
+            paragraph(context.getString(R.string.route_endpoints, r.points.first().coordinateText(), r.points.last().coordinateText()))
         title(R.string.route_setup)
         row(R.string.route_mode_coordinates to { setMode(RoutePositionMode.COORDINATES) },
             R.string.route_mode_minimap to { setMode(RoutePositionMode.MINIMAP) })
@@ -218,7 +220,8 @@ class RouteDialog : OverlayDialog(R.style.ScenarioConfigTheme) {
     }
 
     private fun selectArea(kind: Int) {
-        overlayManager.navigateTo(context, ConditionAreaSelectorMenu(onAreaSelected = { rect ->
+        val current = model.route ?: return
+        overlayManager.navigateTo(context, ConditionAreaSelectorMenu(initialSelection = current.selectionFor(kind), onAreaSelected = { rect ->
             val area = RouteArea(rect.left, rect.top, rect.right, rect.bottom)
             val r = model.route ?: return@ConditionAreaSelectorMenu
             if (kind == 3) {

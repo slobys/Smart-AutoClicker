@@ -37,6 +37,7 @@ import com.buzbuz.smartautoclicker.core.common.tutorial.domain.model.monitoring.
 
 class ConditionAreaSelectorMenu(
     private val onHelpClicked: (() -> Unit)? = null,
+    private val initialSelection: SelectorUiState? = null,
     private val onAreaSelected: (Rect) -> Unit
 ) : OverlayMenu(theme = R.style.ScenarioConfigTheme) {
 
@@ -68,6 +69,13 @@ class ConditionAreaSelectorMenu(
 
     override fun onStart() {
         super.onStart()
+
+        // Routes have no edited event condition. Initialize their selection explicitly,
+        // otherwise the condition flow never emits and the selector border stays transparent.
+        initialSelection?.let {
+            selectorView.setSelection(it.initialArea, it.minimalArea)
+            return
+        }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {

@@ -63,6 +63,17 @@ class RouteTests {
             assertEquals(if (i == r.points.lastIndex) RouteFollower.Decision.Complete else RouteFollower.Decision.Wait, second)
         }
     }
+    @Test fun resetAllowsConfirmedReturnOverFortyUnitsAwayButNotASingleJump() {
+        val filter = RouteCoordinateFilter()
+        val end = RoutePoint(200.0, 200.0)
+        val start = RoutePoint(10.0, 10.0)
+        filter.accept(end); assertEquals(end, filter.accept(end))
+        assertNull(filter.accept(start))
+        filter.reset()
+        assertNull(filter.accept(start))
+        assertEquals(start, filter.accept(start))
+        assertNull(filter.accept(end))
+    }
     @Test fun wrongStartNeverProducesAMove() {
         val r = exampleRoute(); val f = RouteFollower(r.points, 2.0)
         assertEquals(RouteFollower.Decision.Pause(RouteFollower.Reason.WRONG_START), f.observe(RoutePoint(100.0, 100.0), 0))

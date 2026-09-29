@@ -102,6 +102,9 @@ class RouteCoordinateFilter {
     private var previous: RoutePoint? = null
     private var startup: RoutePoint? = null
 
+    /** A user may have walked back while paused. Require fresh confirmations at the new position. */
+    fun reset() { previous = null; startup = null }
+
     fun accept(point: RoutePoint?): RoutePoint? {
         if (point == null || !point.valid() || point.x < 0 || point.y < 0) {
             startup = null
@@ -128,6 +131,8 @@ class RouteFollower(private val points: List<RoutePoint>, private val tolerance:
     var index = 0
         private set
     private var started = false
+    val hasStarted: Boolean get() = started
+    val startTolerance: Double get() = maxOf(5.0, tolerance * 2)
     private var hits = 0
     private var segmentStarted = 0L
     private var progressAt = 0L
@@ -144,7 +149,7 @@ class RouteFollower(private val points: List<RoutePoint>, private val tolerance:
     fun observe(position: RoutePoint, now: Long): Decision {
         require(position.valid())
         if (!started) {
-            if (position.distance(points.first()) > maxOf(5.0, tolerance * 2)) return Decision.Pause(Reason.WRONG_START)
+            if (position.distance(points.first()) > startTolerance) return Decision.Pause(Reason.WRONG_START)
             started = true
             resetTimers(now)
         }

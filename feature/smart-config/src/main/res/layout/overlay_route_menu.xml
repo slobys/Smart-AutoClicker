@@ -6,10 +6,10 @@
         style="@style/AppTheme.Overlay.FloatingMenu.CardView">
         <LinearLayout android:layout_width="280dp" android:layout_height="wrap_content"
             android:orientation="vertical">
-            <FrameLayout android:layout_width="match_parent" android:layout_height="112dp">
+            <FrameLayout android:layout_width="match_parent" android:layout_height="144dp">
                 <androidx.appcompat.widget.AppCompatTextView android:id="@+id/route_status" android:layout_width="match_parent"
                     android:layout_height="match_parent" android:padding="12dp" android:textSize="14sp"
-                    android:textColor="#FFFFFF" android:gravity="center_vertical" android:maxLines="5"
+                    android:textColor="#FFFFFF" android:gravity="center_vertical" android:maxLines="8"
                     app:autoSizeTextType="uniform" app:autoSizeMinTextSize="11sp"
                     app:autoSizeMaxTextSize="14sp" app:autoSizeStepGranularity="1sp"
                     android:accessibilityLiveRegion="polite" android:text="@string/route_message_preparing" />
