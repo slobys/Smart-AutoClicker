@@ -16,6 +16,57 @@ import org.robolectric.annotation.Config
 class RouteSelectionTests {
     private fun route() = RouteViewModel(mock(), mock()).apply { newRoute(1920, 1080, "Test") }.route!!
 
+    @Test fun wrongMapPreviewShowsDigitsWithoutClaimingAValidPosition() {
+        val text = RouteProgress(RouteMessage.READING, diagnostics = RouteReadDiagnostics(RouteReadIssue.MAP_MISMATCH,
+            false, RouteAxisReading(154.0, .999, true), RouteAxisReading(147.0, .999, true)))
+            .statusText(RuntimeEnvironment.getApplication())
+        assertTrue(text.contains("坐标：未确认"))
+        assertTrue(text.contains("X：154 / 99%"))
+        assertTrue(text.contains("Y：147 / 99%"))
+        assertTrue(text.contains("地图：未匹配（不能移动）"))
+        assertTrue(text.contains("避开时间和坐标"))
+        assertFalse(text.contains("X 未通过"))
+    }
+
+    @Test fun failedAxisCandidateIsClearlyMarked() {
+        val text = RouteProgress(RouteMessage.LOST_POSITION, diagnostics = RouteReadDiagnostics(RouteReadIssue.Y_UNREADABLE,
+            true, RouteAxisReading(154.0, .99, true), RouteAxisReading(147.0, .70, false)))
+            .statusText(RuntimeEnvironment.getApplication())
+        assertTrue(text.contains("Y 未通过"))
+        assertTrue(text.contains("Y：候选 147 / 70%"))
+        assertTrue(text.contains("地图：已匹配"))
+        assertFalse(text.contains("地图标记不匹配"))
+    }
+
+    @Test fun blockedOverlayAndMissingFrameHaveDifferentInstructions() {
+        val context = RuntimeEnvironment.getApplication()
+        val blocked = RouteReadDiagnostics(RouteReadIssue.OVERLAY_BLOCKED).statusText(context)
+        val missing = RouteReadDiagnostics(RouteReadIssue.NO_FRAME).statusText(context)
+        assertTrue(blocked.contains("拖开"))
+        assertTrue(missing.contains("屏幕捕获"))
+        assertFalse(blocked.contains("X："))
+        assertFalse(missing.contains("地图：已匹配"))
+    }
+
+    @Test fun candidatesAreNotCarriedIntoWrongStartOrCompleteText() {
+        for (message in listOf(RouteMessage.WRONG_START, RouteMessage.COMPLETE)) {
+            val text = RouteProgress(message, RoutePoint(154.0, 147.0), diagnostics = RouteReadDiagnostics(RouteReadIssue.READY,
+                true, RouteAxisReading(154.0, .99, true), RouteAxisReading(147.0, .99, true)))
+                .statusText(RuntimeEnvironment.getApplication())
+            assertTrue(text.contains("154, 147"))
+            assertFalse(text.contains("X："))
+        }
+    }
+
+    @Test fun confirmationIsNotMistakenForOcrFailure() {
+        val text = RouteReadDiagnostics(RouteReadIssue.WAITING_CONFIRMATION, true,
+            RouteAxisReading(0.0, .99, true), RouteAxisReading(147.0, .99, true))
+            .statusText(RuntimeEnvironment.getApplication())
+        assertTrue(text.contains("等待连续确认"))
+        assertTrue(text.contains("X：0 / 99%"))
+        assertFalse(text.contains("未通过"))
+    }
+
     @Test fun newRouteHasExplicitVisibleSelectionWithoutAnyEditedCondition() {
         val route = route()
         for (kind in 0..3) {

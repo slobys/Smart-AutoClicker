@@ -378,7 +378,8 @@ class RouteDialog : OverlayDialog(R.style.ScenarioConfigTheme) {
             catch (cancelled: CancellationException) {
                 feedback(context.getString(R.string.route_stopped_feedback)); throw cancelled
             } catch (failure: RouteFailure) {
-                feedback(context.getString(failure.reason.stringId()), true); throw failure
+                feedback(context.getString(failure.reason.stringId()) +
+                    (failure.diagnostics?.let { "\n" + it.statusText(context) } ?: ""), true); throw failure
             } catch (failure: Exception) {
                 feedback(context.getString(R.string.route_error), true); throw failure
             }

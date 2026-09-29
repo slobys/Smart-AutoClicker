@@ -66,7 +66,8 @@ class RouteRunMenu(
                         RouteMessage.LOCALIZATION_PASSED, RouteMessage.LOCALIZATION_WEAK))
                     progress.value = progress.value.copy(message = RouteMessage.DONE)
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: RouteFailure) { progress.value = progress.value.copy(message = failure.reason, position = null) }
+            catch (failure: RouteFailure) { progress.value = progress.value.copy(message = failure.reason,
+                position = null, diagnostics = failure.diagnostics) }
             catch (failure: Exception) {
                 android.util.Log.e("RouteRunMenu", "Route operation failed", failure)
                 progress.value = progress.value.copy(message = RouteMessage.FAILED, position = null)
@@ -96,7 +97,7 @@ class RouteRunMenu(
                 control.paused = !control.paused
                 progress.value = if (control.paused) progress.value.copy(message = RouteMessage.PAUSED)
                     else progress.value.copy(message = RouteMessage.READING, position = null,
-                        expectedPosition = null, allowedDistance = null)
+                        expectedPosition = null, allowedDistance = null, diagnostics = null)
                 binding.routePause.setText(if (control.paused) R.string.route_resume else R.string.route_pause)
             }
         }
@@ -131,7 +132,8 @@ internal fun RouteProgress.statusText(context: android.content.Context): String 
             returning && message == RouteMessage.WRONG_START -> R.string.route_message_wrong_end
             else -> message.stringId()
         }),
-        currentPosition?.coordinateText() ?: context.getString(R.string.route_no_coordinate), observations ?: count))
+        currentPosition?.coordinateText() ?: context.getString(if (diagnostics == null)
+            R.string.route_no_coordinate else R.string.route_unconfirmed_coordinate), observations ?: count))
     expectedPosition?.let { expected ->
         append("\n").append(context.getString(if (message == RouteMessage.APPROACHING_START)
             R.string.route_approach_position else R.string.route_return_position, expected.coordinateText()))
@@ -144,6 +146,38 @@ internal fun RouteProgress.statusText(context: android.content.Context): String 
         }))
     }
     confidence?.let { append("\n").append(context.getString(R.string.route_localization_confidence, (it * 100).toInt())) }
+    if (message == RouteMessage.READING || message == RouteMessage.LOST_POSITION)
+        diagnostics?.let { append("\n").append(it.statusText(context)) }
+}
+
+internal fun RouteReadDiagnostics.statusText(context: android.content.Context): String = buildString {
+    append(context.getString(when (issue) {
+        RouteReadIssue.READY -> R.string.route_read_ready
+        RouteReadIssue.WAITING_CONFIRMATION -> R.string.route_read_confirming
+        RouteReadIssue.NO_FRAME -> R.string.route_read_no_frame
+        RouteReadIssue.OVERLAY_BLOCKED -> R.string.route_read_overlay
+        RouteReadIssue.MAP_MISMATCH -> R.string.route_read_map_mismatch
+        RouteReadIssue.X_UNREADABLE -> R.string.route_read_x
+        RouteReadIssue.Y_UNREADABLE -> R.string.route_read_y
+        RouteReadIssue.XY_UNREADABLE -> R.string.route_read_xy
+        RouteReadIssue.INVALID_COORDINATE -> R.string.route_read_invalid
+        RouteReadIssue.POSITION_OUTLIER -> R.string.route_read_outlier
+        RouteReadIssue.MINIMAP_UNCERTAIN -> R.string.route_read_minimap
+    }))
+    if (x != null || y != null) {
+        fun RouteAxisReading?.text(): String {
+            if (this == null) return context.getString(R.string.route_read_not_checked)
+            val number = value
+            if (number == null) return context.getString(R.string.route_no_coordinate)
+            // Keep candidates bounded and clearly distinguish them from confirmed coordinates.
+            val valueText = if (number in 0.0..100_000.0 && number == kotlin.math.floor(number)) number.toInt().toString()
+                else context.getString(R.string.route_read_invalid_number)
+            return context.getString(if (accepted) R.string.route_read_axis else R.string.route_read_candidate,
+                valueText, (confidence.coerceIn(0.0, 1.0) * 100).toInt())
+        }
+        append("\n").append(context.getString(R.string.route_read_axes, x.text(), y.text()))
+    }
+    mapMatched?.let { append("\n").append(context.getString(if (it) R.string.route_read_map_ok else R.string.route_read_map_failed)) }
 }
 
 internal fun RoutePoint.coordinateText(): String = "${x.toInt()}, ${y.toInt()}"

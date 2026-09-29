@@ -118,7 +118,7 @@
     <string name="route_message_wrong_start">Not moving: too far from the recorded start</string>
     <string name="route_message_stuck">Paused: no progress for 15 seconds</string>
     <string name="route_message_timeout">Paused: waypoint timed out</string>
-    <string name="route_message_lost_position">Coordinates or map lost. Replay paused; recording draft kept.</string>
+    <string name="route_message_lost_position">Position not confirmed; movement stopped, recording draft kept.</string>
     <string name="route_message_bad_calibration">Calibration failed: use two clear, different directions</string>
     <string name="route_message_resolution_changed">Stopped: screen size changed</string>
     <string name="route_message_service_stopped">Stopped: screen capture unavailable or a scenario is running</string>
@@ -149,4 +149,23 @@
     <string name="route_return_distance">Distance %1$.1f; allowed ≤ %2$.1f</string>
     <string name="route_return_help">Walk back, stand still, then tap Resume to recheck.</string>
     <string name="route_endpoints">Recorded start: %1$s → End: %2$s\nThey can differ. Replay approaches the start from nearby; Return follows the route back from near the endpoint.</string>
+    <string name="route_unconfirmed_coordinate">Unconfirmed</string>
+    <string name="route_read_ready">Position confirmed; check the numbers against the game</string>
+    <string name="route_read_confirming">Digits found; stand still for consecutive confirmation</string>
+    <string name="route_read_no_frame">No new frame; check screen capture</string>
+    <string name="route_read_overlay">Toolbar covers a selected area; drag it away</string>
+    <string name="route_read_map_mismatch">Map mismatch; recapture the fixed map name without time or coordinates</string>
+    <string name="route_read_x">X failed; select only the X digits, without the comma</string>
+    <string name="route_read_y">Y failed; select only the Y digits, without parentheses</string>
+    <string name="route_read_xy">X and Y failed; select each number separately</string>
+    <string name="route_read_invalid">Invalid integer; check for extra text in the selection</string>
+    <string name="route_read_outlier">Large coordinate jump rejected; check selection and game position</string>
+    <string name="route_read_minimap">Cannot locate minimap features; check selection and orientation</string>
+    <string name="route_read_not_checked">Not checked</string>
+    <string name="route_read_invalid_number">Invalid</string>
+    <string name="route_read_axis">%1$s / %2$d%%</string>
+    <string name="route_read_candidate">Candidate %1$s / %2$d%%</string>
+    <string name="route_read_axes">X: %1$s · Y: %2$s</string>
+    <string name="route_read_map_ok">Map: matched</string>
+    <string name="route_read_map_failed">Map: not matched (movement blocked)</string>
 </resources>

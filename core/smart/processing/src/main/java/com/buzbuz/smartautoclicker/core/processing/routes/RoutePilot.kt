@@ -12,7 +12,8 @@ enum class RouteMessage {
 }
 data class RouteProgress(val message: RouteMessage, val position: RoutePoint? = null, val count: Int = 0,
     val confidence: Double? = null, val trace: List<RoutePoint> = emptyList(), val observations: Int? = null,
-    val expectedPosition: RoutePoint? = null, val allowedDistance: Double? = null, val returning: Boolean = false)
+    val expectedPosition: RoutePoint? = null, val allowedDistance: Double? = null, val returning: Boolean = false,
+    val diagnostics: RouteReadDiagnostics? = null)
 
 class RouteRunControl {
     @Volatile var stopped = false
@@ -30,7 +31,7 @@ internal interface RoutePort {
     suspend fun move(motion: RouteMotion): Boolean = move(motion.offset)
 }
 
-class RouteFailure(val reason: RouteMessage) : Exception(reason.name)
+class RouteFailure(val reason: RouteMessage, val diagnostics: RouteReadDiagnostics? = null) : Exception(reason.name)
 
 /** At least 20 observations and 12 px travelled with >=80% valid samples. Never dispatches input. */
 internal suspend fun testMinimap(port: RoutePort, control: RouteRunControl, report: (RouteProgress) -> Unit): Boolean {

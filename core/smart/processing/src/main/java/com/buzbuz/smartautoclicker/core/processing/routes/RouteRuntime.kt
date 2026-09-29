@@ -5,7 +5,6 @@ import android.accessibilityservice.GestureDescription
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Path
-import android.graphics.Rect
 import android.os.SystemClock
 import android.util.Base64
 import com.buzbuz.smartautoclicker.code.smart.detectionmodels.text.OCRModelsRepository
@@ -15,7 +14,6 @@ import com.buzbuz.smartautoclicker.core.common.actions.AndroidActionExecutor
 import com.buzbuz.smartautoclicker.core.common.actions.AndroidGestureResult
 import com.buzbuz.smartautoclicker.core.detection.NativeDetector
 import com.buzbuz.smartautoclicker.core.detection.MinimapMatcher
-import com.buzbuz.smartautoclicker.core.detection.NumberFormatType
 import com.buzbuz.smartautoclicker.core.display.config.DisplayConfigManager
 import com.buzbuz.smartautoclicker.core.display.recorder.DisplayRecorder
 import com.buzbuz.smartautoclicker.core.processing.data.DetectorEngine
@@ -35,8 +33,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.math.abs
-import kotlin.math.round
 
 enum class RouteOperation { PREVIEW, RECORD, REPLAY, RETURN, CALIBRATE }
 data class RouteRunResult(val route: RecordedRoute? = null, val sample: RouteCalibrationSample? = null)
@@ -104,12 +100,13 @@ class RouteRuntime @Inject internal constructor(
                 runInternal(route, RouteOperation.REPLAY, RouteRunControl(), null, true, beforeRead) { progress ->
                     if (progress.message == RouteMessage.COMPLETE) completed = true
                     if (progress.message in setOf(RouteMessage.WRONG_START, RouteMessage.POSITION_JUMP, RouteMessage.STUCK, RouteMessage.TIMEOUT,
-                            RouteMessage.LOST_POSITION, RouteMessage.GESTURE_FAILED)) throw RouteFailure(progress.message)
+                            RouteMessage.LOST_POSITION, RouteMessage.GESTURE_FAILED)) throw RouteFailure(progress.message, progress.diagnostics)
                 }
                 if (completed) ActionExecutionResult.Success else ActionExecutionResult.Failed("Route interrupted")
             } ?: ActionExecutionResult.TimedOut(action.timeoutMs)
         } catch (cancelled: CancellationException) { throw cancelled }
-        catch (failure: RouteFailure) { ActionExecutionResult.Failed("Route: ${failure.reason}") }
+        catch (failure: RouteFailure) { ActionExecutionResult.Failed("Route: ${failure.reason}" +
+            (failure.diagnostics?.let { " (${it.issue})" } ?: "")) }
         catch (failure: Exception) {
             android.util.Log.w("RouteRuntime", "Route action failed", failure)
             ActionExecutionResult.Failed("Route data or runtime unavailable")
@@ -158,37 +155,21 @@ class RouteRuntime @Inject internal constructor(
                             options.outHeight == route.mapArea.bottom - route.mapArea.top)
                         val map = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: throw RouteFailure(RouteMessage.FAILED)
                         template = map
-                        val filter = RouteCoordinateFilter()
+                        val reader = RoutePositionReader(route, detector, map, operation == RouteOperation.PREVIEW, minimap)
                         val port = object : RoutePort {
                             override var epoch: Long = 0L
                                 private set
                             override fun now() = SystemClock.elapsedRealtime()
-                            override fun resetObservation() = filter.reset()
+                            override fun resetObservation() = reader.reset()
                             override suspend fun read(): RoutePoint? {
                                 val beforeGate = now()
                                 beforeRead()
                                 if (now() - beforeGate > 200) epoch++ // Reconfirm after a debugger pause, never reuse an arrival hit.
                                 checkEnvironment(route.screenWidth, route.screenHeight, inScenario)
-                                val frame = recorder.acquireLatestBitmap() ?: return null
-                                if (frame.width != route.screenWidth || frame.height != route.screenHeight)
+                                val frame = recorder.acquireLatestBitmap()
+                                if (frame != null && (frame.width != route.screenWidth || frame.height != route.screenHeight))
                                     throw RouteFailure(RouteMessage.RESOLUTION_CHANGED)
-                                if (control.blockedArea?.let { blocked ->
-                                    blocked.overlaps(route.mapArea) ||
-                                        (if (minimap != null) route.minimap?.area?.let(blocked::overlaps) == true
-                                        else blocked.overlaps(route.xArea) || blocked.overlaps(route.yArea))
-                                } == true) return null
-                                try {
-                                    detector.setScreenBitmap(frame, "route:${route.id}")
-                                    if (!detector.detectImage(map, map.width, map.height, route.mapArea.rect(), 15).isDetected)
-                                        return filter.accept(null)
-                                    if (minimap != null) return minimap.locate(MinimapFrames.read(frame, requireNotNull(route.minimap).area))
-                                    val x = detector.detectNumber(route.xArea.rect(), 15, NumberFormatType.AUTO)
-                                    val y = detector.detectNumber(route.yArea.rect(), 15, NumberFormatType.AUTO)
-                                    val px = x.numberDetected; val py = y.numberDetected
-                                    if (!x.isDetected || !y.isDetected || px == null || py == null ||
-                                        abs(px - round(px)) > 0.01 || abs(py - round(py)) > 0.01) return filter.accept(null)
-                                    return filter.accept(RoutePoint(px, py))
-                                } finally { detector.releaseScreenBitmap(frame) }
+                                return reader.read(frame, control.blockedArea)
                             }
                             override suspend fun move(offset: RoutePoint): Boolean = move(RouteMotion(offset,
                                 if (route.control == RouteControl.JOYSTICK) route.joystickDurationMs else 70))
@@ -223,12 +204,13 @@ class RouteRuntime @Inject internal constructor(
                                 if (trace.size >= 120) trace.removeFirst()
                                 trace.addLast(it)
                             } }
-                            val directional = value.copy(returning = operation == RouteOperation.RETURN)
+                            val directional = value.copy(returning = operation == RouteOperation.RETURN,
+                                diagnostics = reader.diagnostics)
                             report(if (minimap == null) directional else directional.copy(confidence = minimap.quality, trace = trace.toList()))
                         }
                         val pilot = RoutePilot(port, control, progress)
                         fun withLandmarks(r: RecordedRoute) = if (minimap == null) r else r.copy(minimap = minimap.snapshot())
-                        when (operation) {
+                        try { when (operation) {
                             RouteOperation.RECORD -> RouteRunResult(route = withLandmarks(pilot.record(route) { store.save(withLandmarks(it)) }))
                             RouteOperation.CALIBRATE -> RouteRunResult(sample = pilot.calibrate(requireNotNull(calibrationOffset)))
                             RouteOperation.PREVIEW -> if (minimap == null) { pilot.preview(); RouteRunResult() } else {
@@ -239,6 +221,10 @@ class RouteRuntime @Inject internal constructor(
                             RouteOperation.REPLAY, RouteOperation.RETURN -> {
                                 pilot.replay(route, returning = operation == RouteOperation.RETURN); RouteRunResult()
                             }
+                        } } catch (failure: RouteFailure) {
+                            if (failure.reason == RouteMessage.LOST_POSITION)
+                                throw RouteFailure(failure.reason, reader.diagnostics.positionFailure()).also { it.initCause(failure) }
+                            throw failure
                         }
                     } finally {
                         try { detector.close() } finally { template?.recycle() }
@@ -264,5 +250,4 @@ class RouteRuntime @Inject internal constructor(
     }
 }
 
-private fun RouteArea.rect() = Rect(left, top, right, bottom)
 private fun RouteArea.overlaps(other: RouteArea) = left < other.right && other.left < right && top < other.bottom && other.top < bottom
