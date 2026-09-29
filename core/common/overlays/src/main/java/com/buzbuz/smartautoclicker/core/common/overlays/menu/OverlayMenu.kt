@@ -560,14 +560,26 @@ abstract class OverlayMenu(
         !resizeController.isAnimating && !animations.showAnimationIsRunning
                 && !animations.hideAnimationIsRunning && menuBackground.width > 0
 
-    private fun forceWindowResize() {
+    protected fun forceWindowResize() {
         Log.d(TAG, "Force window resize")
         onNewWindowSize(resizeController.measureMenuSize())
     }
 
     private fun onNewWindowSize(size: Size) {
+        val displaySize = displayConfigManager.displayConfig.sizePx
+        val wasAtRightEdge = menuLayoutParams.width > 0 &&
+                menuLayoutParams.x + menuLayoutParams.width == displaySize.x
         menuLayoutParams.width = size.width
         menuLayoutParams.height = size.height
+
+        // A result panel can be wider than the toolbar whose saved position it inherits.
+        // Re-clamp after measuring, not just before the window has a known size.
+        // Collapsed launchers deliberately extend beyond the edge and keep their own policy.
+        if (!isMenuCollapsed) {
+            val maxX = maxOf(0, displaySize.x - size.width)
+            menuLayoutParams.x = if (wasAtRightEdge) maxX else menuLayoutParams.x.coerceIn(0, maxX)
+            menuLayoutParams.y = menuLayoutParams.y.coerceIn(0, maxOf(0, displaySize.y - size.height))
+        }
 
         if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
             Log.d(TAG, "Updating menu window size: ${size.width}/${size.height}")
@@ -686,7 +698,8 @@ abstract class OverlayMenu(
     /** Tells specialised menus on which half of the screen the menu is currently displayed. */
     protected fun isMenuOnLeftHalf(): Boolean {
         val displayWidth = displayConfigManager.displayConfig.sizePx.x
-        return menuLayoutParams.x + menuLayout.width / 2 <= displayWidth / 2
+        val menuWidth = menuLayoutParams.width.takeIf { it > 0 } ?: menuLayout.width
+        return menuLayoutParams.x + menuWidth / 2 <= displayWidth / 2
     }
 
     /** Repositions the menu on the requested edge after a specialised layout resize. */
@@ -888,7 +901,7 @@ abstract class OverlayMenu(
 
     private fun loadMenuPosition(orientation: Int) {
         val savedPosition = positionDataSource.loadMenuPosition(orientation)
-        if (savedPosition != null && savedPosition.x != 0 && savedPosition.y != 0) {
+        if (savedPosition != null) {
             updateMenuPosition(savedPosition)
         } else {
             menuLayout.doWhenMeasured {

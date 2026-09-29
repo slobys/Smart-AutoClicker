@@ -16,7 +16,6 @@
  */
 package com.buzbuz.smartautoclicker.feature.smart.debugging.ui.dialog.live.eventtry
 
-import android.util.Size
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
@@ -30,11 +29,11 @@ import com.buzbuz.smartautoclicker.core.base.extensions.setLeftCompoundDrawable
 import com.buzbuz.smartautoclicker.core.base.isStopScenarioKey
 import com.buzbuz.smartautoclicker.core.domain.model.scenario.Scenario
 import com.buzbuz.smartautoclicker.core.common.overlays.base.viewModels
-import com.buzbuz.smartautoclicker.core.common.overlays.menu.OverlayMenu
 import com.buzbuz.smartautoclicker.core.domain.model.event.ScreenEvent
 import com.buzbuz.smartautoclicker.feature.smart.debugging.R
 import com.buzbuz.smartautoclicker.feature.smart.debugging.databinding.OverlayTryEventMenuBinding
 import com.buzbuz.smartautoclicker.feature.smart.debugging.di.DebuggingViewModelsEntryPoint
+import com.buzbuz.smartautoclicker.feature.smart.debugging.ui.dialog.live.SidePanelOverlayMenu
 import com.buzbuz.smartautoclicker.feature.smart.debugging.ui.dialog.live.uistate.EventResultUiState
 import com.buzbuz.smartautoclicker.feature.smart.debugging.ui.view.DebugOverlayView
 
@@ -43,7 +42,7 @@ import kotlinx.coroutines.launch
 class TryEventOverlayMenu(
     private val scenario: Scenario,
     private val triedElement: ScreenEvent,
-) : OverlayMenu() {
+) : SidePanelOverlayMenu() {
 
     /** The view model for this dialog. */
     private val viewModel: TryElementViewModel by viewModels(
@@ -56,6 +55,8 @@ class TryEventOverlayMenu(
 
     private lateinit var viewBinding: OverlayTryEventMenuBinding
 
+    override val resultPanel: View get() = viewBinding.layoutDebug
+
     override fun onCreateMenu(layoutInflater: LayoutInflater): ViewGroup {
         viewBinding = OverlayTryEventMenuBinding.inflate(LayoutInflater.from(context))
         viewBinding.actionList.adapter = tryEventActionsAdapter
@@ -66,6 +67,7 @@ class TryEventOverlayMenu(
     override fun onCreateOverlayView(): View = DebugOverlayView(context)
 
     override fun onStart() {
+        super.onStart()
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.displayResults.collect(::updateDetectionResults) }
@@ -77,14 +79,6 @@ class TryEventOverlayMenu(
 
     override fun onStop() {
         viewModel.stopTry()
-    }
-
-    override fun getWindowMaximumSize(backgroundView: ViewGroup): Size {
-        val bgSize = super.getWindowMaximumSize(backgroundView)
-        return Size(
-            bgSize.width + context.resources.getDimensionPixelSize(R.dimen.overlay_debug_text_width),
-            bgSize.height,
-        )
     }
 
     override fun onMenuItemClicked(viewId: Int) {
