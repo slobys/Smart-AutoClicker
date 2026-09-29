@@ -38,7 +38,7 @@ import javax.inject.Singleton
 import kotlin.math.abs
 import kotlin.math.round
 
-enum class RouteOperation { PREVIEW, RECORD, REPLAY, CALIBRATE }
+enum class RouteOperation { PREVIEW, RECORD, REPLAY, RETURN, CALIBRATE }
 data class RouteRunResult(val route: RecordedRoute? = null, val sample: RouteCalibrationSample? = null)
 
 @Singleton
@@ -148,7 +148,8 @@ class RouteRuntime @Inject internal constructor(
                         val minimap = route.minimap?.takeIf { route.positionMode == RoutePositionMode.MINIMAP }?.let {
                             if (operation != RouteOperation.PREVIEW && !it.tested) throw RouteFailure(RouteMessage.LOCALIZATION_WEAK)
                             MinimapLocalizer(it, operation == RouteOperation.RECORD || operation == RouteOperation.PREVIEW,
-                                MinimapMatcher()::match)
+                                initialPosition = if (operation == RouteOperation.RETURN) route.points.lastOrNull() else route.points.firstOrNull(),
+                                match = MinimapMatcher()::match)
                         }
                         val bytes = Base64.decode(route.mapPng, Base64.NO_WRAP)
                         val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -222,7 +223,8 @@ class RouteRuntime @Inject internal constructor(
                                 if (trace.size >= 120) trace.removeFirst()
                                 trace.addLast(it)
                             } }
-                            report(if (minimap == null) value else value.copy(confidence = minimap.quality, trace = trace.toList()))
+                            val directional = value.copy(returning = operation == RouteOperation.RETURN)
+                            report(if (minimap == null) directional else directional.copy(confidence = minimap.quality, trace = trace.toList()))
                         }
                         val pilot = RoutePilot(port, control, progress)
                         fun withLandmarks(r: RecordedRoute) = if (minimap == null) r else r.copy(minimap = minimap.snapshot())
@@ -234,7 +236,9 @@ class RouteRuntime @Inject internal constructor(
                                 // Test landmarks are not copied into the route: recording must start at its own origin.
                                 RouteRunResult(route = route.copy(minimap = route.minimap?.copy(tested = result)))
                             }
-                            RouteOperation.REPLAY -> { pilot.replay(route); RouteRunResult() }
+                            RouteOperation.REPLAY, RouteOperation.RETURN -> {
+                                pilot.replay(route, returning = operation == RouteOperation.RETURN); RouteRunResult()
+                            }
                         }
                     } finally {
                         try { detector.close() } finally { template?.recycle() }

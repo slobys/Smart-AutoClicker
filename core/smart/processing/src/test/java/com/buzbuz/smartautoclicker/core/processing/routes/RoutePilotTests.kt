@@ -16,6 +16,8 @@ class RoutePilotTests {
         override var epoch: Long = 0
         var position: RoutePoint? = RoutePoint(10.0, 10.0)
         var movements = 0
+        val visited = mutableListOf<RoutePoint>()
+        var applyMovements = true
         var reads = 0
         var moveSucceeds = true
         var filter: RouteCoordinateFilter? = null
@@ -26,7 +28,8 @@ class RoutePilotTests {
         override fun resetObservation() { resets++; filter?.reset() }
         override suspend fun move(offset: RoutePoint): Boolean {
             movements++
-            if (moveSucceeds) position = position?.plus(offset * .1)
+            if (moveSucceeds && applyMovements) position = position?.plus(offset * .1)
+            position?.let(visited::add)
             return moveSucceeds
         }
     }
@@ -74,7 +77,7 @@ class RoutePilotTests {
         }.replay(exampleRoute())
         assertEquals(port.position, paused?.position)
         assertEquals(exampleRoute().points.first(), paused?.expectedPosition)
-        assertEquals(5.0, paused!!.allowedDistance!!, .001)
+        assertEquals(exampleRoute().entryRadius(), paused!!.allowedDistance!!, .001)
     }
     @Test fun movingAwayDuringPauseStillCannotCutAcrossTheMap() = runTest {
         val port = FakePort { testScheduler.currentTime }
@@ -162,6 +165,83 @@ class RoutePilotTests {
         RoutePilot(port, control) { if (it.message == RouteMessage.COMPLETE) completedAt = port.reads }.replay(route)
         // A hit before a pause must not combine with one after the pause to advance a waypoint.
         assertTrue(completedAt >= 5)
+        assertEquals(0, port.movements)
+    }
+
+    @Test fun nearStartAutomaticallyApproachesBeforeFollowingEveryWaypoint() = runTest {
+        val route = exampleRoute()
+        val port = FakePort { testScheduler.currentTime }.apply { position = RoutePoint(3.0, 10.0) }
+        val updates = mutableListOf<RouteProgress>()
+        withTimeout(20_000) { RoutePilot(port, RouteRunControl(), updates::add).replay(route) }
+        assertEquals(route.points, port.visited)
+        assertEquals(3, port.movements)
+        assertTrue(updates.any { it.message == RouteMessage.APPROACHING_START && it.expectedPosition == route.points.first() })
+        assertEquals(RouteMessage.COMPLETE, updates.last().message)
+    }
+
+    @Test fun returningNearEndpointVisitsCornerThenStartWithoutChangingRecording() = runTest {
+        val route = exampleRoute()
+        val saved = route.copy(points = route.points.toList())
+        val port = FakePort { testScheduler.currentTime }.apply { position = RoutePoint(27.0, 20.0) }
+        withTimeout(20_000) { RoutePilot(port, RouteRunControl()) {}.replay(route, returning = true) }
+        assertEquals(route.points.reversed(), port.visited)
+        assertEquals(route.points.first(), port.position)
+        assertEquals(saved, route)
+    }
+
+    @Test fun reverseChecksEndpointNotOriginalStartAndCannotStartFarAway() = runTest {
+        val route = exampleRoute().copy(points = listOf(RoutePoint(10.0, 10.0), RoutePoint(50.0, 10.0)))
+        val port = FakePort { testScheduler.currentTime }
+        val c = RouteRunControl()
+        var blocked: RouteProgress? = null
+        RoutePilot(port, c) { if (it.message == RouteMessage.WRONG_START) { blocked = it; c.stopped = true } }
+            .replay(route, returning = true)
+        assertEquals(route.points.last(), blocked?.expectedPosition)
+        assertEquals(0, port.movements)
+    }
+
+    @Test fun lostCoordinatesDuringReturnPauseWithoutMovement() = runTest {
+        val port = FakePort { testScheduler.currentTime }.apply { position = null }
+        val c = RouteRunControl()
+        RoutePilot(port, c) { if (it.message == RouteMessage.LOST_POSITION) c.stopped = true }
+            .replay(exampleRoute(), returning = true)
+        assertTrue(c.paused)
+        assertEquals(0, port.movements)
+    }
+
+    @Test fun approachCanBePausedBeforeAnyGestureAndThenContinued() = runTest {
+        val port = FakePort { testScheduler.currentTime }.apply { position = RoutePoint(3.0, 10.0) }
+        val c = RouteRunControl()
+        var pausedOnce = false
+        withTimeout(30_000) {
+            RoutePilot(port, c) {
+                if (!pausedOnce && it.message == RouteMessage.APPROACHING_START) {
+                    pausedOnce = true; c.paused = true
+                    launch { delay(5_000); assertEquals(0, port.movements); c.paused = false }
+                }
+            }.replay(exampleRoute())
+        }
+        assertEquals(3, port.movements)
+    }
+
+    @Test fun blockedApproachStillStopsAfterNoProgress() = runTest {
+        val port = FakePort { testScheduler.currentTime }.apply {
+            position = RoutePoint(3.0, 10.0); applyMovements = false
+        }
+        val c = RouteRunControl()
+        var stuck = false
+        withTimeout(20_000) {
+            RoutePilot(port, c) { if (it.message == RouteMessage.STUCK) { stuck = true; c.stopped = true } }.replay(exampleRoute())
+        }
+        assertTrue(stuck); assertTrue(c.paused)
+        assertEquals(RoutePoint(3.0, 10.0), port.position)
+        assertTrue(port.movements in 1..10)
+    }
+
+    @Test fun reverseAtEndpointCanStopBeforeDispatch() = runTest {
+        val port = FakePort { testScheduler.currentTime }.apply { position = exampleRoute().points.last() }
+        val c = RouteRunControl()
+        RoutePilot(port, c) { if (it.count == 1) c.stopped = true }.replay(exampleRoute(), returning = true)
         assertEquals(0, port.movements)
     }
 }

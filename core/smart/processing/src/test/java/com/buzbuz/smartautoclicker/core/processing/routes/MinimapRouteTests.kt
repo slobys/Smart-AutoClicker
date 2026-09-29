@@ -37,6 +37,31 @@ class MinimapRouteTests {
         val locator = MinimapLocalizer(config(), false) { _, _, _ -> MinimapMatcher.Match(-10.0, 4.0, .9, 8) }
         assertEquals(RoutePoint(50_010.0, 49_996.0), locator.locate(bytes))
     }
+    @Test fun returnLocalizesNearLastLandmarkAndTraversesBackWithoutRebasing() {
+        val frames = (0..5).map { i -> RouteKeyframe(RoutePoint(50_000.0 + i * 24, 50_000.0),
+            MinimapFrames.encode(ByteArray(192 * 192) { i.toByte() })) }
+        val c = config().copy(keyframes = frames)
+        var currentX = 50_120.0
+        val match: (ByteArray, ByteArray, Int) -> MinimapMatcher.Match? = { reference, _, _ ->
+            val dx = 50_000.0 + reference[0] * 24 - currentX
+            if (kotlin.math.abs(dx) <= 24) MinimapMatcher.Match(dx, 0.0, .9, 8) else null
+        }
+        assertNull(MinimapLocalizer(c, false, match = match).locate(bytes))
+        val locator = MinimapLocalizer(c, false, initialPosition = frames.last().position, match = match)
+        for (step in 0..10) {
+            currentX = 50_120.0 - step * 12
+            assertEquals(RoutePoint(currentX, 50_000.0), locator.locate(bytes))
+        }
+        assertEquals(c, locator.snapshot())
+    }
+    @Test fun choosingReturnLandmarkDoesNotBypassConflictProtection() {
+        val c = config().copy(keyframes = (0..5).map { i -> config().keyframes.first().copy(
+            position = RoutePoint(50_000.0 + i * 24, 50_000.0)) })
+        val locator = MinimapLocalizer(c, false, initialPosition = c.keyframes.last().position) { _, _, _ ->
+            MinimapMatcher.Match(0.0, 0.0, .9, 8)
+        }
+        assertNull(locator.locate(bytes))
+    }
     @Test fun locatorNeverReturnsLastCoordinateOnFailure() {
         var succeed = true
         val locator = MinimapLocalizer(config(), false) { _, _, _ -> if (succeed) MinimapMatcher.Match(0.0, 0.0, .9, 8) else null }

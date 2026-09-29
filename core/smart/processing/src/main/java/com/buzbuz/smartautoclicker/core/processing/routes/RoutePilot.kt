@@ -6,13 +6,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 
 enum class RouteMessage {
-    PREPARING, READING, RECORDING, REPLAYING, PAUSED, COMPLETE, SAVED_DRAFT, DONE,
+    PREPARING, READING, RECORDING, APPROACHING_START, REPLAYING, PAUSED, COMPLETE, SAVED_DRAFT, DONE,
     WRONG_START, POSITION_JUMP, STUCK, TIMEOUT, LOST_POSITION, BAD_CALIBRATION, RESOLUTION_CHANGED,
     SERVICE_STOPPED, MODELS_MISSING, GESTURE_FAILED, LIMIT_REACHED, FAILED, LOCALIZATION_PASSED, LOCALIZATION_WEAK,
 }
 data class RouteProgress(val message: RouteMessage, val position: RoutePoint? = null, val count: Int = 0,
     val confidence: Double? = null, val trace: List<RoutePoint> = emptyList(), val observations: Int? = null,
-    val expectedPosition: RoutePoint? = null, val allowedDistance: Double? = null)
+    val expectedPosition: RoutePoint? = null, val allowedDistance: Double? = null, val returning: Boolean = false)
 
 class RouteRunControl {
     @Volatile var stopped = false
@@ -133,10 +133,12 @@ internal class RoutePilot(
         return RouteCalibrationSample(offset, delta)
     }
 
-    suspend fun replay(route: RecordedRoute) {
+    suspend fun replay(route: RecordedRoute, returning: Boolean = false) {
         val calibration = route.calibration ?: throw RouteFailure(RouteMessage.BAD_CALIBRATION)
         require(route.recordingComplete && route.points.size >= 2 && calibration.valid())
-        val follower = RouteFollower(route.points, route.tolerance)
+        // Reverse the traversal only, never the saved route or its coordinate/calibration basis.
+        val points = if (returning) route.points.reversed() else route.points
+        val follower = RouteFollower(points, route.tolerance, route.entryRadius())
         var previous: RoutePoint? = null
         var lastKnown: RoutePoint? = null
         var lastGood = port.now()
@@ -174,12 +176,14 @@ internal class RoutePilot(
             if (decision is RouteFollower.Decision.Pause) {
                 val wrongStart = decision.reason == RouteFollower.Reason.WRONG_START
                 pause(RouteMessage.valueOf(decision.reason.name), follower.index, position,
-                    if (wrongStart) route.points.first() else null,
+                    if (wrongStart) points.first() else null,
                     if (wrongStart) follower.startTolerance else null)
                 continue
             }
             lastKnown = position
-            report(RouteProgress(RouteMessage.REPLAYING, position, follower.index))
+            val approaching = follower.index == 0
+            report(RouteProgress(if (approaching) RouteMessage.APPROACHING_START else RouteMessage.REPLAYING,
+                position, follower.index, expectedPosition = if (approaching) points.first() else null))
             when (decision) {
                 RouteFollower.Decision.Complete -> { report(RouteProgress(RouteMessage.COMPLETE, position, follower.index)); return }
                 RouteFollower.Decision.Wait -> Unit

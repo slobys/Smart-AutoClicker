@@ -51,4 +51,25 @@ class RouteSelectionTests {
         assertTrue(text.contains("未识别"))
         assertFalse(text.contains("需返回"))
     }
+    @Test fun approachStatusDoesNotTellUserToWalkManuallyOrResume() {
+        val text = RouteProgress(RouteMessage.APPROACHING_START, RoutePoint(107.0, 100.0),
+            expectedPosition = RoutePoint(100.0, 100.0)).statusText(RuntimeEnvironment.getApplication())
+        assertTrue(text.contains("自动接近起点"))
+        assertTrue(text.contains("100, 100"))
+        assertTrue(text.contains("小步移动"))
+        assertFalse(text.contains("复查继续"))
+    }
+    @Test fun returnStatusNamesEndpointAndCompletionNamesStart() {
+        val context = RuntimeEnvironment.getApplication()
+        val blocked = RouteProgress(RouteMessage.WRONG_START, RoutePoint(200.0, 200.0),
+            expectedPosition = RoutePoint(110.0, 110.0), allowedDistance = 10.0, returning = true).statusText(context)
+        assertTrue(blocked.contains("距离录制终点过远"))
+        assertTrue(blocked.contains("终点允许范围"))
+        assertFalse(blocked.contains("距离录制起点"))
+        assertTrue(RouteProgress(RouteMessage.APPROACHING_START, returning = true).statusText(context).contains("准备返程"))
+        assertTrue(RouteProgress(RouteMessage.REPLAYING, returning = true).statusText(context).contains("沿原路返回"))
+        val completed = RouteProgress(RouteMessage.COMPLETE, returning = true).statusText(context)
+        assertTrue(completed.contains("已返回录制起点"))
+        assertFalse(completed.contains("到达路线终点"))
+    }
 }

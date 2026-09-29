@@ -75,7 +75,7 @@ class RouteViewModel @Inject constructor(val store: RouteStore, val runtime: Rou
         val r = route ?: return@buildList
         if (operation != RouteOperation.PREVIEW && r.positionMode == RoutePositionMode.MINIMAP && r.minimap?.tested != true)
             add(R.string.route_need_test)
-        if (operation == RouteOperation.REPLAY) {
+        if (operation == RouteOperation.REPLAY || operation == RouteOperation.RETURN) {
             if (r.calibration == null) {
                 if (sampleA == null) add(R.string.route_need_calibration_a)
                 if (sampleB == null) add(R.string.route_need_calibration_b)

@@ -47,6 +47,7 @@ class RouteDialog : OverlayDialog(R.style.ScenarioConfigTheme) {
     private var storageBusy = false
     private var deleteConfirmation: AlertDialog? = null
     private var issueDialog: AlertDialog? = null
+    private var returnConfirmation: AlertDialog? = null
 
     override fun onCreateView(): ViewGroup {
         content = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(12), dp(20), dp(20)) }
@@ -80,6 +81,8 @@ class RouteDialog : OverlayDialog(R.style.ScenarioConfigTheme) {
         deleteConfirmation = null
         issueDialog?.dismiss()
         issueDialog = null
+        returnConfirmation?.dismiss()
+        returnConfirmation = null
         super.onStop()
     }
 
@@ -168,6 +171,7 @@ class RouteDialog : OverlayDialog(R.style.ScenarioConfigTheme) {
         button(R.string.route_record) { run(RouteOperation.RECORD) }
         replayButton = makeButton(context.getString(R.string.route_replay), primary = true) { run(RouteOperation.REPLAY) }
         content.addView(replayButton)
+        button(R.string.route_reverse) { confirmReturn() }
         row(R.string.route_save to { save() }, R.string.route_delete to { delete() })
         title(R.string.route_saved)
         savedList = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
@@ -298,6 +302,20 @@ class RouteDialog : OverlayDialog(R.style.ScenarioConfigTheme) {
         }
     }
 
+    private fun confirmReturn() {
+        val issues = model.operationIssues(RouteOperation.RETURN)
+        if (issues.isNotEmpty()) { blocked(issues); return }
+        returnConfirmation?.dismiss()
+        returnConfirmation = MaterialAlertDialogBuilder(context).setTitle(R.string.route_reverse)
+            .setMessage(R.string.route_reverse_confirm)
+            .setNegativeButton(R.string.route_cancel, null)
+            .setPositiveButton(R.string.route_reverse_start) { _, _ -> run(RouteOperation.RETURN) }
+            .create().apply {
+                window?.setType(com.buzbuz.smartautoclicker.core.common.overlays.manager.OverlayManager.OVERLAY_WINDOW_TYPE)
+                show()
+            }
+    }
+
     private fun run(operation: RouteOperation) {
         val issues = model.operationIssues(operation)
         if (issues.isNotEmpty()) { blocked(issues); return }
@@ -310,9 +328,10 @@ class RouteDialog : OverlayDialog(R.style.ScenarioConfigTheme) {
         val label = when (operation) {
             RouteOperation.RECORD -> R.string.route_record
             RouteOperation.REPLAY -> R.string.route_replay
+            RouteOperation.RETURN -> R.string.route_reverse
             else -> if (route.positionMode == RoutePositionMode.MINIMAP) R.string.route_minimap_test else R.string.route_preview
         }
-        launchOperation(label, operation == RouteOperation.REPLAY) { control, report ->
+        launchOperation(label, operation == RouteOperation.REPLAY || operation == RouteOperation.RETURN) { control, report ->
             val result = model.runtime.run(route, operation, control, report = report)
             result.route?.let {
                 model.route = it
@@ -324,8 +343,9 @@ class RouteDialog : OverlayDialog(R.style.ScenarioConfigTheme) {
             if (operation == RouteOperation.RECORD) feedback(if (model.route?.recordingComplete == true)
                 context.getString(R.string.route_recorded_feedback, model.route?.points?.size ?: 0)
                 else context.getString(R.string.route_message_saved_draft))
-            else if (operation == RouteOperation.REPLAY) feedback(context.getString(
-                if (control.stopped) R.string.route_stopped_feedback else R.string.route_message_complete))
+            else if (operation == RouteOperation.REPLAY || operation == RouteOperation.RETURN) feedback(context.getString(
+                if (control.stopped) R.string.route_stopped_feedback else if (operation == RouteOperation.RETURN)
+                    R.string.route_message_return_complete else R.string.route_message_complete))
             else feedback(context.getString(if (route.positionMode == RoutePositionMode.MINIMAP && model.route?.minimap?.tested != true)
                 R.string.route_message_localization_weak else R.string.route_message_done))
         }
@@ -371,7 +391,8 @@ class RouteDialog : OverlayDialog(R.style.ScenarioConfigTheme) {
                 "  A:${if (model.sampleA != null) "✓" else "—"} B:${if (model.sampleB != null) "✓" else "—"}"
         if (!::readinessView.isInitialized || !::replayButton.isInitialized) return
         val issues = model.operationIssues(RouteOperation.REPLAY)
-        readinessView.text = if (issues.isEmpty()) context.getString(R.string.route_ready_help) else
+        readinessView.text = if (issues.isEmpty()) context.getString(R.string.route_ready_help) + "\n" +
+            context.getString(R.string.route_entry_help, model.route?.entryRadius() ?: 5.0) else
             context.getString(R.string.route_not_ready) + "\n" + issues.joinToString("\n") { "• " + context.getString(it) }
         readinessView.setTextColor(MaterialColors.getColor(readinessView, if (issues.isEmpty())
             com.google.android.material.R.attr.colorOnSurface else androidx.appcompat.R.attr.colorError))

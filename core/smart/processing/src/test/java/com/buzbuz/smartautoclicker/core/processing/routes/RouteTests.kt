@@ -16,6 +16,28 @@ internal fun exampleCalibration() = RouteCalibration(
 )
 
 class RouteTests {
+    @Test fun entryRangeIsCalibratedBoundedAndDoesNotLoosenWaypointPrecision() {
+        val route = exampleRoute()
+        assertEquals(10.0, route.entryRadius(), .001)
+        val fast = route.copy(calibration = RouteCalibration(
+            RouteCalibrationSample(RoutePoint(100.0, 0.0), RoutePoint(100.0, 0.0)),
+            RouteCalibrationSample(RoutePoint(0.0, 100.0), RoutePoint(0.0, 100.0))))
+        assertEquals(15.0, fast.entryRadius(), .001)
+        assertEquals(10.0, fast.copy(positionMode = RoutePositionMode.MINIMAP).entryRadius(), .001)
+        assertEquals(5.0, route.copy(calibration = null).entryRadius(), .001)
+        val f = RouteFollower(route.points, route.tolerance, route.entryRadius())
+        // Inside approach range, but still must reach and confirm waypoint zero.
+        assertEquals(RouteFollower.Decision.Move(route.points.first()), f.observe(RoutePoint(0.0, 10.0), 0))
+        assertEquals(RouteFollower.Decision.Move(route.points.first()), f.observe(RoutePoint(3.0, 10.0), 400))
+        assertEquals(0, f.index)
+    }
+    @Test fun justOutsideApproachBoundaryStillCannotMove() {
+        val route = exampleRoute()
+        val f = RouteFollower(route.points, route.tolerance, route.entryRadius())
+        assertEquals(RouteFollower.Decision.Pause(RouteFollower.Reason.WRONG_START),
+            f.observe(RoutePoint(20.01, 10.0), 0))
+        assertFalse(f.hasStarted)
+    }
     @Test fun validRouteAndCalibration() { assertTrue(exampleRoute().valid()); assertTrue(exampleCalibration().valid()) }
     @Test fun mapsWorldCoordinatesToScreenAndLimitsStepSize() {
         val c = exampleCalibration()

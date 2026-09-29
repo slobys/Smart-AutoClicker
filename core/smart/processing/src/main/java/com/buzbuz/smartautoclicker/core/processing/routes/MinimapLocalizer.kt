@@ -36,12 +36,14 @@ internal object MinimapFrames {
 internal class MinimapLocalizer(
     config: RouteMinimap,
     private val allowLearning: Boolean,
+    initialPosition: RoutePoint? = null,
     private val match: (ByteArray, ByteArray, Int) -> MinimapMatcher.Match?,
 ) {
     private val initial = config
     private val frames = config.keyframes.toMutableList()
     private val pixels = frames.map { MinimapFrames.decode(it.gray) }.toMutableList()
-    private var index = 0
+    // Returning begins at the recorded endpoint, which can be many landmarks from the start.
+    private var index = initialPosition?.let { p -> frames.indices.minByOrNull { frames[it].position.distance(p) } } ?: 0
     private var previous: RoutePoint? = null
     var quality: Double = 0.0
         private set

@@ -29,8 +29,12 @@
     <string name="route_actions">3. Record and replay</string>
     <string name="route_preview">Test coordinates (no movement)</string>
     <string name="route_record">Record a new route</string>
-    <string name="route_record_help">Stand at the start, record, then walk normally. Tap Finish at the destination. Recording again creates a new route; the old route is kept. Every 5 seconds a draft is saved. An interrupted draft cannot be replayed. Before replay, return to the recorded start and stop moving.</string>
+    <string name="route_record_help">Record while walking normally, then tap Finish. New recordings keep old routes; drafts are saved every 5 seconds but cannot replay. For replay, stand near the start and let the app approach it. At the endpoint, use Return along route.</string>
     <string name="route_replay">Replay route</string>
+    <string name="route_reverse">Return along route to start</string>
+    <string name="route_reverse_start">Confirm return</string>
+    <string name="route_reverse_confirm">Stand near the recorded endpoint. The app will follow the saved waypoints in reverse, without crossing the whole map directly or changing your recording.\n\nCheck that the path is reversible. One-way gates, drops, teleports and doors needing interaction are not supported. It pauses if stuck. At the start, tap Replay yourself; this does not start an automatic loop.</string>
+    <string name="route_entry_help">Approach range: ≤ %1$.1f position units; exact coordinates are not required. Stand still with a clear path nearby. Distant or arbitrary mid-route entry is not supported.</string>
     <string name="route_save">Save configuration</string>
     <string name="route_delete">Delete loaded route</string>
     <string name="route_action_delete">Delete action</string>
@@ -50,7 +54,7 @@
     <string name="route_starting">Starting: %1$s. Check the floating status panel that opens next.</string>
     <string name="route_not_ready">Not ready — complete these settings</string>
     <string name="route_check_replay">Check replay requirements</string>
-    <string name="route_ready_help">✓ Replay configuration ready. Return to the original start and stand still before replaying. Map and position will still be checked at runtime.</string>
+    <string name="route_ready_help">✓ Ready. Stand near the start and tap Replay: the app approaches the start before following the entire route. At the endpoint, use Return along route.</string>
     <string name="route_need_name">Enter a route name (1–60 characters).</string>
     <string name="route_need_x">Select a valid X coordinate area.</string>
     <string name="route_need_y">Select a valid Y coordinate area.</string>
@@ -74,7 +78,7 @@
     <string name="route_minimap_captured">Minimap reference captured. Test localization next.</string>
     <string name="route_calibration_a_done">Calibration A complete. Finish B, then save both directions.</string>
     <string name="route_calibration_b_done">Calibration B complete. Finish A, then save both directions.</string>
-    <string name="route_calibrated_saved">✓ Both directions calibrated and saved to the original route. No re-recording needed. Return to its start before replay.</string>
+    <string name="route_calibrated_saved">✓ Calibration saved to the original route; no re-recording needed. Replay near the start, or return along the route from near its endpoint.</string>
     <string name="route_calibrated_save_needed">✓ Both directions calibrated. Save configuration or record a new route next.</string>
     <string name="route_recorded_feedback">Recording saved. Waypoint count: %1$d. Check calibration before replay.</string>
     <string name="route_saved_feedback">✓ Current configuration for “%1$s” saved.</string>
@@ -99,10 +103,19 @@
     <string name="route_message_reading">Reading coordinates / checking map</string>
     <string name="route_message_recording">Recording — walk normally</string>
     <string name="route_message_replaying">Following route</string>
+    <string name="route_message_approaching_start">Approaching the recorded start</string>
+    <string name="route_message_approaching_end">Approaching the endpoint before returning</string>
+    <string name="route_message_returning">Returning along the saved route</string>
+    <string name="route_message_return_complete">Returned to the recorded start; ready to replay</string>
+    <string name="route_message_wrong_end">Not moving: too far from the recorded endpoint</string>
+    <string name="route_approach_position">Approaching: %1$s</string>
+    <string name="route_approach_help">Moving in small steps. Do not steer manually; Pause remains available.</string>
+    <string name="route_wrong_start_help">Walk within the allowed range, stop, then tap Resume. Exact alignment is unnecessary. At the endpoint, finish this operation and choose Return along route.</string>
+    <string name="route_wrong_end_help">Walk within range of the endpoint, stop, then tap Resume. Exact alignment is unnecessary.</string>
     <string name="route_message_paused">Paused — no more moves will be sent</string>
     <string name="route_message_complete">Route completed</string>
     <string name="route_message_saved_draft">Draft saved; record again before replay</string>
-    <string name="route_message_wrong_start">Not moving: current position is not at the route start</string>
+    <string name="route_message_wrong_start">Not moving: too far from the recorded start</string>
     <string name="route_message_stuck">Paused: no progress for 15 seconds</string>
     <string name="route_message_timeout">Paused: waypoint timed out</string>
     <string name="route_message_lost_position">Coordinates or map lost. Replay paused; recording draft kept.</string>
@@ -135,5 +148,5 @@
     <string name="route_return_position">Return to: %1$s</string>
     <string name="route_return_distance">Distance %1$.1f; allowed ≤ %2$.1f</string>
     <string name="route_return_help">Walk back, stand still, then tap Resume to recheck.</string>
-    <string name="route_endpoints">Recorded start: %1$s → End: %2$s\nThe start and end can differ. Replay must begin at the start, not the end.</string>
+    <string name="route_endpoints">Recorded start: %1$s → End: %2$s\nThey can differ. Replay approaches the start from nearby; Return follows the route back from near the endpoint.</string>
 </resources>

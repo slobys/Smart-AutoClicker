@@ -97,6 +97,16 @@ data class RecordedRoute(
 const val MAX_ROUTE_POINTS = 2_000
 internal val ROUTE_ID = Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 
+/** Only a nearby, calibrated approach is allowed; waypoint arrival precision stays unchanged. */
+fun RecordedRoute.entryRadius(): Double {
+    val minimum = maxOf(5.0, tolerance * 2)
+    val c = calibration ?: return minimum
+    val origin = RoutePoint(0.0, 0.0)
+    val calibratedStep = minOf(c.first.mapDelta.distance(origin), c.second.mapDelta.distance(origin))
+    val maximum = if (positionMode == RoutePositionMode.MINIMAP) 10.0 else 15.0
+    return calibratedStep.coerceIn(minimum, maximum)
+}
+
 /** Rejects impossible coordinates and isolated OCR jumps. Never substitutes an unreadable value with zero. */
 class RouteCoordinateFilter {
     private var previous: RoutePoint? = null
@@ -122,17 +132,18 @@ class RouteCoordinateFilter {
 }
 
 /** Event-independent, clock-injected follower. Only confirmed positions advance the route. */
-class RouteFollower(private val points: List<RoutePoint>, private val tolerance: Double) {
+class RouteFollower(private val points: List<RoutePoint>, private val tolerance: Double,
+    val startTolerance: Double = maxOf(5.0, tolerance * 2)) {
     init {
         require(points.size in 2..MAX_ROUTE_POINTS && points.all { it.valid() })
         require(tolerance.isFinite() && tolerance in 1.0..5.0)
+        require(startTolerance.isFinite() && startTolerance in maxOf(5.0, tolerance * 2)..15.0)
     }
 
     var index = 0
         private set
     private var started = false
     val hasStarted: Boolean get() = started
-    val startTolerance: Double get() = maxOf(5.0, tolerance * 2)
     private var hits = 0
     private var segmentStarted = 0L
     private var progressAt = 0L

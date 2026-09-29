@@ -11,6 +11,15 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 
 class RouteViewModelTests {
+    @Test fun returningRequiresSameCompleteRecordingAndCalibrationAsReplay() {
+        val m = recordedModel()
+        assertFalse(m.operationIssues(RouteOperation.RETURN).isEmpty())
+        assertEquals(m.operationIssues(RouteOperation.REPLAY), m.operationIssues(RouteOperation.RETURN))
+        m.setSample(true, sampleA); m.setSample(false, sampleB)
+        assertTrue(m.operationIssues(RouteOperation.RETURN).isEmpty())
+        m.route = m.route!!.copy(recordingComplete = false)
+        assertEquals(listOf(R.string.route_need_recording), m.operationIssues(RouteOperation.RETURN))
+    }
     private fun configuredModel() = RouteViewModel(mock(), mock()).apply {
         newRoute(1920, 1080, "Route")
         route = route!!.copy(xArea = RouteArea(0, 0, 50, 50), yArea = RouteArea(50, 0, 100, 50),

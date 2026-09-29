@@ -124,13 +124,24 @@ internal fun RouteProgress.statusText(context: android.content.Context): String 
     val currentPosition = position
     append(context.getString(
         if (observations == null) R.string.route_progress else R.string.route_progress_samples,
-        context.getString(message.stringId()),
+        context.getString(when {
+            returning && message == RouteMessage.APPROACHING_START -> R.string.route_message_approaching_end
+            returning && message == RouteMessage.REPLAYING -> R.string.route_message_returning
+            returning && message == RouteMessage.COMPLETE -> R.string.route_message_return_complete
+            returning && message == RouteMessage.WRONG_START -> R.string.route_message_wrong_end
+            else -> message.stringId()
+        }),
         currentPosition?.coordinateText() ?: context.getString(R.string.route_no_coordinate), observations ?: count))
     expectedPosition?.let { expected ->
-        append("\n").append(context.getString(R.string.route_return_position, expected.coordinateText()))
+        append("\n").append(context.getString(if (message == RouteMessage.APPROACHING_START)
+            R.string.route_approach_position else R.string.route_return_position, expected.coordinateText()))
         if (currentPosition != null && allowedDistance != null)
             append("\n").append(context.getString(R.string.route_return_distance, currentPosition.distance(expected), allowedDistance))
-        append("\n").append(context.getString(R.string.route_return_help))
+        append("\n").append(context.getString(when (message) {
+            RouteMessage.APPROACHING_START -> R.string.route_approach_help
+            RouteMessage.WRONG_START -> if (returning) R.string.route_wrong_end_help else R.string.route_wrong_start_help
+            else -> R.string.route_return_help
+        }))
     }
     confidence?.let { append("\n").append(context.getString(R.string.route_localization_confidence, (it * 100).toInt())) }
 }
@@ -141,6 +152,7 @@ internal fun RouteMessage.stringId(): Int = when (this) {
     RouteMessage.PREPARING -> R.string.route_message_preparing
     RouteMessage.READING -> R.string.route_message_reading
     RouteMessage.RECORDING -> R.string.route_message_recording
+    RouteMessage.APPROACHING_START -> R.string.route_message_approaching_start
     RouteMessage.REPLAYING -> R.string.route_message_replaying
     RouteMessage.PAUSED -> R.string.route_message_paused
     RouteMessage.COMPLETE -> R.string.route_message_complete
