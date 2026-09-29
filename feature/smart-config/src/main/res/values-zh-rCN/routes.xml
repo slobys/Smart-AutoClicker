@@ -19,7 +19,7 @@
     <string name="route_ground">点击地面</string>
     <string name="route_joystick">固定摇杆短按</string>
     <string name="route_anchor">选择角色脚下／摇杆中心</string>
-    <string name="route_calibration_help">角色先站稳。选旁边一处无遮挡地面，再点“执行校准 A”：这会让角色移动一次。B 选择另一方向（尽量与 A 垂直）。点击地面模式要求镜头跟随角色、脚下位置始终在锚点；镜头或移速改变后需重新校准。</string>
+    <string name="route_calibration_help">A/B 是两个方向的校准样本，不是路线起点和终点，回放不会轮流执行 A/B。它们用于测量“屏幕点击方向”与“地图坐标变化”的对应关系。\n\n角色先站稳，选择旁边无遮挡、不会点到角色自身的地面，再执行 A；B 换另一方向，尽量与 A 垂直。点击地面模式要求镜头跟随角色、脚下位置始终在锚点。镜头或移速改变后需重新校准，原路径点可保留。</string>
     <string name="route_target_a">选择校准 A 目标</string>
     <string name="route_target_b">选择校准 B 目标</string>
     <string name="route_calibrate_a">执行校准 A（会移动）</string>
@@ -29,7 +29,7 @@
     <string name="route_actions">3．录制与回放</string>
     <string name="route_preview">测试坐标（不会移动）</string>
     <string name="route_record">开始录制新路线</string>
-    <string name="route_record_help">站在起点开始录制，正常走路，到终点点“结束”。重新录制创建新路线，不覆盖旧路线；每 5 秒存草稿，中断草稿不能回放。回放只需站在起点附近，软件会小步接近起点。录完站在终点附近，可选“沿原路返回起点”。</string>
+    <string name="route_record_help">站在起点开始录制，正常走路，到终点点“结束”。重新录制创建新路线，不覆盖旧路线；每 5 秒存草稿，中断草稿不能回放。回放只需站在起点附近，软件会小步接近起点；直线路段合并密集采样点，拐点和终点仍需确认。这不是按原录制时长播放，识别和校验会增加耗时。录完站在终点附近，可选“沿原路返回起点”。</string>
     <string name="route_replay">开始回放</string>
     <string name="route_reverse">沿原路返回起点</string>
     <string name="route_reverse_start">确认原路返回</string>

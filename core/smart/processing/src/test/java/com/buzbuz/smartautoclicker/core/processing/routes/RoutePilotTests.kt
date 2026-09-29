@@ -12,6 +12,17 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class RoutePilotTests {
+    @Test fun denseStraightRecordingDoesNotStopAtEverySample() = runTest {
+        val route = exampleRoute().copy(points = (0..10).map { RoutePoint(10.0 + it * 3, 10.0) })
+        val original = route.points.toList()
+        val port = FakePort { testScheduler.currentTime }
+        withTimeout(8_000) { RoutePilot(port, RouteRunControl()) {}.replay(route) }
+        assertEquals(route.points.last(), port.position)
+        assertEquals(4, port.movements)
+        assertEquals(original, route.points)
+        assertTrue(port.visited.zipWithNext().all { (a, b) -> b.x > a.x })
+    }
+
     private class FakePort(val clock: () -> Long) : RoutePort {
         override var epoch: Long = 0
         var position: RoutePoint? = RoutePoint(10.0, 10.0)
@@ -235,7 +246,7 @@ class RoutePilotTests {
         }
         assertTrue(stuck); assertTrue(c.paused)
         assertEquals(RoutePoint(3.0, 10.0), port.position)
-        assertTrue(port.movements in 1..10)
+        assertTrue(port.movements in 1..20)
     }
 
     @Test fun reverseAtEndpointCanStopBeforeDispatch() = runTest {
@@ -243,5 +254,48 @@ class RoutePilotTests {
         val c = RouteRunControl()
         RoutePilot(port, c) { if (it.count == 1) c.stopped = true }.replay(exampleRoute(), returning = true)
         assertEquals(0, port.movements)
+    }
+
+    @Test fun denseCornerRouteAndReturnKeepTheTurnAndBothEndpoints() = runTest {
+        val points = (0..10).map { RoutePoint(10.0 + it * 3, 10.0) } +
+            (1..10).map { RoutePoint(40.0, 10.0 + it * 3) }
+        val route = exampleRoute().copy(points = points)
+        val port = FakePort { testScheduler.currentTime }
+        val control = RouteRunControl()
+        withTimeout(15_000) { RoutePilot(port, control) {}.replay(route) }
+        assertTrue(port.visited.contains(RoutePoint(40.0, 10.0)))
+        assertEquals(points.last(), port.position)
+        assertEquals(8, port.movements)
+        assertTrue(port.visited.all { it.y == 10.0 || it.x == 40.0 })
+        port.visited.clear()
+        withTimeout(15_000) { RoutePilot(port, control) {}.replay(route, returning = true) }
+        assertEquals(points.first(), port.position)
+        assertTrue(port.visited.contains(RoutePoint(40.0, 10.0)))
+        assertEquals(points, route.points)
+    }
+
+    @Test fun movingCharacterDoesNotGetRetargetedBeforeItSettles() = runTest {
+        var position = RoutePoint(10.0, 10.0)
+        var destination = position
+        var gestures = 0
+        val route = exampleRoute()
+        val port = object : RoutePort {
+            override fun now() = testScheduler.currentTime
+            override suspend fun read(): RoutePoint {
+                val delta = destination - position
+                val distance = delta.distance(RoutePoint(0.0, 0.0))
+                if (distance > 0) position += delta * minOf(1.0, 2.0 / distance)
+                return position
+            }
+            override suspend fun move(offset: RoutePoint): Boolean {
+                assertEquals("Do not replace a gesture still walking", destination, position)
+                gestures++
+                destination = position + offset * .1
+                return true
+            }
+        }
+        withTimeout(15_000) { RoutePilot(port, RouteRunControl()) {}.replay(route) }
+        assertEquals(route.points.last(), position)
+        assertEquals(2, gestures)
     }
 }

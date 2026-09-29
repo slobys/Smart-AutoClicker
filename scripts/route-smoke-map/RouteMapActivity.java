@@ -105,6 +105,12 @@ public class RouteMapActivity extends Activity {
                     .put("tolerance",2).put("complete",true).put("points",new JSONArray("[[100,100],[110,100],[110,110]]"))
                     .put("calibration",new JSONArray("[[[100,0],[10,0]],[[0,100],[0,10]]]"));
                 try (FileOutputStream out = openFileOutput("route.json",MODE_PRIVATE)) { out.write(route.toString().getBytes("UTF-8")); }
+                JSONObject dense = new JSONObject(route.toString());
+                JSONArray densePoints = new JSONArray();
+                for (int i = 0; i <= 10; i++) densePoints.put(new JSONArray().put(100 + i * 3).put(100));
+                for (int i = 1; i <= 10; i++) densePoints.put(new JSONArray().put(130).put(100 + i * 3));
+                dense.put("id","cccccccc-cccc-cccc-cccc-cccccccccccc").put("name","Dense L route (21 samples)").put("points",densePoints);
+                try (FileOutputStream out = openFileOutput("route-dense.json",MODE_PRIVATE)) { out.write(dense.toString().getBytes("UTF-8")); }
                 Bitmap mini = minimapFrame(100,100);
                 int[] colors = new int[192*192]; byte[] gray = new byte[colors.length];
                 mini.getPixels(colors,0,192,0,0,192,192); mini.recycle();

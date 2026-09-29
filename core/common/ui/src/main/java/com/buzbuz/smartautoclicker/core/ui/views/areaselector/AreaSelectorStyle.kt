@@ -49,8 +49,10 @@ internal fun TypedArray.getAnimationsStyle() =
         ).toLong(),
     )
 
-internal fun TypedArray.getSelectorComponentStyle(displayConfigManager: DisplayConfigManager) =
-    SelectorComponentStyle(
+internal fun TypedArray.getSelectorComponentStyle(displayConfigManager: DisplayConfigManager): SelectorComponentStyle {
+    val density = resources.displayMetrics.density
+    val thickness = minOf(getDimension(R.styleable.AreaSelectorView_thickness, density), density)
+    return SelectorComponentStyle(
         displayConfigManager = displayConfigManager,
         selectorDefaultSize = PointF(
             getDimensionPixelSize(
@@ -66,20 +68,13 @@ internal fun TypedArray.getSelectorComponentStyle(displayConfigManager: DisplayC
             R.styleable.AreaSelectorView_resizeHandleSize,
             10,
         ).toFloat(),
-        selectorAreaOffset = ceil(
-            getDimensionPixelSize(
-                R.styleable.AreaSelectorView_thickness,
-                4,
-            ).toFloat() / 2
-        ).toInt(),
+        // Include the thin contrast outline, entirely outside the captured content.
+        selectorAreaOffset = ceil((thickness + density) / 2).toInt(),
         cornerRadius = getDimensionPixelSize(
             R.styleable.AreaSelectorView_cornerRadius,
             2,
         ).toFloat(),
-        selectorThickness = getDimensionPixelSize(
-            R.styleable.AreaSelectorView_thickness,
-            4,
-        ).toFloat(),
+        selectorThickness = thickness,
         selectorColor = getColor(
             R.styleable.AreaSelectorView_colorOutlinePrimary,
             Color.WHITE,
@@ -90,6 +85,7 @@ internal fun TypedArray.getSelectorComponentStyle(displayConfigManager: DisplayC
         ),
         showResizeHandles = true,
     )
+}
 
 internal fun TypedArray.getHintsStyle(displayConfigManager: DisplayConfigManager) =
     HintsComponentStyle(

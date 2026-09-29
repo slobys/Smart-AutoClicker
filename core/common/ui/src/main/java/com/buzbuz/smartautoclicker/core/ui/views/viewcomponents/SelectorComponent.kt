@@ -31,6 +31,7 @@ import android.view.MotionEvent
 import androidx.annotation.ColorInt
 import androidx.core.graphics.toRect
 import androidx.core.graphics.toRectF
+import androidx.core.graphics.withSave
 
 import com.buzbuz.smartautoclicker.core.base.extensions.translate
 import com.buzbuz.smartautoclicker.core.display.config.DisplayConfigManager
@@ -91,13 +92,19 @@ internal class SelectorComponent(
     /** The radius of the corner for the selector. */
     private val cornerRadius = selectorStyle.cornerRadius
     private val showResizeHandles = selectorStyle.showResizeHandles
-    private val handleRadius = 4f * context.resources.displayMetrics.density
+    private val displayDensity = context.resources.displayMetrics.density
+    private val handleRadius = 3f * displayDensity
     private val borderShadow = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = selectorStyle.selectorThickness + 2f * context.resources.displayMetrics.density
+        strokeWidth = selectorStyle.selectorThickness + displayDensity
         color = Color.BLACK
     }
     private val handlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
+    private val handleOutline = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = displayDensity
+        color = Color.BLACK
+    }
 
     /** Paint drawing the selector. */
     private val selectorPaint = Paint().apply {
@@ -337,22 +344,29 @@ internal class SelectorComponent(
 
     override fun onDraw(canvas: Canvas) {
         canvas.drawPath(selectorDrawingPath, backgroundPaint)
-        if (showResizeHandles) {
-            borderShadow.alpha = selectorPaint.alpha
-            canvas.drawRoundRect(selectorArea, cornerRadius, cornerRadius, borderShadow)
-        }
-        canvas.drawRoundRect(selectorArea, cornerRadius, cornerRadius, selectorPaint)
-        if (showResizeHandles) {
-            handlePaint.alpha = selectorPaint.alpha
-            fun handle(x: Float, y: Float) {
-                canvas.drawCircle(x, y, handleRadius, borderShadow)
-                canvas.drawCircle(x, y, handleRadius, handlePaint)
+        canvas.withSave {
+            // Even an 8 px OCR region must remain entirely visible. Drawing and touch sizes
+            // are independent: keep the existing wide, invisible resize hit areas.
+            if (showResizeHandles) canvas.clipPath(selectorDrawingPath)
+            if (showResizeHandles) {
+                borderShadow.alpha = selectorPaint.alpha
+                canvas.drawRoundRect(selectorArea, cornerRadius, cornerRadius, borderShadow)
             }
-            // Persistent edge handles: the arrow hints may fade, the resize affordances do not.
-            handle(selectorArea.left, selectorArea.centerY())
-            handle(selectorArea.right, selectorArea.centerY())
-            handle(selectorArea.centerX(), selectorArea.top)
-            handle(selectorArea.centerX(), selectorArea.bottom)
+            canvas.drawRoundRect(selectorArea, cornerRadius, cornerRadius, selectorPaint)
+            if (showResizeHandles) {
+                handlePaint.alpha = selectorPaint.alpha
+                handleOutline.alpha = selectorPaint.alpha
+                fun handle(x: Float, y: Float) {
+                    canvas.drawCircle(x, y, handleRadius, handlePaint)
+                    canvas.drawCircle(x, y, handleRadius, handleOutline)
+                }
+                // Place the handles outside, not on the small digits being selected.
+                val outward = handleRadius + 2f * displayDensity
+                handle(selectorArea.left - outward, selectorArea.centerY())
+                handle(selectorArea.right + outward, selectorArea.centerY())
+                handle(selectorArea.centerX(), selectorArea.top - outward)
+                handle(selectorArea.centerX(), selectorArea.bottom + outward)
+            }
         }
     }
 

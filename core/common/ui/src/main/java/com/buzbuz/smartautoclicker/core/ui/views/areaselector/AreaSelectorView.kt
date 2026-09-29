@@ -18,6 +18,7 @@ package com.buzbuz.smartautoclicker.core.ui.views.areaselector
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Canvas
 import android.graphics.Rect
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -80,6 +81,15 @@ class AreaSelectorView(
     }
 
     override val viewComponents: List<ViewComponent> = listOf(selector, hintsIcons)
+
+    override fun onDraw(canvas: Canvas) {
+        selector.onDraw(canvas)
+        // Suppress drawing only: hints still need size/invalidation callbacks when a
+        // small field is enlarged. Large transient hints would cover tiny digits.
+        val minimumHintSize = 96 * resources.displayMetrics.density
+        if (selector.selectedArea.width() >= minimumHintSize && selector.selectedArea.height() >= minimumHintSize)
+            hintsIcons.onDraw(canvas)
+    }
 
     fun setSelection(area: Rect, minimalArea: Rect?) {
         if (selector.setDefaultSelectionArea(area, minimalArea)) {

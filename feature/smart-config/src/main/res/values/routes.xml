@@ -19,7 +19,7 @@
     <string name="route_ground">Tap ground</string>
     <string name="route_joystick">Fixed joystick hold</string>
     <string name="route_anchor">Select character feet / joystick center</string>
-    <string name="route_calibration_help">Keep the character stationary. Choose a nearby clear point on one side, then run calibration A: it WILL move the character once. Repeat B in a different direction (roughly perpendicular). For ground taps, the camera must follow the character so their feet stay at the anchor. Recalibrate after changing camera or speed.</string>
+    <string name="route_calibration_help">A/B are two direction samples, not the start and end of the route. Replay does not alternate between A/B: they map screen input to changes in map coordinates.\n\nStand still, choose nearby clear ground outside the character, then run A. Repeat B in another direction, roughly perpendicular. For ground taps the camera must follow the character so their feet stay at the anchor. Recalibrate after changing camera or speed; recorded points can be kept.</string>
     <string name="route_target_a">Select calibration A target</string>
     <string name="route_target_b">Select calibration B target</string>
     <string name="route_calibrate_a">Run calibration A (moves)</string>
@@ -29,7 +29,7 @@
     <string name="route_actions">3. Record and replay</string>
     <string name="route_preview">Test coordinates (no movement)</string>
     <string name="route_record">Record a new route</string>
-    <string name="route_record_help">Record while walking normally, then tap Finish. New recordings keep old routes; drafts are saved every 5 seconds but cannot replay. For replay, stand near the start and let the app approach it. At the endpoint, use Return along route.</string>
+    <string name="route_record_help">Record while walking normally, then tap Finish. New recordings keep old routes; drafts are saved every 5 seconds but cannot replay. Stand near the start to replay. Dense straight samples are combined; turns and the endpoint still require confirmation. This is not timed gesture playback: recognition and checks add time. At the endpoint, use Return along route.</string>
     <string name="route_replay">Replay route</string>
     <string name="route_reverse">Return along route to start</string>
     <string name="route_reverse_start">Confirm return</string>

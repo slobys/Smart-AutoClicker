@@ -138,7 +138,8 @@ internal class RoutePilot(
         require(route.recordingComplete && route.points.size >= 2 && calibration.valid())
         // Reverse the traversal only, never the saved route or its coordinate/calibration basis.
         val points = if (returning) route.points.reversed() else route.points
-        val follower = RouteFollower(points, route.tolerance, route.entryRadius())
+        val follower = RouteFollower(points, route.tolerance, route.entryRadius(),
+            lookAheadDistance = minOf(12.0, route.entryRadius()))
         var previous: RoutePoint? = null
         var lastKnown: RoutePoint? = null
         var lastGood = port.now()
@@ -190,7 +191,10 @@ internal class RoutePilot(
                 is RouteFollower.Decision.Pause -> Unit // Handled above, before updating the resume anchor.
                 is RouteFollower.Decision.Move -> {
                     // Wait for two settled observations; do not replace a movement still in progress.
-                    if (previous?.distance(position)?.let { it <= 1.0 } == true && port.now() - lastMove >= 1_500) {
+                    // A completed gesture plus two new settled observations is enough; a fixed
+                    // 1.5 s penalty on every tiny sample made dense recordings crawl.
+                    val minimumInterval = if (route.control == RouteControl.GROUND_TAP) 800 else 400
+                    if (previous?.distance(position)?.let { it <= 1.0 } == true && port.now() - lastMove >= minimumInterval) {
                         currentCoroutineContext().ensureActive()
                         if (!control.paused && !control.stopped) {
                             if (!port.move(routeMotion(route, decision.target - position))) pause(RouteMessage.GESTURE_FAILED, follower.index, position)

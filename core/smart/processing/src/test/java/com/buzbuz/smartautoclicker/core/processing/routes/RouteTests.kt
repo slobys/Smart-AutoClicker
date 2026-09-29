@@ -16,6 +16,51 @@ internal fun exampleCalibration() = RouteCalibration(
 )
 
 class RouteTests {
+    @Test fun straightLookAheadStillConfirmsStartAndAdvancesOnlyAfterArrival() {
+        val points = (0..6).map { RoutePoint(it * 3.0, 0.0) }
+        val f = RouteFollower(points, 2.0, 5.0, 10.0)
+        assertEquals(RouteFollower.Decision.Wait, f.observe(points[0], 0))
+        assertEquals(0, f.index)
+        assertEquals(RouteFollower.Decision.Wait, f.observe(points[0], 400))
+        assertEquals(RouteFollower.Decision.Move(points[3]), f.observe(points[0], 800))
+        assertEquals(1, f.index) // Planned points are not reported as already reached.
+        assertEquals(RouteFollower.Decision.Wait, f.observe(points[3], 1200))
+        f.breakConfirmation()
+        assertEquals(RouteFollower.Decision.Wait, f.observe(points[3], 1600))
+        assertEquals(1, f.index)
+        f.observe(points[3], 2000)
+        assertEquals(4, f.index)
+    }
+
+    @Test fun lookAheadDoesNotCutCornerOrReverseDirection() {
+        val routes = listOf(
+            listOf(RoutePoint(0.0, 0.0), RoutePoint(3.0, 0.0), RoutePoint(6.0, 0.0), RoutePoint(6.0, 3.0)),
+            listOf(RoutePoint(0.0, 0.0), RoutePoint(3.0, 0.0), RoutePoint(6.0, 0.0), RoutePoint(3.0, 0.0)),
+            listOf(RoutePoint(0.0, 0.0), RoutePoint(3.0, 0.0), RoutePoint(6.0, 0.0), RoutePoint(0.0, 0.0)),
+        )
+        routes.forEach { points ->
+            val f = RouteFollower(points, 2.0, 5.0, 12.0)
+            f.observe(points.first(), 0); f.observe(points.first(), 400)
+            assertEquals(RouteFollower.Decision.Move(points[2]), f.observe(points.first(), 800))
+        }
+    }
+
+    @Test fun lookAheadDoesNotFlattenACurveOrBypassAnEarlierDetour() {
+        val points = listOf(RoutePoint(0.0, 0.0), RoutePoint(3.0, 1.0),
+            RoutePoint(6.0, 0.0), RoutePoint(9.0, 0.0))
+        val f = RouteFollower(points, 2.0, 5.0, 12.0)
+        f.observe(points.first(), 0); f.observe(points.first(), 400)
+        assertEquals(RouteFollower.Decision.Move(points[1]), f.observe(points.first(), 800))
+    }
+
+    @Test fun combinedDirectionUsesBothCalibrationsNotAlternatingTargets() {
+        val route = exampleRoute()
+        val motion = routeMotion(route, RoutePoint(3.0, 4.0))
+        assertEquals(RoutePoint(30.0, 40.0), motion.offset)
+        assertNotEquals(route.calibration!!.first.screenDelta, motion.offset)
+        assertNotEquals(route.calibration.second.screenDelta, motion.offset)
+    }
+
     @Test fun entryRangeIsCalibratedBoundedAndDoesNotLoosenWaypointPrecision() {
         val route = exampleRoute()
         assertEquals(10.0, route.entryRadius(), .001)

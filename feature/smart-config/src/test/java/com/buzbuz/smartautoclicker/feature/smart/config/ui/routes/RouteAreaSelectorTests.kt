@@ -31,6 +31,20 @@ import java.time.Duration
 @Config(sdk = [29], qualifiers = "mdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class RouteAreaSelectorTests {
+    @Test fun tinyCoordinateContentIsUnobscuredEvenBeforeHintsFade() {
+        val view = selector()
+        val area = Rect(110, 60, 134, 76)
+        view.setSelection(area, Rect(0, 0, 8, 8))
+        drag(view, 122f, 68f, 142f, 88f)
+        val selected = view.getSelection()
+        val bitmap = Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888)
+        try {
+            view.draw(Canvas(bitmap))
+            for (y in selected.top until selected.bottom) for (x in selected.left until selected.right)
+                assertEquals("Selection obscured at $x,$y", 0, Color.alpha(bitmap.getPixel(x, y)))
+        } finally { bitmap.recycle() }
+    }
+
     private fun selector(): AreaSelectorView {
         val display = mock<DisplayConfigManager>()
         whenever(display.displayConfig).thenReturn(DisplayConfig(Point(1920, 1080), Configuration.ORIENTATION_LANDSCAPE, 0, emptyMap()))
@@ -46,9 +60,44 @@ class RouteAreaSelectorTests {
         val bitmap = Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888)
         try {
             view.draw(Canvas(bitmap))
-            assertEquals(Color.WHITE, bitmap.getPixel(398, 400))
-            assertEquals(Color.WHITE, bitmap.getPixel(398, 450))
+            assertEquals("Fine white border remains visible", Color.WHITE, bitmap.getPixel(399, 400))
+            assertEquals(Color.WHITE, bitmap.getPixel(394, 450))
             assertEquals(0, Color.alpha(bitmap.getPixel(600, 400)))
+        } finally { bitmap.recycle() }
+    }
+
+    @Test fun externalHandleStillResizesATinyFieldAndPreservesOtherEdges() {
+        val view = selector()
+        view.setSelection(Rect(110, 60, 134, 76), Rect(0, 0, 8, 8))
+        drag(view, 140f, 68f, 160f, 68f)
+        assertEquals(Rect(110, 60, 154, 76), view.getSelection())
+    }
+
+    @Test fun largeSelectionStillShowsMovementHintAfterATinyField() {
+        val view = selector()
+        view.setSelection(Rect(110, 60, 134, 76), Rect(0, 0, 8, 8))
+        view.setSelection(Rect(400, 300, 800, 600), Rect(0, 0, 8, 8))
+        drag(view, 600f, 450f, 640f, 490f)
+        val bitmap = Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888)
+        try {
+            view.draw(Canvas(bitmap))
+            assertTrue("Large fields retain their movement hint", (470..510).any { y ->
+                (620..660).any { x -> Color.alpha(bitmap.getPixel(x, y)) > 0 }
+            })
+        } finally { bitmap.recycle() }
+    }
+
+    @Test @Config(qualifiers = "xhdpi") fun highDensityMinimumFieldRemainsUnobscured() {
+        val view = selector()
+        view.setSelection(Rect(110, 60, 118, 68), Rect(0, 0, 8, 8))
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
+        val bitmap = Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888)
+        try {
+            view.draw(Canvas(bitmap))
+            val area = view.getSelection()
+            assertEquals(Rect(110, 60, 118, 68), area)
+            for (y in area.top until area.bottom) for (x in area.left until area.right)
+                assertEquals("Selection obscured at $x,$y", 0, Color.alpha(bitmap.getPixel(x, y)))
         } finally { bitmap.recycle() }
     }
 

@@ -133,15 +133,17 @@ class RouteCoordinateFilter {
 
 /** Event-independent, clock-injected follower. Only confirmed positions advance the route. */
 class RouteFollower(private val points: List<RoutePoint>, private val tolerance: Double,
-    val startTolerance: Double = maxOf(5.0, tolerance * 2)) {
+    val startTolerance: Double = maxOf(5.0, tolerance * 2), private val lookAheadDistance: Double = 0.0) {
     init {
         require(points.size in 2..MAX_ROUTE_POINTS && points.all { it.valid() })
         require(tolerance.isFinite() && tolerance in 1.0..5.0)
         require(startTolerance.isFinite() && startTolerance in maxOf(5.0, tolerance * 2)..15.0)
+        require(lookAheadDistance.isFinite() && lookAheadDistance in 0.0..12.0)
     }
 
     var index = 0
         private set
+    private var targetIndex = 0
     private var started = false
     val hasStarted: Boolean get() = started
     private var hits = 0
@@ -165,10 +167,11 @@ class RouteFollower(private val points: List<RoutePoint>, private val tolerance:
             resetTimers(now)
         }
         if (index >= points.size) return Decision.Complete
-        val distance = position.distance(points[index])
+        val distance = position.distance(points[targetIndex])
         if (distance <= tolerance) {
             if (++hits < 2) return Decision.Wait
-            index++
+            index = targetIndex + 1
+            targetIndex = nextTargetIndex()
             resetTimers(now)
             return if (index >= points.size) Decision.Complete else Decision.Wait
         }
@@ -179,7 +182,35 @@ class RouteFollower(private val points: List<RoutePoint>, private val tolerance:
         }
         if (now - segmentStarted >= 60_000) return Decision.Pause(Reason.TIMEOUT)
         if (now - progressAt >= 15_000) return Decision.Pause(Reason.STUCK)
-        return Decision.Move(points[index])
+        return Decision.Move(points[targetIndex])
+    }
+
+    /** Coalesce only nearby samples on the same straight corridor. Start, corners, reversals
+     * and end remain checkpoints; this is not arbitrary mid-route joining or obstacle avoidance.
+     * Progress advances only after two observations at the chosen target, not when it is planned.
+     */
+    private fun nextTargetIndex(): Int {
+        if (index == 0 || index >= points.lastIndex || lookAheadDistance == 0.0) return index
+        val start = points[index - 1]
+        var target = index
+        val corridor = minOf(0.5, tolerance / 4)
+        for (candidate in index + 1..points.lastIndex) {
+            val delta = points[candidate] - start
+            val length = delta.distance(RoutePoint(0.0, 0.0))
+            if (length > lookAheadDistance || length < 0.001) break
+            var previousProjection = 0.0
+            val straight = (index until candidate).all { i ->
+                val offset = points[i] - start
+                val projection = (offset.x * delta.x + offset.y * delta.y) / length
+                val deviation = abs(offset.x * delta.y - offset.y * delta.x) / length
+                val valid = deviation <= corridor && projection >= previousProjection && projection <= length
+                previousProjection = projection
+                valid
+            }
+            if (!straight) break
+            target = candidate
+        }
+        return target
     }
 
     /** A pause cannot supply the second arrival confirmation or consume a timeout. */
