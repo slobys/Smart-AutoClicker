@@ -52,7 +52,7 @@ internal fun ScreenCondition.toSelectorUiState(screenSize: Point): SelectorUiSta
     when (this) {
         is ScreenCondition.Color ->
             SelectorUiState(
-                initialArea = detectionArea,
+                initialArea = Rect(detectionArea),
                 minimalArea = Rect(0, 0, 1, 1),
             )
 
@@ -65,16 +65,16 @@ internal fun ScreenCondition.toSelectorUiState(screenSize: Point): SelectorUiSta
 
         is ScreenCondition.Number ->
             SelectorUiState(
-                initialArea = detectionArea.takeUnless { it.isEmpty }
+                initialArea = detectionArea.takeUnless { it.isEmpty }?.let(::Rect)
                     ?: screenSize.defaultDetectionArea(),
-                minimalArea = null,
+                minimalArea = Rect(0, 0, 8, 8),
             )
 
         is ScreenCondition.Text ->
             SelectorUiState(
-                initialArea = detectionArea.takeUnless { it.isEmpty }
+                initialArea = detectionArea.takeUnless { it.isEmpty }?.let(::Rect)
                     ?: screenSize.defaultDetectionArea(),
-                minimalArea = null,
+                minimalArea = Rect(0, 0, 8, 8),
             )
     }
 

@@ -92,6 +92,11 @@ class ColorConditionViewModel  @Inject constructor(
         }
     }
 
+    fun setDetectionArea(area: Rect) {
+        if (area.isEmpty) return
+        updateEditedCondition { it.copy(detectionArea = Rect(area)) }
+    }
+
     fun toggleShouldBeDetected() {
         updateEditedCondition { oldCondition ->
             oldCondition.copy(shouldBeDetected = !oldCondition.shouldBeDetected)
@@ -128,6 +133,7 @@ class ColorConditionViewModel  @Inject constructor(
             conditionColor = color,
             conditionColorText = color.toRgbaHexString(),
             conditionPosition = PointF(detectionArea.left.toFloat(), detectionArea.top.toFloat()),
+            detectionArea = Rect(detectionArea),
             redValue = color.getRedValue(),
             greenValue = color.getGreenValue(),
             blueValue = color.getBlueValue(),

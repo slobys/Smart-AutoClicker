@@ -129,6 +129,8 @@ internal class SelectorComponent(
     private val selectorMinimumSize = PointF()
     /** The area where the selector should be drawn. */
     private val selectorArea = RectF()
+    /** Border may extend off-screen; the selected content must still include edge pixels. */
+    private val selectorBounds = RectF()
     /** Area within the selector that represents the zone to be capture to creates a event condition. */
     val selectedArea = RectF()
 
@@ -251,7 +253,7 @@ internal class SelectorComponent(
     }
 
     private fun onNewDownEvent(eventX: Float, eventY: Float): Boolean {
-        currentGesture = when {
+        currentGesture = externalHandleAt(eventX, eventY) ?: when {
             ResizeLeft.getGestureArea(selectedArea, handleSize, innerHandleSize).contains(eventX, eventY) ->
                 ResizeLeft
             ResizeTop.getGestureArea(selectedArea, handleSize, innerHandleSize).contains(eventX, eventY) ->
@@ -266,6 +268,26 @@ internal class SelectorComponent(
         }
 
         return currentGesture != null
+    }
+
+    /** Tiny fields have tiny edges, but their visible outer handles must remain draggable. */
+    private fun externalHandleAt(x: Float, y: Float): GestureType? {
+        if (!showResizeHandles || selectedArea.contains(x, y)) return null
+        val outward = handleRadius + 2f * displayDensity
+        var nearest: GestureType? = null
+        var nearestDistance = (12f * displayDensity).let { it * it }
+        fun consider(gesture: GestureType, handleX: Float, handleY: Float) {
+            val distance = (x - handleX) * (x - handleX) + (y - handleY) * (y - handleY)
+            if (distance < nearestDistance) {
+                nearest = gesture
+                nearestDistance = distance
+            }
+        }
+        consider(ResizeLeft, selectorArea.left - outward, selectorArea.centerY())
+        consider(ResizeTop, selectorArea.centerX(), selectorArea.top - outward)
+        consider(ResizeRight, selectorArea.right + outward, selectorArea.centerY())
+        consider(ResizeBottom, selectorArea.centerX(), selectorArea.bottom + outward)
+        return nearest
     }
 
     /** The result of the move gesture. Kept here to avoid instantiation at each touch event. */
@@ -300,7 +322,7 @@ internal class SelectorComponent(
                     moveResult.set(selectorArea)
                     moveResult.translate(translateX, translateY)
 
-                    if (maxArea.contains(moveResult)) {
+                    if (selectorBounds.contains(moveResult)) {
                         selectorArea.set(moveResult)
                     }
                 }
@@ -315,7 +337,9 @@ internal class SelectorComponent(
 
     /** Verify the correctness of the selector bounds. */
     private fun verifyBounds() {
-        selectorArea.intersect(maxArea)
+        selectorBounds.set(maxArea)
+        if (showResizeHandles) selectorBounds.inset(-selectorAreaOffset.toFloat(), -selectorAreaOffset.toFloat())
+        selectorArea.intersect(selectorBounds)
         selectedArea.apply {
             left = selectorArea.left + selectorAreaOffset
             top = selectorArea.top + selectorAreaOffset

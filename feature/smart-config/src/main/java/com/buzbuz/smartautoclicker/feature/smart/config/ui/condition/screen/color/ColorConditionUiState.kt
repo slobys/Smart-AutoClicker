@@ -17,6 +17,7 @@
 package com.buzbuz.smartautoclicker.feature.smart.config.ui.condition.screen.color
 
 import android.graphics.PointF
+import android.graphics.Rect
 import androidx.annotation.ColorInt
 
 data class ColorConditionUiState(
@@ -24,6 +25,7 @@ data class ColorConditionUiState(
     val conditionName: String,
     val conditionNameError: Boolean,
     val conditionPosition: PointF,
+    val detectionArea: Rect,
     @param:ColorInt val conditionColor: Int,
     val conditionColorText: String,
     val redValue: Int,

@@ -22,11 +22,9 @@ import android.graphics.PointF
 
 import com.buzbuz.smartautoclicker.core.display.config.DisplayConfigManager
 import com.buzbuz.smartautoclicker.core.ui.R
-import com.buzbuz.smartautoclicker.core.ui.views.pixelselector.PixelSelectorView
 import com.buzbuz.smartautoclicker.core.ui.views.viewcomponents.CaptureComponentStyle
 import com.buzbuz.smartautoclicker.core.ui.views.viewcomponents.DEFAULT_ZOOM_MAXIMUM
 import com.buzbuz.smartautoclicker.core.ui.views.viewcomponents.DEFAULT_ZOOM_MINIMUM
-import com.buzbuz.smartautoclicker.core.ui.views.viewcomponents.PixelPositionComponentStyle
 import com.buzbuz.smartautoclicker.core.ui.views.viewcomponents.SelectorComponentStyle
 import com.buzbuz.smartautoclicker.core.ui.views.viewcomponents.hints.DEFAULT_HINTS_ICON_MARGIN
 import com.buzbuz.smartautoclicker.core.ui.views.viewcomponents.hints.DEFAULT_HINTS_ICON_SIZE
@@ -39,7 +37,7 @@ internal fun TypedArray.getAnimationsStyle() =
         selectorBackgroundAlpha = getColor(
             R.styleable.ImageSelectorView_colorBackground,
             Color.TRANSPARENT
-        ).shr(24),
+        ).ushr(24),
         hintFadeDuration = getInteger(
             R.styleable.ImageSelectorView_hintsFadeDuration,
             DEFAULT_FADE_DURATION
@@ -51,10 +49,6 @@ internal fun TypedArray.getAnimationsStyle() =
         showSelectorAnimationDuration = getInteger(
             R.styleable.ImageSelectorView_showSelectorAnimationDuration,
             DEFAULT_SELECTOR_ANIMATION_DURATION
-        ).toLong(),
-        showCaptureAnimationDuration = getInteger(
-            R.styleable.ImageSelectorView_showCaptureAnimationDuration,
-            DEFAULT_CAPTURE_ANIMATION_DURATION
         ).toLong(),
     )
 
@@ -71,8 +65,10 @@ internal fun TypedArray.getCaptureComponentStyle(displayConfigManager: DisplayCo
         )
     )
 
-internal fun TypedArray.getSelectorComponentStyle(displayConfigManager: DisplayConfigManager) =
-    SelectorComponentStyle(
+internal fun TypedArray.getSelectorComponentStyle(displayConfigManager: DisplayConfigManager): SelectorComponentStyle {
+    val density = resources.displayMetrics.density
+    val thickness = minOf(getDimension(R.styleable.ImageSelectorView_thickness, density), density)
+    return SelectorComponentStyle(
         displayConfigManager = displayConfigManager,
         selectorDefaultSize = PointF(
             getDimensionPixelSize(
@@ -88,20 +84,12 @@ internal fun TypedArray.getSelectorComponentStyle(displayConfigManager: DisplayC
             R.styleable.ImageSelectorView_resizeHandleSize,
             10,
         ).toFloat(),
-        selectorAreaOffset = ceil(
-            getDimensionPixelSize(
-                R.styleable.ImageSelectorView_thickness,
-                4,
-            ).toFloat() / 2
-        ).toInt(),
+        selectorAreaOffset = ceil((thickness + density) / 2).toInt(),
         cornerRadius = getDimensionPixelSize(
             R.styleable.ImageSelectorView_cornerRadius,
             2,
         ).toFloat(),
-        selectorThickness = getDimensionPixelSize(
-            R.styleable.ImageSelectorView_thickness,
-            4,
-        ).toFloat(),
+        selectorThickness = thickness,
         selectorColor = getColor(
             R.styleable.ImageSelectorView_colorOutlinePrimary,
             Color.WHITE,
@@ -110,7 +98,9 @@ internal fun TypedArray.getSelectorComponentStyle(displayConfigManager: DisplayC
             R.styleable.ImageSelectorView_colorBackground,
             Color.TRANSPARENT,
         ),
+        showResizeHandles = true,
     )
+}
 
 internal fun TypedArray.getHintsStyle(displayConfigManager: DisplayConfigManager) =
     HintsComponentStyle(

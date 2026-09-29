@@ -94,9 +94,6 @@ class ImageSelectorView(
     /** Setup animation values callback. */
     init {
         animations.apply {
-            onCaptureZoomLevelChanged = { zoomLevel ->
-                capture.setZoomLevel(zoomLevel)
-            }
             onSelectorBorderAlphaChanged = { alpha ->
                 selector.selectorAlpha = alpha
             }
@@ -208,7 +205,12 @@ class ImageSelectorView(
 
     override fun onDraw(canvas: Canvas) {
         if (hide) return
-        super.onDraw(canvas)
+        capture.onDraw(canvas)
+        selector.onDraw(canvas)
+        // Like the live area selector, keep small targets clear even while dragging.
+        val minimumHintSize = 96 * resources.displayMetrics.density
+        if (selector.selectedArea.width() >= minimumHintSize && selector.selectedArea.height() >= minimumHintSize)
+            hintsIcons.onDraw(canvas)
     }
 
     private fun BitmapDrawable.getSelection(area: Rect): Pair<Rect, Bitmap>? {

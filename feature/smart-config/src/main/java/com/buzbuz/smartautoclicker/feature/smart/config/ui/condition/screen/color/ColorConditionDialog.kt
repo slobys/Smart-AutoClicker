@@ -49,7 +49,9 @@ import com.buzbuz.smartautoclicker.feature.smart.config.databinding.DialogConfig
 import com.buzbuz.smartautoclicker.feature.smart.config.di.ScenarioConfigViewModelsEntryPoint
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.dialogs.showCloseWithoutSavingDialog
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.dialogs.showDeleteConditionsWithAssociatedActionsDialog
+import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.formatters.toAreaDisplayText
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.condition.OnConditionConfigCompleteListener
+import com.buzbuz.smartautoclicker.feature.smart.config.ui.condition.screen.areaselector.ConditionAreaSelectorMenu
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.condition.screen.color.capture.ColorCaptureMenu
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.condition.screen.color.extensions.rgbToColorInt
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.condition.screen.color.extensions.setGradientBackground
@@ -107,6 +109,16 @@ class ColorConditionDialog(
             hideSoftInputOnFocusLoss(fieldEditName.textField)
 
             iconColorValue.setOnClickListener { showPixelColorPickerOverlay() }
+            fieldSelectArea.apply {
+                setTitle(context.getString(R.string.generic_detection_area_title))
+                setOnClickListener {
+                    overlayManager.navigateTo(
+                        context = context,
+                        newOverlay = ConditionAreaSelectorMenu(onAreaSelected = viewModel::setDetectionArea),
+                        hideCurrent = true,
+                    )
+                }
+            }
             sliderRed.slider.addOnChangeListener(::onColorSliderValueChanged)
             sliderGreen.slider.addOnChangeListener(::onColorSliderValueChanged)
             sliderBlue.slider.addOnChangeListener(::onColorSliderValueChanged)
@@ -208,6 +220,7 @@ class ColorConditionDialog(
             fieldEditName.setError(uiState.conditionNameError)
             iconColorValue.updateColorIndicatorDrawableColor(uiState.conditionColor)
             textColorValue.text = uiState.conditionColorText
+            fieldSelectArea.setDescription(uiState.detectionArea.toAreaDisplayText(context))
 
             updateRGBSliders(uiState)
 

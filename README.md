@@ -90,6 +90,7 @@ Android 可视化自动化工具。根据屏幕上的图片、文字、数值和
 相关入口：
 
 - [稳定执行与诊断指南](documentation/reliability-and-diagnostics-zh.md)：点击后确认、智能滑动查找、运行历史与内存诊断。
+- [条件框选](documentation/condition-selection-zh.md)：细边框、框外手柄、颜色区域与原尺寸截图预览（开发分支新增）。
 - [路线录制与回放](documentation/route-recorder-zh.md)：数字坐标／小地图模式、摇杆校准、场景调用和安全测试（开发分支新增，旧正式版不含此入口；不支持随机地图自动探索）。
 - [版本说明](documentation/releases)：每版改动、验证结果和适用范围。
 - [问题与功能建议](https://github.com/slobys/Smart-AutoClicker/issues)：提交复现信息或描述希望解决的任务。

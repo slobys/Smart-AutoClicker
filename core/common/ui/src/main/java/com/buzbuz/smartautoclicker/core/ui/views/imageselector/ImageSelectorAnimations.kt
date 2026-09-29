@@ -19,7 +19,6 @@ package com.buzbuz.smartautoclicker.core.ui.views.imageselector
 import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
-import android.view.animation.DecelerateInterpolator
 import android.view.animation.LinearInterpolator
 
 import androidx.core.animation.doOnEnd
@@ -40,11 +39,6 @@ internal class ImageSelectorAnimations(style: AnimationsStyle) {
     private val hintAllFadeDelay = style.hintAllFadeDelay
     /** The duration of the show selector animation in milliseconds. */
     private val showSelectorAnimationDuration = style.showSelectorAnimationDuration
-    /** The duration of the show capture animation in milliseconds. */
-    private val showCaptureAnimationDuration = style.showCaptureAnimationDuration
-
-    /** Listener notified for capture zoom level changes due to animations. */
-    var onCaptureZoomLevelChanged: ((Float) -> Unit)? = null
     /** Listener notified for selector border alpha changes due to animations. */
     var onSelectorBorderAlphaChanged: ((Int) -> Unit)? = null
     /** Listener notified for selector background alpha changes due to animations. */
@@ -85,14 +79,6 @@ internal class ImageSelectorAnimations(style: AnimationsStyle) {
         }
     }
 
-    /** Animator for the scale change when defining the capture. */
-    private val showCaptureAnimator: Animator = ValueAnimator.ofFloat(1f, 0.8f).apply {
-        duration = showCaptureAnimationDuration
-        interpolator = DecelerateInterpolator(2f)
-        addUpdateListener {
-            onCaptureZoomLevelChanged?.invoke(it.animatedValue as Float)
-        }
-    }
     /** Animator for the selector and hints showing. */
     private val showSelectorAndHintsAnimator: Animator = ValueAnimator.ofInt(0, 255).apply {
         duration = showSelectorAnimationDuration
@@ -119,7 +105,6 @@ internal class ImageSelectorAnimations(style: AnimationsStyle) {
     private val showSelectorAnimators = AnimatorSet().apply {
         playTogether(
             listOf(
-                showCaptureAnimator,
                 showSelectorAndHintsAnimator,
                 showSelectorBackgroundAnimator,
             )
@@ -145,14 +130,12 @@ internal class ImageSelectorAnimations(style: AnimationsStyle) {
  * @param hintFadeDuration the duration of the hints fading animation in milliseconds.
  * @param hintAllFadeDelay the duration of the all hints fading animation in milliseconds.
  * @param showSelectorAnimationDuration the duration of the show selector animation in milliseconds.
- * @param showCaptureAnimationDuration the duration of the show capture animation in milliseconds.
  */
 internal class AnimationsStyle(
     val selectorBackgroundAlpha: Int,
     val hintFadeDuration: Long,
     val hintAllFadeDelay: Long,
     val showSelectorAnimationDuration: Long,
-    val showCaptureAnimationDuration: Long,
 )
 
 /** The default duration of the hints fade out animation in milliseconds. */
@@ -161,5 +144,3 @@ internal const val DEFAULT_FADE_DURATION = 500
 internal const val DEFAULT_FADE_ALL_HINTS_DURATION = 1000
 /** The default duration of the capture display animation in milliseconds. */
 internal const val DEFAULT_SELECTOR_ANIMATION_DURATION = 500
-/** The default duration of the capture display animation in milliseconds. */
-internal const val DEFAULT_CAPTURE_ANIMATION_DURATION = 750

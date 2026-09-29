@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="color_detection_area_hint">拖动细框或框外手柄调整范围。单像素比较该点颜色；扩大区域后比较平均颜色，不是查找任意同色点。点击色块重新取色会恢复为单像素。</string>
+</resources>

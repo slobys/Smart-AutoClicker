@@ -152,13 +152,34 @@
                 android:layout_marginHorizontal="@dimen/margin_horizontal_default"
                 android:layout_marginBottom="@dimen/margin_vertical_large">
 
-                <include layout="@layout/include_field_slider"
-                    android:id="@+id/field_slider_threshold"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="@dimen/margin_horizontal_default"
-                    android:layout_marginTop="@dimen/margin_vertical_large"
-                    android:layout_marginBottom="@dimen/margin_vertical_small"/>
+                    android:orientation="vertical">
+
+                    <include layout="@layout/include_field_selector"
+                        android:id="@+id/field_select_area"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/margin_horizontal_default"
+                        android:layout_marginVertical="@dimen/margin_vertical_default" />
+
+                    <TextView
+                        style="@style/AppTheme.TextAppearance.FieldSubText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/margin_horizontal_default"
+                        android:text="@string/color_detection_area_hint" />
+
+                    <include layout="@layout/include_field_slider"
+                        android:id="@+id/field_slider_threshold"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/margin_horizontal_default"
+                        android:layout_marginTop="@dimen/margin_vertical_large"
+                        android:layout_marginBottom="@dimen/margin_vertical_small"/>
+
+                </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
 
