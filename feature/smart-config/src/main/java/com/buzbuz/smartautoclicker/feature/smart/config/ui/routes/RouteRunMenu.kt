@@ -100,7 +100,11 @@ class RouteRunMenu(
             }
         }
         binding.routeFinish.setOnClickListener {
-            if (finished) back() else { control.stopped = true; binding.routeFinish.isEnabled = false }
+            if (finished) back() else {
+                control.stopped = true
+                binding.routeFinish.setText(R.string.route_finishing)
+                binding.routeFinish.isEnabled = false
+            }
         }
     }
 
