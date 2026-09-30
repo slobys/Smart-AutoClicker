@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.textfield.TextInputLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/group_name_container"
+    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:hint="@string/field_scenario_group_name"
+    app:helperText="@string/scenario_create_group_hint">
+    <com.google.android.material.textfield.MaterialAutoCompleteTextView
+        android:id="@+id/group_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:completionThreshold="0"
+        android:inputType="textCapSentences"
+        android:imeOptions="actionDone"
+        android:maxLength="40"
+        android:singleLine="true" />
+</com.google.android.material.textfield.TextInputLayout>

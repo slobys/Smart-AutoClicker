@@ -22,14 +22,25 @@ class ScenarioGroupSelectionAdapter(
 ) : ListAdapter<GroupableScenario, ScenarioGroupSelectionAdapter.ViewHolder>(DiffCallback) {
 
     private val selected = mutableSetOf<GroupableScenario.Reference>()
+    private var selectionEnabled = true
+
+    fun setSelectionEnabled(enabled: Boolean) {
+        if (selectionEnabled == enabled) return
+        selectionEnabled = enabled
+        notifyItemRangeChanged(0, itemCount)
+    }
 
     fun setScenarios(
         scenarios: List<GroupableScenario>,
         initialSelection: Set<GroupableScenario.Reference>,
     ) {
+        val validSelection = initialSelection.intersect(scenarios.map { it.reference }.toSet())
+        val selectionChanged = selected != validSelection
         selected.clear()
-        selected.addAll(initialSelection)
-        submitList(scenarios)
+        selected.addAll(validSelection)
+        submitList(scenarios) {
+            if (selectionChanged) notifyItemRangeChanged(0, itemCount)
+        }
         onSelectionChanged(selected.size)
     }
 
@@ -57,12 +68,15 @@ class ScenarioGroupSelectionAdapter(
                 if (item.reference.isSmart) R.drawable.ic_smart else R.drawable.ic_dumb
             )
             contentDescription = item.name
+            isEnabled = selectionEnabled
+            binding.root.isEnabled = selectionEnabled
             isChecked = item.reference in selected
             setOnCheckedChangeListener { _, checked ->
+                if (!selectionEnabled) return@setOnCheckedChangeListener
                 if (checked) selected.add(item.reference) else selected.remove(item.reference)
                 onSelectionChanged(selected.size)
             }
-            binding.root.setOnClickListener { isChecked = !isChecked }
+            binding.root.setOnClickListener { if (selectionEnabled) isChecked = !isChecked }
         }
     }
 

@@ -68,6 +68,11 @@
         android:title="@string/menu_item_title_settings"
         tools:ignore="AlwaysShowAction" />
 
+    <item android:id="@+id/action_bulk_delete"
+        android:icon="@drawable/ic_delete"
+        android:title="@string/scenario_bulk_delete_title"
+        app:showAsAction="ifRoom|withText" />
+
     <item android:id="@+id/action_execution_history"
         app:showAsAction="never" android:title="@string/execution_history_title" />
 

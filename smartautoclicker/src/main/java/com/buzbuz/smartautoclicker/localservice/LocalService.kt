@@ -102,6 +102,8 @@ class LocalService(
     private val sessionState = RuntimeSessionStateMachine()
     private val scenarioCatalog = RuntimeScenarioCatalog(smartScenarioRepository, dumbScenarioRepository, serviceScope)
     private val scenarioCreator = RuntimeScenarioCreator(smartScenarioRepository, dumbScenarioRepository)
+    private val scenarioGroups = com.buzbuz.smartautoclicker.scenarios.creation.scenarioGroupNames(
+        smartScenarioRepository, dumbScenarioRepository)
     private val overlayCoordinator = RuntimeOverlayCoordinator(context, overlayManager)
     private val permissionHandoff = RuntimePermissionHandoff(context)
     private val dumbRuntime = DumbScenarioRuntime(dumbEngine)
@@ -378,11 +380,12 @@ class LocalService(
                 runtimeDialog = showRuntimeScenarioCreator(
                     context, serviceScope, previous.target.kind,
                     onDismissed = { runtimeDialog = null },
-                ) { name, kind ->
+                    groups = scenarioGroups,
+                ) { name, kind, group ->
                     transitionMutex.withLock {
                         check(!releaseRequested && sessionState.state.value is RuntimeSessionState.Active)
                         val metrics = context.resources.displayMetrics
-                        val target = scenarioCreator.create(name, kind, maxOf(metrics.widthPixels, metrics.heightPixels))
+                        val target = scenarioCreator.create(name, kind, maxOf(metrics.widthPixels, metrics.heightPixels), group)
                         val switched = performScenarioSwitch(target, openEditor = true)
                         Toast.makeText(context, context.getString(
                             if (switched) R.string.runtime_create_success else R.string.runtime_create_saved_not_opened,

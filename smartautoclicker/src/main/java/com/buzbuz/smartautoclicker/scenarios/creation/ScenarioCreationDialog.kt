@@ -25,6 +25,8 @@ import android.view.inputmethod.InputMethodManager
 
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.viewModels
+import androidx.core.widget.doAfterTextChanged
+import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -74,6 +76,8 @@ class ScenarioCreationDialog : DialogFragment() {
                 launch { viewModel.scenarioTypeSelectionState.collect(::updateTypeSelection) }
                 launch { viewModel.creationState.collect(::updateCreationState) }
                 launch { viewModel.showPaidLimitationWarning.collect(::updatePaidLimitationWarning) }
+                launch { viewModel.groups.collect(viewBinding.scenarioGroup::setGroups) }
+                launch { viewModel.creationError.collect { viewBinding.creationError.isVisible = it } }
             }
         }
     }
@@ -84,6 +88,8 @@ class ScenarioCreationDialog : DialogFragment() {
             scenarioNameInputLayout.initScenarioNameField()
             scenarioTypeDumb.initScenarioTypeCard(ScenarioTypeSelection.DUMB)
             scenarioTypeSmart.initScenarioTypeCard(ScenarioTypeSelection.SMART)
+            scenarioGroup.groupName.setText(viewModel.groupName, false)
+            scenarioGroup.groupName.doAfterTextChanged { viewModel.setGroupName(it?.toString().orEmpty()) }
         }
 
         return createDialog(viewBinding.root)

@@ -18,6 +18,8 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.google.android.material.textfield.MaterialAutoCompleteTextView
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.*
 import org.junit.After
@@ -124,7 +126,43 @@ class RuntimeScenarioDialogTests {
         runCurrent()
         val simple = dialog.findViewById<MaterialButton>(R.id.type_dumb)!!
         assertFalse(simple.isEnabled)
+        assertFalse(dialog.findViewById<MaterialAutoCompleteTextView>(R.id.group_name)!!.isEnabled)
         assertTypeSelection(simple, dialog.findViewById<MaterialButton>(R.id.type_smart)!!)
+    }
+
+    @Test fun groupSuggestionsDoNotOverwriteInputAndAreCollectedOnlyWhileDialogIsOpen() = runTest {
+        val groups = MutableStateFlow(listOf("Daily", "任务", "Daily"))
+        var savedGroup: String? = null
+        val dialog = showRuntimeScenarioCreator(context, backgroundScope, RuntimeScenarioKind.SMART, {}, groups) { _, _, group ->
+            savedGroup = group
+        }.also { dialogs += it }
+        runCurrent()
+        val input = dialog.findViewById<MaterialAutoCompleteTextView>(R.id.group_name)!!
+        assertEquals(2, input.adapter.count)
+        input.setText(" 新分组 ", false)
+        groups.value = listOf("Daily", "任务", "备用")
+        runCurrent()
+        assertEquals(" 新分组 ", input.text.toString())
+        assertEquals(3, input.adapter.count)
+        dialog.findViewById<MaterialButton>(R.id.button_create)!!.performClick()
+        runCurrent(); ShadowLooper.idleMainLooper(); runCurrent()
+        assertEquals("新分组", savedGroup)
+        assertEquals(0, groups.subscriptionCount.value)
+    }
+
+    @Test fun typedExistingGroupUsesCanonicalNameAndBlankStaysUngrouped() = runTest {
+        val groups = MutableStateFlow(listOf("Daily"))
+        val saved = mutableListOf<String>()
+        for (name in listOf(" daily ", " ")) {
+            val dialog = showRuntimeScenarioCreator(context, backgroundScope, RuntimeScenarioKind.DUMB, {}, groups) { _, _, group ->
+                saved += group
+            }.also { dialogs += it }
+            runCurrent()
+            dialog.findViewById<MaterialAutoCompleteTextView>(R.id.group_name)!!.setText(name, false)
+            dialog.findViewById<MaterialButton>(R.id.button_create)!!.performClick()
+            runCurrent(); ShadowLooper.idleMainLooper()
+        }
+        assertEquals(listOf("Daily", ""), saved)
     }
 
     @Test fun currentScriptUsesFilledCardAndCheckmarkAndRecyclingClearsSelection() {
@@ -228,7 +266,9 @@ class RuntimeScenarioDialogTests {
 
     private fun creator(scope: CoroutineScope, kind: RuntimeScenarioKind = RuntimeScenarioKind.DUMB,
                         create: suspend (String, RuntimeScenarioKind) -> Unit): AlertDialog =
-        showRuntimeScenarioCreator(context, scope, kind, {}, create).also { dialogs += it }
+        showRuntimeScenarioCreator(context, scope, kind, {}) { name, selectedKind, _ ->
+            create(name, selectedKind)
+        }.also { dialogs += it }
 
     private fun switcher(count: Int, selected: (RuntimeScenarioTarget) -> Unit = {}, onCreate: () -> Unit = {}): AlertDialog =
         showRuntimeScenarioSwitcher(context, (1..count).map { index ->

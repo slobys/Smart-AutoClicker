@@ -36,6 +36,12 @@
                 android:imeOptions="actionDone"
                 android:singleLine="true" />
         </com.google.android.material.textfield.TextInputLayout>
+        <include
+            android:id="@+id/scenario_group"
+            layout="@layout/include_scenario_group_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp" />
         <com.google.android.material.button.MaterialButtonToggleGroup
             android:id="@+id/scenario_type"
             android:layout_width="match_parent"

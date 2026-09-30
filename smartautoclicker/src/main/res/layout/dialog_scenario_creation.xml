@@ -43,6 +43,18 @@
                 android:layout_marginHorizontal="@dimen/margin_horizontal_default"
                 android:layout_marginVertical="@dimen/margin_vertical_default"/>
 
+            <include
+                android:id="@+id/scenario_group"
+                layout="@layout/include_scenario_group_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/margin_horizontal_default" />
+
+            <TextView android:id="@+id/creation_error" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginHorizontal="@dimen/margin_horizontal_default"
+                android:text="@string/runtime_create_error" android:textColor="?attr/colorError"
+                android:accessibilityLiveRegion="polite" android:visibility="gone" />
+
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/card_type_selection"
                 style="@style/AppTheme.Widget.Card"

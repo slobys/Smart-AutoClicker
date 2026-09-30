@@ -44,6 +44,19 @@ class RuntimeScenarioCreatorTests {
         confirmVerified(smart, dumb)
     }
 
+    @Test fun groupIsInsertedWithSmartAndSimpleScriptInTheSameWrite() = runTest {
+        val smartInsert = slot<Scenario>()
+        val simpleInsert = slot<DumbScenario>()
+        coEvery { smart.addScenario(capture(smartInsert)) } returns 7
+        coEvery { dumb.addDumbScenario(capture(simpleInsert)) } returns 7
+        creator.create("Smart", RuntimeScenarioKind.SMART, 1080, "  新分组  ")
+        creator.create("Simple", RuntimeScenarioKind.DUMB, 1080, " 任务 ")
+        assertEquals("新分组", smartInsert.captured.groupName)
+        assertEquals("任务", simpleInsert.captured.groupName)
+        coVerify(exactly = 0) { smart.updateScenarioOrganization(any(), any(), any()) }
+        coVerify(exactly = 0) { dumb.updateScenarioOrganization(any(), any(), any()) }
+    }
+
     @Test fun failedInsertIsNotReportedAsSaved() = runTest {
         coEvery { smart.addScenario(any()) } returns -1
         try { creator.create("New", RuntimeScenarioKind.SMART, 1080); fail("Invalid ID accepted") }

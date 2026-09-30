@@ -17,6 +17,7 @@
 package com.buzbuz.smartautoclicker.scenarios.creation
 
 import android.content.Context
+import android.util.Log
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -37,11 +38,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.floor
@@ -62,7 +65,7 @@ class ScenarioCreationViewModel @Inject constructor(
         .map { it ?: "" }
         .take(1)
     val nameError: Flow<Boolean> = _name
-        .map { it.isNullOrEmpty() }
+        .map { it.isNullOrBlank() }
     val showPaidLimitationWarning: Flow<Boolean> = revenueRepository.userBillingState
         .map { it != UserBillingState.PURCHASED }
 
@@ -77,7 +80,7 @@ class ScenarioCreationViewModel @Inject constructor(
             )
         }
 
-    private val canBeCreated: Flow<Boolean> = _name.map { name -> !name.isNullOrEmpty() }
+    private val canBeCreated: Flow<Boolean> = _name.map { name -> !name.isNullOrBlank() }
     private val _creationState: MutableStateFlow<CreationState> =
         MutableStateFlow(CreationState.CONFIGURING)
     val creationState: Flow<CreationState> = _creationState.combine(canBeCreated) { state, valid ->
@@ -92,44 +95,68 @@ class ScenarioCreationViewModel @Inject constructor(
     fun setSelectedType(type: ScenarioTypeSelection) {
         _selectedType.value = type
     }
+    val creationError = MutableStateFlow(false)
+
+    val groups = scenarioGroupNames(smartRepository, dumbRepository)
+    var groupName: String = ""
+        private set
+
+    fun setGroupName(value: String) { groupName = normalizeScenarioGroup(value) }
 
     fun createScenario() {
         if (isInvalidForCreation() || _creationState.value != CreationState.CONFIGURING) return
 
         _creationState.value = CreationState.CREATING
+        creationError.value = false
+        val requestedName = _name.value!!.trim()
+        val requestedType = _selectedType.value
+        val requestedGroup = groupName
         viewModelScope.launch(Dispatchers.IO) {
-            when (_selectedType.value) {
-                ScenarioTypeSelection.DUMB -> createDumbScenario()
-                ScenarioTypeSelection.SMART -> createSmartScenario()
+            try {
+                val group = resolveScenarioGroup(requestedGroup, groups.first())
+                when (requestedType) {
+                    ScenarioTypeSelection.DUMB -> createDumbScenario(requestedName, group)
+                    ScenarioTypeSelection.SMART -> createSmartScenario(requestedName, group)
+                }
+                _creationState.value = CreationState.SAVED
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Log.e("ScenarioCreation", "Unable to create scenario", error)
+                creationError.value = true
+                _creationState.value = CreationState.CONFIGURING
             }
-            _creationState.value = CreationState.SAVED
         }
     }
 
-    private suspend fun createDumbScenario() {
-        dumbRepository.addDumbScenario(
+    private suspend fun createDumbScenario(name: String, group: String) {
+        val id = dumbRepository.addDumbScenario(
             DumbScenario(
                 id = Identifier(databaseId = DATABASE_ID_INSERTION, tempId = 0L),
-                name = _name.value!!,
+                name = name,
                 dumbActions = emptyList(),
                 repeatCount = 1,
                 isRepeatInfinite = false,
                 maxDurationMin = 1,
                 isDurationInfinite = true,
                 randomize = false,
+                groupName = group,
             )
         )
+        check(id > 0) { "Scenario insertion failed" }
     }
 
-    private suspend fun createSmartScenario() {
-        smartRepository.addScenario(
+    private suspend fun createSmartScenario(name: String, group: String) {
+        val id = smartRepository.addScenario(
             Scenario(
                 id = Identifier(databaseId = DATABASE_ID_INSERTION, tempId = 0L),
-                name = _name.value!!,
+                name = name,
                 detectionQuality = getDefaultDetectionQuality(),
                 randomize = false,
+                groupName = group,
             )
         )
+        check(id > 0) { "Scenario insertion failed" }
     }
 
     private fun getDefaultDetectionQuality(): Int {
@@ -142,7 +169,7 @@ class ScenarioCreationViewModel @Inject constructor(
         )
     }
 
-    private fun isInvalidForCreation(): Boolean = _name.value.isNullOrEmpty()
+    private fun isInvalidForCreation(): Boolean = _name.value.isNullOrBlank()
 }
 
 

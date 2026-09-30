@@ -16,11 +16,15 @@ import com.buzbuz.smartautoclicker.R
 import com.buzbuz.smartautoclicker.core.common.overlays.manager.OverlayManager.Companion.showAsOverlay
 import com.buzbuz.smartautoclicker.core.ui.utils.getDynamicColorsContext
 import com.buzbuz.smartautoclicker.databinding.DialogRuntimeScenarioCreateBinding
+import com.buzbuz.smartautoclicker.scenarios.creation.resolveScenarioGroup
+import com.buzbuz.smartautoclicker.scenarios.creation.setGroups
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import android.util.Log
 
 internal fun showRuntimeScenarioCreator(
@@ -28,19 +32,28 @@ internal fun showRuntimeScenarioCreator(
     scope: CoroutineScope,
     initialKind: RuntimeScenarioKind,
     onDismissed: () -> Unit,
-    onCreate: suspend (String, RuntimeScenarioKind) -> Unit,
+    groups: Flow<List<String>> = flowOf(emptyList()),
+    onCreate: suspend (String, RuntimeScenarioKind, String) -> Unit,
 ): AlertDialog {
     val themed = context.getDynamicColorsContext(R.style.AppTheme)
     val binding = DialogRuntimeScenarioCreateBinding.inflate(LayoutInflater.from(themed))
     val dialog = MaterialAlertDialogBuilder(themed)
         .setBackgroundInsetStart(0).setBackgroundInsetEnd(0).setView(binding.root).create()
     var creationJob: Job? = null
+    var existingGroups = emptyList<String>()
+    val groupsJob = scope.launch {
+        groups.collect { names ->
+            existingGroups = names
+            binding.scenarioGroup.setGroups(names)
+        }
+    }
     var creating = false
     fun setCreating(value: Boolean) {
         creating = value
         binding.buttonCreate.isEnabled = !value
         binding.buttonCancel.isEnabled = !value
         binding.scenarioName.isEnabled = !value
+        binding.scenarioGroup.root.isEnabled = !value
         binding.typeSmart.isEnabled = !value
         binding.typeDumb.isEnabled = !value
         binding.creationProgress.isVisible = value
@@ -72,11 +85,12 @@ internal fun showRuntimeScenarioCreator(
         }
         binding.nameLayout.error = null
         binding.creationStatus.isVisible = false
-        setCreating(true)
         val kind = if (binding.scenarioType.checkedButtonId == R.id.type_smart) RuntimeScenarioKind.SMART else RuntimeScenarioKind.DUMB
+        val group = resolveScenarioGroup(binding.scenarioGroup.groupName.text?.toString().orEmpty(), existingGroups)
+        setCreating(true)
         creationJob = scope.launch {
             try {
-                onCreate(name, kind)
+                onCreate(name, kind, group)
                 dialog.dismiss()
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -90,7 +104,7 @@ internal fun showRuntimeScenarioCreator(
             }
         }
     }
-    dialog.setOnDismissListener { creationJob?.cancel(); onDismissed() }
+    dialog.setOnDismissListener { groupsJob.cancel(); creationJob?.cancel(); onDismissed() }
     dialog.setCanceledOnTouchOutside(false)
     dialog.showAsOverlay()
     dialog.window?.apply {

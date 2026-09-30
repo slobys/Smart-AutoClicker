@@ -54,6 +54,7 @@ import com.buzbuz.smartautoclicker.scenarios.list.adapter.ScenarioGroupSelection
 import com.buzbuz.smartautoclicker.scenarios.list.copy.ScenarioCopyDialog
 import com.buzbuz.smartautoclicker.scenarios.list.copy.ScenarioCopyDialog.Companion.FRAGMENT_TAG_COPY_DIALOG
 import com.buzbuz.smartautoclicker.scenarios.list.model.ScenarioListUiState
+import com.buzbuz.smartautoclicker.scenarios.list.delete.ScenarioBulkDeleteDialog
 import com.buzbuz.smartautoclicker.scenarios.migration.ConditionsMigrationFragment.Companion.FRAGMENT_RESULT_KEY_COMPLETED
 import com.buzbuz.smartautoclicker.scenarios.migration.ConditionsMigrationFragment.Companion.FRAGMENT_TAG_CONDITION_MIGRATION_DIALOG
 import com.buzbuz.smartautoclicker.settings.SettingsActivity
@@ -166,6 +167,10 @@ class ScenarioListFragment : Fragment() {
                 else showImportExportDialog()
             }
             R.id.action_groups -> showGroupEditor()
+            R.id.action_bulk_delete -> {
+                if (parentFragmentManager.findFragmentByTag(ScenarioBulkDeleteDialog.TAG) == null)
+                    ScenarioBulkDeleteDialog().show(parentFragmentManager, ScenarioBulkDeleteDialog.TAG)
+            }
             R.id.action_tutorials -> tutorialNavigator.startTutorialActivity(requireContext())
             R.id.action_cancel -> scenarioListViewModel.setUiState(ScenarioListUiState.Type.SELECTION)
             R.id.action_search -> scenarioListViewModel.setUiState(ScenarioListUiState.Type.SEARCH)
@@ -183,6 +188,8 @@ class ScenarioListFragment : Fragment() {
         uiState ?: return
 
         updateMenu(uiState.menuUiState)
+        viewBinding.topAppBar.menu.findItem(R.id.action_bulk_delete)?.isVisible =
+            uiState.type == ScenarioListUiState.Type.SELECTION
         updateScenarioList(uiState)
     }
 

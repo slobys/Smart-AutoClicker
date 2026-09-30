@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="scenario_create_group_hint">选择已有分组，或输入新名称自动建组；留空为未分组。</string>
+    <string name="scenario_bulk_delete_title">批量删除</string>
+    <string name="scenario_bulk_delete_hint">勾选要删除的脚本。这里包含所有分组的智能、简单和空脚本。</string>
+    <string name="scenario_bulk_selection_count">已选 %1$d / 共 %2$d 个</string>
+    <string name="scenario_bulk_clear_selection">取消全选</string>
+    <string name="scenario_bulk_delete_count">删除（%1$d）</string>
+    <string name="scenario_bulk_deleting">正在删除…</string>
+    <string name="scenario_bulk_confirm_title">确认删除 %1$d 个脚本？</string>
+    <string name="scenario_bulk_confirm_message">以下脚本及其事件、操作会被永久删除，无法撤销。如需保留，请先导出备份。\n\n%1$s</string>
+    <string name="scenario_bulk_confirm_delete">确认删除</string>
+    <string name="scenario_bulk_deleted">已删除 %1$d 个脚本</string>
+    <string name="scenario_bulk_partial_failure">已删除 %1$d 个，%2$d 个删除失败。失败项仍保持选中，可以重试。</string>
+    <string name="scenario_bulk_load_error">脚本加载失败，请关闭此窗口后重试。</string>
+    <string name="scenario_bulk_empty">没有可删除的脚本。</string>
+</resources>

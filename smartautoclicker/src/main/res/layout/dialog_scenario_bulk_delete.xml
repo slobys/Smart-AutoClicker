@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/scenario_bulk_delete_title" android:textAppearance="?attr/textAppearanceTitleLarge"
+        android:textColor="?attr/colorOnSurface" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="8dp" android:text="@string/scenario_bulk_delete_hint"
+        android:textColor="?attr/colorOnSurfaceVariant" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:gravity="center_vertical" android:layout_marginTop="8dp">
+        <TextView android:id="@+id/selection_summary" android:layout_width="0dp"
+            android:layout_height="wrap_content" android:layout_weight="1"
+            android:accessibilityLiveRegion="polite" android:textColor="?attr/colorOnSurface" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/select_all"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:minHeight="48dp" android:text="@string/menu_item_title_select_all" />
+    </LinearLayout>
+    <androidx.recyclerview.widget.RecyclerView android:id="@+id/scenario_list"
+        android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+        android:scrollbars="vertical" android:fadeScrollbars="false"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+    <com.google.android.material.progressindicator.LinearProgressIndicator android:id="@+id/progress"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:indeterminate="true" android:visibility="gone" />
+    <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="8dp" android:accessibilityLiveRegion="polite"
+        android:textColor="?attr/colorError" android:visibility="gone" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="8dp" android:orientation="horizontal">
+        <com.google.android.material.button.MaterialButton android:id="@+id/button_cancel"
+            style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="0dp"
+            android:layout_height="wrap_content" android:layout_weight="1" android:minHeight="48dp"
+            android:text="@android:string/cancel" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/button_delete"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:layout_marginStart="8dp" android:minHeight="48dp"
+            android:text="@string/scenario_bulk_delete_title" />
+    </LinearLayout>
+</LinearLayout>

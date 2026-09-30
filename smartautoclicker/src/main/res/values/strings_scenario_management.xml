@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- English fallback for locales without management translations. -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="scenario_create_group_hint">Choose an existing group or enter a new name. Leave empty for ungrouped.</string>
+    <string name="scenario_bulk_delete_title">Batch delete</string>
+    <string name="scenario_bulk_delete_hint">Select scripts to delete. This list includes all groups, smart scripts, simple scripts and empty scripts.</string>
+    <string name="scenario_bulk_selection_count">Selected: %1$d / %2$d</string>
+    <string name="scenario_bulk_clear_selection">Deselect all</string>
+    <string name="scenario_bulk_delete_count">Delete (%1$d)</string>
+    <string name="scenario_bulk_deleting">Deleting…</string>
+    <string name="scenario_bulk_confirm_title">Delete scripts: %1$d?</string>
+    <string name="scenario_bulk_confirm_message">The selected scripts and their events or actions will be permanently deleted. This cannot be undone. Export a backup first if needed.\n\n%1$s</string>
+    <string name="scenario_bulk_confirm_delete">Delete permanently</string>
+    <string name="scenario_bulk_deleted">Scripts removed: %1$d</string>
+    <string name="scenario_bulk_partial_failure">Removed: %1$d. Failed: %2$d. Failed scripts remain selected; you can retry.</string>
+    <string name="scenario_bulk_load_error">Could not load scripts. Close this window and try again.</string>
+    <string name="scenario_bulk_empty">No scripts to delete.</string>
+</resources>

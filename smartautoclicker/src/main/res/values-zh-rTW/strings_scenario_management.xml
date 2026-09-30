@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="scenario_create_group_hint">選擇現有群組，或輸入新名稱自動建立；留空為未分組。</string>
+    <string name="scenario_bulk_delete_title">批次刪除</string>
+    <string name="scenario_bulk_delete_hint">勾選要刪除的腳本。這裡包含所有群組的智慧、簡單及空白腳本。</string>
+    <string name="scenario_bulk_selection_count">已選 %1$d / 共 %2$d 個</string>
+    <string name="scenario_bulk_clear_selection">取消全選</string>
+    <string name="scenario_bulk_delete_count">刪除（%1$d）</string>
+    <string name="scenario_bulk_deleting">正在刪除…</string>
+    <string name="scenario_bulk_confirm_title">確定刪除 %1$d 個腳本？</string>
+    <string name="scenario_bulk_confirm_message">以下腳本及其事件、操作會被永久刪除，無法復原。如需保留，請先匯出備份。\n\n%1$s</string>
+    <string name="scenario_bulk_confirm_delete">確認刪除</string>
+    <string name="scenario_bulk_deleted">已刪除 %1$d 個腳本</string>
+    <string name="scenario_bulk_partial_failure">已刪除 %1$d 個，%2$d 個刪除失敗。失敗項仍保持勾選，可以重試。</string>
+    <string name="scenario_bulk_load_error">腳本載入失敗，請關閉此視窗後重試。</string>
+    <string name="scenario_bulk_empty">沒有可刪除的腳本。</string>
+</resources>
