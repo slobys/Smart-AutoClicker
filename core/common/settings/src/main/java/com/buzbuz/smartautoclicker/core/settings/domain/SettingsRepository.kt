@@ -31,7 +31,7 @@ interface SettingsRepository {
     fun toggleLegacyNotificationUi()
 
     val isEntireScreenCaptureForcedFlow: Flow<Boolean>
-    fun isEntireScreenCaptureForced(): Boolean
+    suspend fun isEntireScreenCaptureForced(): Boolean
     fun toggleForceEntireScreenCapture()
 
     val isFilterScenarioUiEnabledFlow: Flow<Boolean>

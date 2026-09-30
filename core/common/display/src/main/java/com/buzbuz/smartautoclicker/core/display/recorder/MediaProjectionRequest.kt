@@ -87,11 +87,12 @@ class MediaProjectionRequest {
           failureListener = null
      }
 
-     private fun MediaProjectionManager.createScreenCaptureIntentCompat(forceEntireScreen: Boolean): Intent =
-          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM && forceEntireScreen)
-               createScreenCaptureIntent(MediaProjectionConfig.createConfigForDefaultDisplay())
-          else createScreenCaptureIntent()
-
 }
+
+/** Android 14 introduced the per-app picker and the default-display configuration together. */
+internal fun MediaProjectionManager.createScreenCaptureIntentCompat(forceEntireScreen: Boolean): Intent =
+     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && forceEntireScreen)
+          createScreenCaptureIntent(MediaProjectionConfig.createConfigForDefaultDisplay())
+     else createScreenCaptureIntent()
 
 private const val TAG = "MediaProjectionRequest"

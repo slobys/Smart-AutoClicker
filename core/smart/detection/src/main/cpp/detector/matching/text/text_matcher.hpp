@@ -111,6 +111,10 @@ namespace smartautoclicker {
                 const cv::Rect& detectionArea,
                 const std::string& recognitionModelId);
 
+        /** Removes broad RGB background variations without storing previous frames. */
+        std::vector<TextRecognizerResult> recognizeForegroundText(
+                const cv::Mat& rgbCrop, const std::string& recognitionModelId, bool darkText);
+
         /** Scores one OCR pass and keeps the best result found across all passes. */
         bool updateTextMatchingResult(
                 const std::vector<TextRecognizerResult>& recognizerResults,

@@ -61,7 +61,7 @@ class ScenarioViewModel @Inject constructor(
     val userConsentState: StateFlow<UserConsentState> = revenueRepository.userConsentState
         .stateIn(viewModelScope, SharingStarted.Eagerly, UserConsentState.UNKNOWN)
 
-    fun isEntireScreenCaptureForced(): Boolean =
+    suspend fun isEntireScreenCaptureForced(): Boolean =
         settingsRepository.isEntireScreenCaptureForced()
 
     fun requestUserConsentIfNeeded(activity: Activity) {

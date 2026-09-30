@@ -23,6 +23,8 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 
 import com.buzbuz.smartautoclicker.core.display.recorder.MediaProjectionRequest
 import com.buzbuz.smartautoclicker.core.ui.errors.createNoMediaProjectionDialog
@@ -95,13 +97,15 @@ class QSTileLauncherActivity : AppCompatActivity() {
     private fun showMediaProjectionWarning(scenarioId: Long) {
         Log.i(TAG, "All permissions are granted, request media projection")
 
-        mediaProjectionRequest.showMediaProjectionWarning(
-            context = this,
-            forceEntireScreen = viewModel.isEntireScreenCaptureForced(),
-            onSuccess = { resultCode, data -> startScenario(resultCode, data, scenarioId) },
-            onFailure = { showProjectionDeniedToast() },
-            onError = { showUnsupportedDeviceDialog() },
-        )
+        lifecycleScope.launch {
+            mediaProjectionRequest.showMediaProjectionWarning(
+                context = this@QSTileLauncherActivity,
+                forceEntireScreen = viewModel.isEntireScreenCaptureForced(),
+                onSuccess = { resultCode, data -> startScenario(resultCode, data, scenarioId) },
+                onFailure = { showProjectionDeniedToast() },
+                onError = { showUnsupportedDeviceDialog() },
+            )
+        }
     }
 
     private fun startScenario(resultCode: Int, data: Intent, scenarioId: Long) {

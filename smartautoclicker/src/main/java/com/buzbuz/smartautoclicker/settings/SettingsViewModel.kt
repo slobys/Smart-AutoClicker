@@ -62,7 +62,7 @@ class SettingsViewModel @Inject constructor(
         settingsRepository.overlayMenuAutoCollapseDelaySecondsFlow
 
     val shouldShowEntireScreenCapture: Flow<Boolean> =
-        flowOf(Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM)
+        flowOf(Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 
     val shouldShowPrivacySettings: Flow<Boolean> =
         revenueRepository.isPrivacySettingRequired

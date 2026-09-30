@@ -44,6 +44,8 @@ namespace {
     constexpr float MAX_DIRECT_TEXT_ASPECT_RATIO = 12.0f;
     constexpr int MAX_DIRECT_NUMBER_SIDE = 384;
     constexpr float MAX_DIRECT_NUMBER_ASPECT_RATIO = 8.0f;
+    constexpr float MIN_FOREGROUND_TEXT_CONFIDENCE = 0.60f;
+    constexpr int MAX_FOREGROUND_OCR_PIXELS = 512 * 512;
 }
 
 bool TextMatcher::init(const std::string& detectionModelPath, const std::map<std::string, std::string>& recognitionModels) {
@@ -94,13 +96,26 @@ TextMatchingResult* TextMatcher::matchText(
     // low-contrast glyphs more uniform while a conservative unsharp mask recovers mildly blurred
     // edges. Fallback candidates must also meet a model-confidence floor to limit false positives.
     recognizerResults = recognizeEnhancedText(screenImage, detectionArea, recognitionModelId);
-    updateTextMatchingResult(
+    if (updateTextMatchingResult(
             recognizerResults,
             conditionText,
             detectionArea,
             threshold,
             MIN_ENHANCED_TEXT_CONFIDENCE,
-            "enhanced");
+            "enhanced")) return &currentMatchingResult;
+
+    // Hue changes can hide glyphs in grayscale even when one RGB channel still separates them.
+    // Only failed compact regions pay for these two bounded background-removal passes.
+    if (detectionArea.area() <= MAX_FOREGROUND_OCR_PIXELS) {
+        cv::Mat rgbCrop;
+        cv::cvtColor(screenImage.cropColor(detectionArea), rgbCrop, cv::COLOR_RGBA2RGB);
+        for (bool darkText : {false, true}) {
+            if (updateTextMatchingResult(
+                    recognizeForegroundText(rgbCrop, recognitionModelId, darkText),
+                    conditionText, detectionArea, threshold, MIN_FOREGROUND_TEXT_CONFIDENCE,
+                    darkText ? "dark-foreground" : "light-foreground")) break;
+        }
+    }
 
     return &currentMatchingResult;
 }
@@ -139,6 +154,7 @@ TextMatchingResult* TextMatcher::matchNumber(
     float bestRankingScore = 0.0f;
     int bestDigitCount = 0;
     int bestBoundingBoxArea = 0;
+    bool bestIsAccepted = false;
 
     // Repeated readings produced from the original and background-suppressed crops are more
     // trustworthy than a one-off high-confidence reading caused by a moving effect. Keep the
@@ -146,9 +162,12 @@ TextMatchingResult* TextMatcher::matchNumber(
     std::vector<double> numericCandidateValues;
     numericCandidateValues.reserve(recognizerResults.size());
     for (const auto& result: recognizerResults) {
+        if (result.confidence * 100.0f < minimumRequiredScore) continue;
         const std::string normalizedText = normalizeNumberText(result.text);
         if (!isNumber(normalizedText)) continue;
-        numericCandidateValues.push_back(stringToDouble(normalizedText, numberFormat));
+        const double value = stringToDouble(normalizedText, numberFormat);
+        if (std::isfinite(value) && value != std::numeric_limits<double>::lowest())
+            numericCandidateValues.push_back(value);
     }
 
     // Parse results and find matching candidate, if any
@@ -178,6 +197,8 @@ TextMatchingResult* TextMatcher::matchNumber(
 
         float score = recognizerResult.confidence * 100;
         auto recognizedNumber = stringToDouble(normalizedText, numberFormat);
+        if (!std::isfinite(recognizedNumber) || recognizedNumber == std::numeric_limits<double>::lowest()) continue;
+        const bool isAccepted = score >= minimumRequiredScore;
         LOGD(
                 "TextMatcher",
                 "Score=%f; raw=%s; normalized=%s; recognized=%f; box=(%d,%d,%d,%d)",
@@ -237,8 +258,12 @@ TextMatchingResult* TextMatcher::matchNumber(
                 hasEquivalentScore &&
                 (digitCount < bestDigitCount ||
                  (digitCount == bestDigitCount && boundingBoxArea <= bestBoundingBoxArea));
-        if (hasClearlyLowerScore || isLessCompleteAtEquivalentScore) continue;
+        // A below-threshold corner fragment must never evict a valid complete number merely
+        // because it received a location/length bonus. Weak candidates cannot vote for consensus.
+        if (bestIsAccepted && !isAccepted) continue;
+        if (isAccepted == bestIsAccepted && (hasClearlyLowerScore || isLessCompleteAtEquivalentScore)) continue;
 
+        bestIsAccepted = isAccepted;
         bestRankingScore = rankingScore;
         bestDigitCount = digitCount;
         bestBoundingBoxArea = boundingBoxArea;
@@ -347,6 +372,43 @@ std::vector<TextRecognizerResult> TextMatcher::recognizeEnhancedText(
         results.insert(results.end(), directResults.begin(), directResults.end());
     }
 
+    return results;
+}
+
+std::vector<TextRecognizerResult> TextMatcher::recognizeForegroundText(
+        const cv::Mat& rgbCrop, const std::string& recognitionModelId, bool darkText
+) {
+    if (rgbCrop.empty() || rgbCrop.total() > MAX_FOREGROUND_OCR_PIXELS ||
+        std::min(rgbCrop.cols, rgbCrop.rows) < MIN_DIRECT_TEXT_SIDE) return {};
+
+    // Opening/closing estimates broad scenery behind thin glyph strokes. The strongest RGB
+    // residual retains coloured lettering with low luminance contrast. No earlier frames are
+    // retained, so movement and disappearing text cannot create stale coordinates or ghost text.
+    const int kernelSize = std::clamp(std::min(rgbCrop.cols, rgbCrop.rows) / 6, 7, 21) | 1;
+    cv::Mat residual;
+    cv::morphologyEx(rgbCrop, residual, darkText ? cv::MORPH_BLACKHAT : cv::MORPH_TOPHAT,
+                    cv::getStructuringElement(cv::MORPH_RECT, cv::Size(kernelSize, kernelSize)));
+    std::vector<cv::Mat> channels;
+    cv::split(residual, channels);
+    cv::Mat foreground;
+    cv::max(channels[0], channels[1], foreground);
+    cv::max(foreground, channels[2], foreground);
+    double peak;
+    cv::minMaxLoc(foreground, nullptr, &peak);
+    if (peak < 16.0) return {};
+    // Black glyphs on white preserve antialiased boundaries without hard binary thresholding.
+    foreground.convertTo(foreground, CV_8U, -255.0 / peak, 255.0);
+    cv::Mat foregroundRgb;
+    cv::cvtColor(foreground, foregroundRgb, cv::COLOR_GRAY2RGB);
+    auto results = recognizeTextInImage(foregroundRgb, recognitionModelId, MIN_ENHANCED_TEXT_DETECTION_SIDE);
+    // Only a tight horizontal line is suitable for direct recognition, not an entire game scene.
+    if (rgbCrop.rows <= MAX_DIRECT_TEXT_SHORT_SIDE && rgbCrop.cols <= MAX_DIRECT_TEXT_LONG_SIDE &&
+        rgbCrop.cols >= rgbCrop.rows && rgbCrop.cols <= rgbCrop.rows * MAX_DIRECT_TEXT_ASPECT_RATIO) {
+        std::vector<TextDetectorResult> direct;
+        direct.emplace_back(cv::Rect(0, 0, rgbCrop.cols, rgbCrop.rows), foregroundRgb);
+        auto directResults = textRecognizer->recognizeText(recognitionModelId, direct);
+        results.insert(results.end(), directResults.begin(), directResults.end());
+    }
     return results;
 }
 
@@ -486,7 +548,9 @@ std::vector<TextRecognizerResult> TextMatcher::recognizeNumber(
             if (result.confidence * 100.0f < minimumRequiredScore) continue;
             const std::string normalizedText = normalizeNumberText(result.text);
             if (!isNumber(normalizedText)) continue;
-            confidentValues.push_back(stringToDouble(normalizedText, numberFormat));
+            const double value = stringToDouble(normalizedText, numberFormat);
+            if (std::isfinite(value) && value != std::numeric_limits<double>::lowest())
+                confidentValues.push_back(value);
         }
 
         return std::any_of(
@@ -560,6 +624,15 @@ std::vector<TextRecognizerResult> TextMatcher::recognizeNumber(
     results.insert(results.end(), enhancedResults.begin(), enhancedResults.end());
     if ((!isCompactDirectArea && hasUsableNumericCandidate(results)) ||
         hasConfidentNumericConsensus(results)) return results;
+
+    // Keep coloured digits when animation makes them nearly equal to the background in grayscale.
+    if (isCompactDirectArea) {
+        for (bool darkText : {false, true}) {
+            auto foregroundResults = recognizeForegroundText(rgbScreenCrop, recognitionModelId, darkText);
+            results.insert(results.end(), foregroundResults.begin(), foregroundResults.end());
+            if (hasConfidentNumericConsensus(results)) return results;
+        }
+    }
 
     // Last resort for low-contrast digits: local thresholding separates the outline from a
     // non-uniform background better than a single global threshold.

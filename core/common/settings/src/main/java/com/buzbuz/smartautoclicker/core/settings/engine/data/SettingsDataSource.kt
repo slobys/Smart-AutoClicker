@@ -93,11 +93,11 @@ internal class SettingsDataSource @Inject constructor(
         }
 
     internal fun isEntireScreenCaptureForced(): Flow<Boolean> =
-        dataStore.data.map { preferences -> preferences[KEY_FORCE_ENTIRE_SCREEN] ?: false }
+        dataStore.data.map { preferences -> preferences[KEY_FORCE_ENTIRE_SCREEN] ?: true }
 
     internal suspend fun toggleForceEntireScreenCapture() =
         dataStore.edit { preferences ->
-            preferences[KEY_FORCE_ENTIRE_SCREEN] = !(preferences[KEY_FORCE_ENTIRE_SCREEN] ?: false)
+            preferences[KEY_FORCE_ENTIRE_SCREEN] = !(preferences[KEY_FORCE_ENTIRE_SCREEN] ?: true)
         }
 
     internal fun isInputBlockWorkaroundEnabled(): Flow<Boolean> =

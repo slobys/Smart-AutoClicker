@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Chinese and English are maintained here; other locales use the English fallback. -->
-    <string name="color_detection_area_hint" tools:ignore="MissingTranslation">Drag the thin frame or its outer handles to set the detection area. A single pixel compares its color; a larger area compares its average color, not any matching pixel. Tap the color swatch to pick a pixel again and reset the area.</string>
+    <string name="color_detection_area_hint" tools:ignore="MissingTranslation">Drag the thin frame or its outer handles. A single pixel compares its color; a larger area requires at least 75% of pixels within the color tolerance, ignoring minority moving noise. This is not an any-pixel search: tightly select the target color patch. Picking a color again resets the area to one pixel.</string>
 </resources>

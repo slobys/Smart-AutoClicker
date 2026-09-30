@@ -105,6 +105,7 @@ Android 可视化自动化工具。根据屏幕上的图片、文字、数值和
 
 - [稳定执行与诊断指南](documentation/reliability-and-diagnostics-zh.md)：点击后确认、智能滑动查找、运行历史与内存诊断。
 - [条件框选](documentation/condition-selection-zh.md)：细边框、框外手柄、颜色区域与原尺寸截图预览（v4.0.5.25 起提供）。
+- [动态背景识别](documentation/dynamic-recognition-zh.md)：移动中的图片、文字、数值与颜色识别，以及手机的屏幕捕获“应用范围”。
 - [测试结果面板](documentation/test-result-panel-zh.md)：工具栏靠左或靠右时，结果面板自动向屏幕内侧展开。
 - [路线录制与回放](documentation/route-recorder-zh.md)：数字坐标／小地图模式、摇杆校准、场景调用和安全测试（v4.0.5.25 起提供，仍为实验功能；不支持随机地图自动探索）。
 - [版本说明](documentation/releases)：每版改动、验证结果和适用范围。

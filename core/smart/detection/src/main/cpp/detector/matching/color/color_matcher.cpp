@@ -17,6 +17,8 @@
 
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/imgproc/imgproc_c.h>
+#include <array>
+#include <cmath>
 
 #include "color_matcher.hpp"
 #include "../../../logs/log.h"
@@ -59,13 +61,30 @@ void ColorMatcher::matchColor(
         return;
     }
 
-    // Compute the difference between each channel color (RGB)
-    auto imageColorMeans = mean(screenCroppedColorMat);
-    double diff = 0;
-    for (int i = 0; i < 3; i++) {
-        diff += abs(imageColorMeans.val[i] - conditionColor.val[i]);
+    // Compare real pixels instead of averaging RGB first: red/blue must not become a fictitious
+    // purple match. The 75th percentile tolerates a minority of moving highlights/edge pixels,
+    // while requiring the selected area to be predominantly the requested colour. For a 1px
+    // condition this is exactly the original RGB difference. Histogram memory is constant.
+    std::array<int, 766> differences{};
+    for (int y = 0; y < screenCroppedColorMat.rows; ++y) {
+        const auto* row = screenCroppedColorMat.ptr<cv::Vec4b>(y);
+        for (int x = 0; x < screenCroppedColorMat.cols; ++x) {
+            int difference = 0;
+            for (int channel = 0; channel < 3; ++channel) {
+                difference += std::abs(static_cast<int>(row[x][channel]) -
+                                       static_cast<int>(conditionColor[channel]));
+            }
+            ++differences[difference];
+        }
     }
-    diff = diff / (255 * 3);
+    const int requiredPixels = static_cast<int>(std::ceil(screenCroppedColorMat.total() * 0.75));
+    int counted = 0;
+    int quantileDifference = 0;
+    for (; quantileDifference < 765; ++quantileDifference) {
+        counted += differences[quantileDifference];
+        if (counted >= requiredPixels) break;
+    }
+    const double diff = quantileDifference / 765.0;
 
     currentMatchingResult.updateResults(detectionArea, diff);
 

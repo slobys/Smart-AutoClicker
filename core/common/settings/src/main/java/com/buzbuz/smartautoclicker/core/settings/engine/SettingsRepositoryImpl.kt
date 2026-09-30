@@ -28,6 +28,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -107,8 +108,10 @@ internal class SettingsRepositoryImpl @Inject constructor(
     }
 
 
-    override fun isEntireScreenCaptureForced(): Boolean =
-        _isEntireScreenCaptureForcedFlow.value
+    // Wait for persisted preferences on cold start; an initial StateFlow placeholder must not
+    // decide the capture/privacy scope before the user's choice has loaded.
+    override suspend fun isEntireScreenCaptureForced(): Boolean =
+        dataSource.isEntireScreenCaptureForced().first()
 
     override fun toggleForceEntireScreenCapture() {
         coroutineScope.launch {

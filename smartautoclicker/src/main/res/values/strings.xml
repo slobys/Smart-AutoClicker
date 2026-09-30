@@ -160,8 +160,8 @@
     <string name="field_legacy_notification_ui_title">Legacy Notification UI</string>
     <string name="field_legacy_notification_ui_desc">Use the system buttons instead of icon buttons in the notification.</string>
 
-    <string name="field_force_entire_screen_title">Force entire screen</string>
-    <string name="field_force_entire_screen_desc">Force the screen capture selector to \"Entire Screen\". Might not work depending on your device</string>
+    <string name="field_force_entire_screen_title">Capture entire screen by default</string>
+    <string name="field_force_entire_screen_desc">Skip choosing an app and keep detection working across apps. All visible screen content can be captured: avoid displaying sensitive information. System consent is still required. Turn off to choose one app; some devices may retain the scope picker.</string>
 
     <string name="field_input_block_workaround_title">Unblock touch screen</string>
     <string name="field_input_block_workaround_desc">On Pixel Devices With Android 15, using an auto clicker can block the touch screen.\nTo unblock it, you need to touch the screen with multiple fingers at the same time. This setting tries to simulate this every 10s.</string>

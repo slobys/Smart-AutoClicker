@@ -70,7 +70,8 @@ interface ImageDetector : AutoCloseable {
     ): DetectionResult
 
     /**
-     * Detect if the average color of the provided area match the condition color.
+     * Detect if at least 75% of pixels in the area match the condition color within the threshold.
+     * A single-pixel area remains an exact point sample; minority moving highlights are ignored.
      * [setScreenBitmap] must have been called first with the content of the screen.
      *
      * @param conditionColor the color to detect.

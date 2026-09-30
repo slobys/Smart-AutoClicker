@@ -81,6 +81,6 @@ class QSTileLauncherViewModel @Inject constructor(
         }
     }
 
-    fun isEntireScreenCaptureForced(): Boolean =
+    suspend fun isEntireScreenCaptureForced(): Boolean =
         settingsRepository.isEntireScreenCaptureForced()
 }

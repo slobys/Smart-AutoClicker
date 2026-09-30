@@ -108,6 +108,11 @@ void TemplateMatcher::matchTemplate(
         return;
     }
 
+    // Transparent HUDs keep their foreground but not the scenery underneath. A local high-pass
+    // fallback removes broad background/lighting changes. It still checks spatial foreground RGB
+    // and never reuses a position from an older frame.
+    if (matchForeground(screenImage, condition, detectionArea, threshold)) return;
+
     // During a swipe, Android can capture an intermediate frame where the target is directionally
     // blurred. Keep the exact pass authoritative, then try small horizontal and vertical motion-
     // blurred condition variants only as a fallback. This preserves static-image precision and
@@ -154,6 +159,64 @@ void TemplateMatcher::matchTemplate(
             return;
         }
     }
+}
+
+bool TemplateMatcher::matchForeground(
+        const ScreenImage& screenImage, const ConditionImage& condition,
+        const cv::Rect& detectionArea, int threshold
+) {
+    const cv::Mat& templateGray = condition.getGrayMat();
+    // Bound additional CPU/memory on missing-target frames. Prefer a tight detection region.
+    if (templateGray.total() > 256 * 256 || detectionArea.area() > 1024 * 1024 ||
+        std::min(templateGray.cols, templateGray.rows) < 16) return false;
+
+    auto highPass = [](const cv::Mat& source) {
+        cv::Mat floating, background, detail;
+        source.convertTo(floating, CV_32F);
+        cv::GaussianBlur(floating, background, cv::Size(0, 0), 3.0);
+        cv::subtract(floating, background, detail);
+        return detail;
+    };
+    const cv::Mat detail = highPass(templateGray);
+    double peak = 0;
+    cv::minMaxLoc(detail, nullptr, &peak);
+    if (peak < 20.0) return false;
+    const cv::Mat foreground = detail > std::max(12.0, peak * 0.35);
+    const int support = cv::countNonZero(foreground);
+    if (support < 24 || support < templateGray.total() * 0.03 ||
+        support > templateGray.total() * 0.65) return false;
+
+    cv::Mat scores;
+    cv::matchTemplate(highPass(screenImage.cropGray(detectionArea)), detail, scores, cv::TM_CCOEFF_NORMED);
+    // Extra fallback must not accept a weak edge resemblance even with a permissive user setting.
+    const double minimumScore = std::max(0.90, (100.0 - threshold) / 100.0);
+    for (int i = 0; i < MAX_CANDIDATE_COUNT; ++i) {
+        double score;
+        cv::Point location;
+        cv::minMaxLoc(scores, nullptr, &score, nullptr, &location);
+        if (!std::isfinite(score) || score < minimumScore) return false;
+        const cv::Rect area(detectionArea.x + location.x, detectionArea.y + location.y,
+                            templateGray.cols, templateGray.rows);
+        cv::Mat difference;
+        cv::absdiff(screenImage.cropColor(area), condition.getColorMat(), difference);
+        const cv::Scalar channels = cv::mean(difference, foreground);
+        const double colorDifference = (channels[0] + channels[1] + channels[2]) * 100.0 / 765.0;
+        // Also reject gross changes outside the edge mask (e.g. a similarly outlined coloured
+        // icon). Background suppression must not discard the entire spatial colour signature.
+        const double fullColorDifference = getPixelColorDiff(screenImage.cropColor(area), condition.getColorMat());
+        if (colorDifference <= getMaxColorDifference(threshold) &&
+            fullColorDifference <= std::min(30.0, 3.0 * getMaxColorDifference(threshold))) {
+            currentMatchingResult.setDetectedResult(area, score);
+            return true;
+        }
+        // Suppress the rejected candidate symmetrically, retaining separate nearby candidates.
+        const int radius = std::max(1, std::min(templateGray.cols, templateGray.rows) / 4);
+        const cv::Rect excluded = cv::Rect(location.x - radius, location.y - radius,
+                                           2 * radius + 1, 2 * radius + 1) &
+                                  cv::Rect(0, 0, scores.cols, scores.rows);
+        scores(excluded).setTo(-1);
+    }
+    return false;
 }
 
 bool TemplateMatcher::runMatchingPass(

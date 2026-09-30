@@ -23,6 +23,8 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 
 import com.buzbuz.smartautoclicker.R
 import com.buzbuz.smartautoclicker.scenarios.list.ScenarioListFragment
@@ -88,13 +90,15 @@ class ScenarioActivity : AppCompatActivity(), ScenarioListFragment.Listener {
         scenarioViewModel.startTroubleshootingFlowIfNeeded(this) {
             when (val scenario = requestedItem?.scenario) {
                 is DumbScenario -> startDumbScenario(scenario)
-                is Scenario -> mediaProjectionRequest.showMediaProjectionWarning(
-                    context = this,
-                    forceEntireScreen = scenarioViewModel.isEntireScreenCaptureForced(),
-                    onSuccess = { resultCode, data -> startSmartScenario(resultCode, data, scenario) },
-                    onFailure = { showProjectionDeniedToast() },
-                    onError = { showUnsupportedDeviceDialog() },
-                )
+                is Scenario -> lifecycleScope.launch {
+                    mediaProjectionRequest.showMediaProjectionWarning(
+                        context = this@ScenarioActivity,
+                        forceEntireScreen = scenarioViewModel.isEntireScreenCaptureForced(),
+                        onSuccess = { resultCode, data -> startSmartScenario(resultCode, data, scenario) },
+                        onFailure = { showProjectionDeniedToast() },
+                        onError = { showUnsupportedDeviceDialog() },
+                    )
+                }
             }
         }
     }

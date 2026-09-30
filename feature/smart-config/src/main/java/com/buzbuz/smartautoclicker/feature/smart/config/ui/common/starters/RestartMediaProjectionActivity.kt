@@ -24,6 +24,8 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 
 import com.buzbuz.smartautoclicker.core.common.overlays.manager.OverlayManager
 import com.buzbuz.smartautoclicker.core.display.recorder.MediaProjectionRequest
@@ -57,13 +59,15 @@ class RestartMediaProjectionActivity : AppCompatActivity() {
         setContentView(R.layout.activity_transparent)
 
         mediaProjectionRequest.registerForActivityResult(this)
-        mediaProjectionRequest.showMediaProjectionWarning(
-            context = this,
-            forceEntireScreen = viewModel.isEntireScreenCaptureForced(),
-            onSuccess = { resultCode, data -> restartScreenRecord(resultCode, data) },
-            onFailure = { showProjectionDeniedToast() },
-            onError = { showUnsupportedDeviceDialog() },
-        )
+        lifecycleScope.launch {
+            mediaProjectionRequest.showMediaProjectionWarning(
+                context = this@RestartMediaProjectionActivity,
+                forceEntireScreen = viewModel.isEntireScreenCaptureForced(),
+                onSuccess = { resultCode, data -> restartScreenRecord(resultCode, data) },
+                onFailure = { showProjectionDeniedToast() },
+                onError = { showUnsupportedDeviceDialog() },
+            )
+        }
     }
 
     private fun finishActivity() {
