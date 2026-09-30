@@ -60,7 +60,7 @@
             app:layout_constraintStart_toStartOf="parent"
             tools:text="Smart script · 6 events" />
 
-        <TextView
+        <androidx.appcompat.widget.AppCompatTextView
             android:id="@+id/current_badge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -69,9 +69,12 @@
             android:text="@string/runtime_switcher_current"
             android:textSize="12sp"
             android:textStyle="bold"
-            android:textColor="?attr/colorPrimary"
+            android:textColor="?attr/colorOnPrimary"
+            android:drawablePadding="4dp"
             android:layout_marginStart="4dp"
             android:visibility="gone"
+            app:drawableStartCompat="@drawable/ic_confirm"
+            app:drawableTint="?attr/colorOnPrimary"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             tools:visibility="visible" />

@@ -10,12 +10,14 @@ package com.buzbuz.smartautoclicker.localservice
 
 import android.content.Context
 import android.content.res.ColorStateList
+import android.graphics.Typeface
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.view.HapticFeedbackConstants
 import android.view.WindowManager
 
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.R.attr.colorPrimary
 import androidx.core.view.isVisible
 import androidx.core.widget.ImageViewCompat
 import androidx.recyclerview.widget.RecyclerView
@@ -30,9 +32,12 @@ import com.buzbuz.smartautoclicker.databinding.DialogRuntimeScenarioSwitchBindin
 import com.buzbuz.smartautoclicker.databinding.ItemRuntimeScenarioBinding
 
 import com.google.android.material.R.attr.colorOnPrimaryContainer
+import com.google.android.material.R.attr.colorOnPrimary
+import com.google.android.material.R.attr.colorOnSurface
+import com.google.android.material.R.attr.colorOnSurfaceVariant
 import com.google.android.material.R.attr.colorOutlineVariant
+import com.google.android.material.R.attr.colorPrimaryContainer
 import com.google.android.material.R.attr.colorSurface
-import com.google.android.material.R.attr.colorSurfaceVariant
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
@@ -169,22 +174,32 @@ private class RuntimeScenarioViewHolder(
             else R.string.runtime_switcher_dumb_details,
             target.itemCount,
         )
+        // Reset every selection-dependent property when a recycled card is rebound.
+        binding.scenarioName.setTextColor(MaterialColors.getColor(binding.root,
+            if (item.isCurrent) colorOnPrimary else colorOnSurface))
+        binding.scenarioName.setTypeface(null, if (item.isCurrent) Typeface.BOLD else Typeface.NORMAL)
+        binding.scenarioDetails.setTextColor(MaterialColors.getColor(binding.root,
+            if (item.isCurrent) colorOnPrimary else colorOnSurfaceVariant))
         binding.scenarioIcon.setImageResource(if (target.isSmart) R.drawable.ic_smart else R.drawable.ic_dumb)
+        binding.scenarioIcon.backgroundTintList = ColorStateList.valueOf(MaterialColors.getColor(binding.root,
+            if (item.isCurrent) colorOnPrimary else colorPrimaryContainer))
         ImageViewCompat.setImageTintList(
             binding.scenarioIcon,
-            ColorStateList.valueOf(MaterialColors.getColor(binding.scenarioIcon, colorOnPrimaryContainer)),
+            ColorStateList.valueOf(MaterialColors.getColor(binding.scenarioIcon,
+                if (item.isCurrent) colorPrimary else colorOnPrimaryContainer)),
         )
         binding.currentBadge.isVisible = item.isCurrent
 
         binding.scenarioCard.apply {
+            isSelected = item.isCurrent
             strokeWidth = resources.displayMetrics.density.times(if (item.isCurrent) 2f else 1f).toInt()
             setStrokeColor(
                 MaterialColors.getColor(
                     this,
-                    if (item.isCurrent) androidx.appcompat.R.attr.colorPrimary else colorOutlineVariant,
+                    if (item.isCurrent) colorPrimary else colorOutlineVariant,
                 )
             )
-            setCardBackgroundColor(MaterialColors.getColor(this, if (item.isCurrent) colorSurfaceVariant else colorSurface))
+            setCardBackgroundColor(MaterialColors.getColor(this, if (item.isCurrent) colorPrimary else colorSurface))
             contentDescription = listOfNotNull(
                 target.name,
                 binding.scenarioDetails.text,

@@ -5,6 +5,7 @@
 package com.buzbuz.smartautoclicker.localservice
 
 import android.content.Context
+import android.graphics.Typeface
 import android.text.InputFilter
 import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
@@ -49,6 +50,13 @@ internal fun showRuntimeScenarioCreator(
     }
     binding.scenarioName.filters = arrayOf(InputFilter.LengthFilter(context.resources.getInteger(R.integer.name_max_length)))
     binding.scenarioName.setText(context.getString(R.string.default_scenario_name))
+    binding.scenarioType.addOnButtonCheckedListener { _, _, _ ->
+        // Keep a non-color selection cue, including while creation disables the buttons.
+        listOf(binding.typeSmart, binding.typeDumb).forEach { button ->
+            button.setIconResource(if (button.isChecked) R.drawable.ic_confirm else 0)
+            button.setTypeface(null, if (button.isChecked) Typeface.BOLD else Typeface.NORMAL)
+        }
+    }
     binding.scenarioType.check(if (initialKind == RuntimeScenarioKind.SMART) R.id.type_smart else R.id.type_dumb)
     binding.buttonCancel.setOnClickListener {
         it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)

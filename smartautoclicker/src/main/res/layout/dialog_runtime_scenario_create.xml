@@ -50,7 +50,12 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:minHeight="48dp"
-                android:text="@string/item_title_smart_scenario" />
+                android:text="@string/item_title_smart_scenario"
+                android:textColor="@color/selector_button_checkable_tint"
+                app:backgroundTint="@color/selector_button_checkable_background"
+                app:iconGravity="textStart"
+                app:iconSize="20dp"
+                app:iconTint="@color/selector_button_checkable_tint" />
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/type_dumb"
                 style="@style/Widget.Material3.Button.OutlinedButton"
@@ -58,7 +63,12 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:minHeight="48dp"
-                android:text="@string/item_title_dumb_scenario" />
+                android:text="@string/item_title_dumb_scenario"
+                android:textColor="@color/selector_button_checkable_tint"
+                app:backgroundTint="@color/selector_button_checkable_background"
+                app:iconGravity="textStart"
+                app:iconSize="20dp"
+                app:iconTint="@color/selector_button_checkable_tint" />
         </com.google.android.material.button.MaterialButtonToggleGroup>
         <TextView
             android:id="@+id/creation_status"
