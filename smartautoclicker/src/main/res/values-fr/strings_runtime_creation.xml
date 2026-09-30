@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_create_title">Nouveau script</string>
+    <string name="runtime_create_hint">Le script actuel est en pause. Créez et modifiez un script ici sans revenir à l’accueil. Il ne démarrera pas automatiquement.</string>
+    <string name="runtime_create_and_edit">Créer et modifier</string>
+    <string name="runtime_creating">Création…</string>
+    <string name="runtime_create_name_required">Saisissez un nom de script.</string>
+    <string name="runtime_create_error">Impossible de créer le script. Le précédent reste inchangé. Réessayez.</string>
+    <string name="runtime_create_success">« %1$s » a été créé. Ajoutez des événements ou des actions avant de le lancer.</string>
+    <string name="runtime_create_saved_not_opened">« %1$s » a été enregistré, mais ne peut pas être ouvert. Sélectionnez-le dans Changer de script ou sur l’accueil pour le modifier.</string>
+</resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_create_title">新增腳本</string>
+    <string name="runtime_create_hint">目前腳本已暫停。建立後直接編輯新腳本，無需返回首頁；不會自動執行。</string>
+    <string name="runtime_create_and_edit">建立並編輯</string>
+    <string name="runtime_creating">正在建立…</string>
+    <string name="runtime_create_name_required">請輸入腳本名稱。</string>
+    <string name="runtime_create_error">無法建立腳本，原腳本未變更，請重試。</string>
+    <string name="runtime_create_success">已建立「%1$s」，請先新增事件或操作再執行。</string>
+    <string name="runtime_create_saved_not_opened">「%1$s」已儲存，但未能開啟。可從切換腳本或首頁選取後繼續編輯。</string>
+</resources>

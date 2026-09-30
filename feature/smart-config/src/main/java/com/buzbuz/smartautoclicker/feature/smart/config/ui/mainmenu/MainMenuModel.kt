@@ -180,7 +180,7 @@ class MainMenuModel @Inject constructor(
     }
 
     fun startScenarioEdition(onEditionStarted: () -> Unit) {
-        scenarioDbId.value?.let { scenarioDatabaseId ->
+        smartProcessingRepository.scenarioId.value?.databaseId?.let { scenarioDatabaseId ->
             viewModelScope.launch(Dispatchers.IO) {
                 if (editionRepository.startEdition(scenarioDatabaseId)) {
                     withContext(Dispatchers.Main) { onEditionStarted() }

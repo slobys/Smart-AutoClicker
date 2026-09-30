@@ -84,6 +84,9 @@ class MainMenu(
     private val onScenarioSwitchClicked: () -> Unit,
     private val canSwitchScenario: StateFlow<Boolean>,
     autoCollapseDelayMs: Long?,
+    private val onScenarioCreateClicked: () -> Unit,
+    private val canCreateScenario: StateFlow<Boolean>,
+    private var openEditorOnStart: Boolean = false,
 ) : OverlayMenu(autoCollapseDelayMs = autoCollapseDelayMs) {
 
     override fun tutorialMonitoringTag(): String = MonitoredOverlayType.MAIN_MENU.name
@@ -220,10 +223,19 @@ class MainMenu(
                 launch { viewModel.screenCaptureError.collect(::showScreenCaptureErrorDialogIfNeeded) }
                 launch { viewModel.runtimeFailure.collect(::showRuntimeFailureIfNeeded) }
                 launch { canSwitchScenario.collect(::updateScenarioSwitchButtonEnabledState) }
+                launch { canCreateScenario.collect { setMenuItemViewEnabled(viewBinding.btnCreateScenario, it) } }
                 launch { debuggingViewModel.isDebugging.collect(::updateDebugOverlayViewVisibility) }
                 launch { debuggingViewModel.debugExecutionState.collect(::updateDebugExecutionState) }
                 launch { debuggingViewModel.lastActionFailure.collect(::updateLastActionFailure) }
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (openEditorOnStart) {
+            openEditorOnStart = false
+            viewModel.startScenarioEdition { showScenarioConfigDialog() }
         }
     }
 
@@ -294,6 +306,7 @@ class MainMenu(
         when (viewId) {
             R.id.btn_play -> onPlayPauseClicked()
             R.id.btn_switch_scenario -> onScenarioSwitchClicked()
+            R.id.btn_create_scenario -> onScenarioCreateClicked()
             R.id.btn_click_list -> onConfigureClicked()
             R.id.btn_stop -> onStopClicked()
         }

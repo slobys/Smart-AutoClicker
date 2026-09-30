@@ -27,8 +27,9 @@ internal class RuntimeScenarioCatalog(
         dumbRepository.dumbScenarios,
     ) { smartScenarios, dumbScenarios ->
         buildList {
-            addAll(smartScenarios.filter { it.eventCount > 0 }.map(RuntimeScenarioTarget::Smart))
-            addAll(dumbScenarios.filter { it.isValid() }.map(RuntimeScenarioTarget::Dumb))
+            // Empty scripts remain reachable for editing after creation or an interrupted handoff.
+            addAll(smartScenarios.map(RuntimeScenarioTarget::Smart))
+            addAll(dumbScenarios.map(RuntimeScenarioTarget::Dumb))
         }.sortedWith(compareBy<RuntimeScenarioTarget> { !it.isSmart }.thenBy { it.name.lowercase() })
     }.stateIn(scope, SharingStarted.Eagerly, emptyList())
 }

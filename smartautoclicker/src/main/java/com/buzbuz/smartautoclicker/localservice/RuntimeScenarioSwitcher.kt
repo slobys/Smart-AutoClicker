@@ -12,11 +12,14 @@ import android.content.Context
 import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.view.HapticFeedbackConstants
+import android.view.WindowManager
 
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.core.widget.ImageViewCompat
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.GridLayoutManager
 
 import com.buzbuz.smartautoclicker.R
 import com.buzbuz.smartautoclicker.core.common.overlays.manager.OverlayManager.Companion.showAsOverlay
@@ -63,19 +66,11 @@ internal fun showRuntimeScenarioSwitcher(
     context: Context,
     items: List<RuntimeScenarioListItem>,
     onSelected: (RuntimeScenarioTarget) -> Unit,
-) {
+    onCreate: () -> Unit,
+): AlertDialog {
     val themedContext = context.getDynamicColorsContext(R.style.AppTheme)
-    if (items.size <= 1) {
-        MaterialAlertDialogBuilder(themedContext)
-            .setTitle(R.string.runtime_switcher_title)
-            .setMessage(R.string.runtime_switcher_empty)
-            .setPositiveButton(android.R.string.ok, null)
-            .create()
-            .showAsOverlay()
-        return
-    }
-
     val binding = DialogRuntimeScenarioSwitchBinding.inflate(LayoutInflater.from(themedContext))
+    val sizing = runtimeSwitcherSizing(context, items.size)
     val smartCount = items.count { item -> item.target.isSmart }
     binding.scenarioSummary.text = themedContext.getString(
         R.string.runtime_switcher_summary,
@@ -85,29 +80,61 @@ internal fun showRuntimeScenarioSwitcher(
     )
 
     lateinit var dialog: AlertDialog
-    binding.scenarioList.adapter = RuntimeScenarioAdapter(items) { item ->
-        if (item.isCurrent) return@RuntimeScenarioAdapter
+    binding.scenarioList.layoutManager = GridLayoutManager(themedContext, sizing.columns)
+    binding.scenarioList.layoutParams.height = sizing.listHeightPx
+    binding.scenarioList.adapter = RuntimeScenarioAdapter(items, sizing.rowHeightPx) { item ->
         dialog.dismiss()
-        onSelected(item.target)
+        if (!item.isCurrent) onSelected(item.target)
     }
     binding.scenarioList.itemAnimator = null
+    binding.scenarioList.isVisible = items.isNotEmpty()
+    binding.scenarioEmpty.isVisible = items.isEmpty()
+    binding.buttonCancel.setOnClickListener {
+        it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+        dialog.dismiss()
+    }
+    binding.buttonCreate.setOnClickListener {
+        it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+        dialog.dismiss()
+        onCreate()
+    }
 
     dialog = MaterialAlertDialogBuilder(themedContext)
-        .setTitle(R.string.runtime_switcher_title)
+        .setBackgroundInsetStart(0)
+        .setBackgroundInsetEnd(0)
         .setView(binding.root)
-        .setNegativeButton(android.R.string.cancel, null)
         .create()
     dialog.showAsOverlay()
+    dialog.window?.setLayout(sizing.widthPx, WindowManager.LayoutParams.WRAP_CONTENT)
+    return dialog
+}
+
+internal data class RuntimeSwitcherSizing(val widthPx: Int, val columns: Int, val rowHeightPx: Int, val listHeightPx: Int)
+
+internal fun runtimeSwitcherSizing(context: Context, itemCount: Int): RuntimeSwitcherSizing {
+    val metrics = context.resources.displayMetrics
+    val density = metrics.density
+    val fontScale = context.resources.configuration.fontScale.coerceAtLeast(1f)
+    val widthDp = minOf(480f, metrics.widthPixels / density - 32f).coerceAtLeast(200f)
+    val columns = if (widthDp >= 320f && fontScale <= 1.4f) 2 else 1
+    val rowHeightDp = (80 * fontScale).toInt()
+    val visibleRows = ((metrics.heightPixels / density - 144 * fontScale) / rowHeightDp).toInt().coerceIn(1, 3)
+    val rows = ((itemCount + columns - 1) / columns).coerceAtMost(visibleRows)
+    return RuntimeSwitcherSizing((widthDp * density).toInt(), columns,
+        (rowHeightDp * density).toInt(), (rows * rowHeightDp * density).toInt())
 }
 
 private class RuntimeScenarioAdapter(
     private val items: List<RuntimeScenarioListItem>,
+    private val rowHeightPx: Int,
     private val onClicked: (RuntimeScenarioListItem) -> Unit,
 ) : RecyclerView.Adapter<RuntimeScenarioViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RuntimeScenarioViewHolder =
         RuntimeScenarioViewHolder(
-            ItemRuntimeScenarioBinding.inflate(LayoutInflater.from(parent.context), parent, false),
+            ItemRuntimeScenarioBinding.inflate(LayoutInflater.from(parent.context), parent, false).apply {
+                root.layoutParams.height = rowHeightPx - (8 * parent.resources.displayMetrics.density).toInt()
+            },
             onClicked,
         )
 
@@ -125,7 +152,10 @@ private class RuntimeScenarioViewHolder(
     private var boundItem: RuntimeScenarioListItem? = null
 
     init {
-        binding.scenarioCard.setOnClickListener { boundItem?.let(onClicked) }
+        binding.scenarioCard.setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+            boundItem?.let(onClicked)
+        }
     }
 
     fun bind(item: RuntimeScenarioListItem) {

@@ -49,6 +49,10 @@ obfuscationConfig {
 android {
     namespace = "com.buzbuz.smartautoclicker"
 
+    // The shared unit-test convention configures library modules; overlay dialog tests in
+    // this application also need the merged Android resources for Robolectric inflation.
+    testOptions.unitTests.isIncludeAndroidResources = true
+
     buildFeatures {
         viewBinding = true
         buildConfig = true
@@ -107,6 +111,11 @@ android {
             )
         )
     }
+}
+
+androidComponents.onVariants { variant ->
+    // Component names are supplied by the obfuscation plugin on the tested variant.
+    variant.hostTests.values.forEach { it.manifestPlaceholders.putAll(variant.manifestPlaceholders) }
 }
 
 // Assign unique versionCodes per ABI for fDroid multi-APK publishing

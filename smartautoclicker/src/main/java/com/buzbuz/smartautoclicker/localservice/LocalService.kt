@@ -23,6 +23,8 @@ import android.media.projection.MediaProjectionManager
 import android.util.Log
 import android.view.KeyEvent
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
+import com.buzbuz.smartautoclicker.R
 
 import com.buzbuz.smartautoclicker.core.base.data.AppComponentsProvider
 import com.buzbuz.smartautoclicker.core.common.accessibility.domain.LocalAccessibilityService
@@ -60,6 +62,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -91,11 +94,14 @@ class LocalService(
     private var paywallResultJob: Job? = null
     /** Coroutine job serialising runtime script switches. */
     private var scenarioSwitchJob: Job? = null
+    /** Service-owned dialogs must not outlive their runtime session. */
+    private var runtimeDialog: AlertDialog? = null
     /** Guards engine, state and overlay transitions against rapid repeated input. */
     private val transitionMutex = Mutex()
 
     private val sessionState = RuntimeSessionStateMachine()
     private val scenarioCatalog = RuntimeScenarioCatalog(smartScenarioRepository, dumbScenarioRepository, serviceScope)
+    private val scenarioCreator = RuntimeScenarioCreator(smartScenarioRepository, dumbScenarioRepository)
     private val overlayCoordinator = RuntimeOverlayCoordinator(context, overlayManager)
     private val permissionHandoff = RuntimePermissionHandoff(context)
     private val dumbRuntime = DumbScenarioRuntime(dumbEngine)
@@ -121,6 +127,9 @@ class LocalService(
         scenarioCatalog.targets,
         sessionState.state,
     ) { scenarios, runtimeState -> scenarios.size > 1 && runtimeState is RuntimeSessionState.Active }
+        .stateIn(serviceScope, SharingStarted.Eagerly, false)
+    private val canCreateScenario: StateFlow<Boolean> = sessionState.state
+        .map { it is RuntimeSessionState.Active }
         .stateIn(serviceScope, SharingStarted.Eagerly, false)
     /** True if the overlay is started, false if not. */
     internal val isStarted: Boolean
@@ -156,7 +165,7 @@ class LocalService(
             delay(500)
             transitionMutex.withLock {
                 dumbRuntime.load(dumbScenario)
-                overlayManager.navigateTo(context, createDumbMainMenu(dumbScenario))
+                overlayManager.navigateTo(context, createDumbMainMenu(dumbScenario, openEditor = dumbScenario.dumbActions.isEmpty()))
                 sessionState.completeStart()
             }
         }
@@ -193,7 +202,7 @@ class LocalService(
 
         startJob = serviceScope.launch {
             transitionMutex.withLock {
-                val mainMenu = createSmartMainMenu()
+                val mainMenu = createSmartMainMenu(openEditor = scenario.eventCount == 0)
                 smartRuntime.load(scenario)
                 overlayManager.navigateTo(context, mainMenu)
                 smartProcessingRepository.startScreenRecord(resultCode = resultCode, data = data)
@@ -209,6 +218,8 @@ class LocalService(
 
     private fun scheduleStop() {
         if (stopJob != null) return
+        runtimeDialog?.dismiss()
+        runtimeDialog = null
         startJob?.cancel()
         scenarioSwitchJob?.cancel()
         paywallResultJob?.cancel()
@@ -245,6 +256,7 @@ class LocalService(
     }
 
     private fun play() {
+        if (runtimeDialog != null || scenarioSwitchJob?.isActive == true) return
         serviceScope.launch {
             val active = sessionState.active ?: return@launch
             if (active.target.kind == RuntimeScenarioKind.SMART && !smartRuntime.isRunning) {
@@ -295,24 +307,32 @@ class LocalService(
         overlayManager.restoreVisibility()
     }
 
-    private fun createSmartMainMenu(): MainMenu = MainMenu(
+    private fun createSmartMainMenu(openEditor: Boolean = false): MainMenu = MainMenu(
         onStopClicked = ::stopScenario,
         onScenarioSwitchClicked = ::showScenarioSwitcher,
         canSwitchScenario = canSwitchScenario,
+        onScenarioCreateClicked = ::showScenarioCreator,
+        canCreateScenario = canCreateScenario,
+        openEditorOnStart = openEditor,
         autoCollapseDelayMs = settingsRepository.getOverlayMenuAutoCollapseDelayMs(),
     ).also { mainMenu ->
         smartProcessingRepository.setProjectionErrorHandler { mainMenu.onMediaProjectionLost() }
     }
 
-    private fun createDumbMainMenu(scenario: DumbScenario): DumbMainMenu = DumbMainMenu(
+    private fun createDumbMainMenu(scenario: DumbScenario, openEditor: Boolean = false): DumbMainMenu = DumbMainMenu(
         dumbScenarioId = scenario.id,
         onStopClicked = ::stopScenario,
         onScenarioSwitchClicked = ::showScenarioSwitcher,
         canSwitchScenario = canSwitchScenario,
+        onScenarioCreateClicked = ::showScenarioCreator,
+        canCreateScenario = canCreateScenario,
+        openEditorOnStart = openEditor,
         autoCollapseDelayMs = settingsRepository.getOverlayMenuAutoCollapseDelayMs(),
     )
 
     private fun showScenarioSwitcher() {
+        if (releaseRequested || runtimeDialog != null || scenarioSwitchJob?.isActive == true ||
+            sessionState.state.value !is RuntimeSessionState.Active) return
         val currentTarget = sessionState.active?.target
         val items = scenarioCatalog.targets.value
             .map { target ->
@@ -325,7 +345,52 @@ class LocalService(
                 .thenBy { !it.target.isSmart }
                 .thenBy { it.target.name.lowercase() })
 
-        showRuntimeScenarioSwitcher(context, items, ::switchScenario)
+        val dialog = showRuntimeScenarioSwitcher(context, items, ::switchScenario) {
+            runtimeDialog = null
+            showScenarioCreator()
+        }
+        runtimeDialog = dialog
+        dialog.setOnDismissListener { if (runtimeDialog === dialog) runtimeDialog = null }
+    }
+
+    private fun showScenarioCreator() {
+        if (releaseRequested || runtimeDialog != null || scenarioSwitchJob?.isActive == true ||
+            sessionState.state.value !is RuntimeSessionState.Active) return
+        scenarioSwitchJob = serviceScope.launch {
+            transitionMutex.withLock {
+                val previous = sessionState.active ?: return@withLock
+                val paused = try {
+                    when (previous.target.kind) {
+                        RuntimeScenarioKind.SMART -> smartRuntime.prepareForSwitch() != null
+                        RuntimeScenarioKind.DUMB -> { dumbRuntime.prepareForSwitch(); true }
+                    }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    Log.e(TAG, "Unable to pause the current scenario for creation", error)
+                    false
+                }
+                if (!paused || releaseRequested || sessionState.state.value !is RuntimeSessionState.Active) {
+                    showSwitchError()
+                    return@withLock
+                }
+                sessionState.updatePlayback(RuntimePlaybackState.PAUSED)
+                runtimeDialog = showRuntimeScenarioCreator(
+                    context, serviceScope, previous.target.kind,
+                    onDismissed = { runtimeDialog = null },
+                ) { name, kind ->
+                    transitionMutex.withLock {
+                        check(!releaseRequested && sessionState.state.value is RuntimeSessionState.Active)
+                        val metrics = context.resources.displayMetrics
+                        val target = scenarioCreator.create(name, kind, maxOf(metrics.widthPixels, metrics.heightPixels))
+                        val switched = performScenarioSwitch(target, openEditor = true)
+                        Toast.makeText(context, context.getString(
+                            if (switched) R.string.runtime_create_success else R.string.runtime_create_saved_not_opened,
+                            target.name), Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
     }
 
     private fun switchScenario(target: RuntimeScenarioTarget) {
@@ -334,45 +399,50 @@ class LocalService(
 
         scenarioSwitchJob = serviceScope.launch {
             transitionMutex.withLock {
-                val previous = sessionState.beginSwitch(target.toKey()) ?: return@withLock
-                try {
-                    val switched = when (target) {
-                        is RuntimeScenarioTarget.Smart -> switchToSmartScenario(target.scenario, previous)
-                        is RuntimeScenarioTarget.Dumb -> switchToDumbScenario(target.scenario, previous)
-                    }
-
-                    if (switched && sessionState.state.value is RuntimeSessionState.Switching) {
-                        sessionState.completeSwitch(
-                            if (dumbRuntime.isRunning || smartRuntime.isRunning) RuntimePlaybackState.RUNNING
-                            else RuntimePlaybackState.PAUSED
-                        )
-                    } else if (!switched) {
-                        restorePreviousPlayback(previous)
-                        sessionState.rollbackSwitch()
-                        showSwitchError()
-                    }
-                } catch (exception: CancellationException) {
-                    sessionState.rollbackSwitch()
-                    throw exception
-                } catch (exception: Exception) {
-                    Log.e(TAG, "Failed to switch runtime scenario to ${target.databaseId}", exception)
-                    if (recoverPreviousScenario(previous)) {
-                        sessionState.rollbackSwitch()
-                    } else {
-                        sessionState.beginStop(isPermissionHandoff = false)
-                        stopScenarioInternal(isScenarioHandoff = false)
-                        sessionState.completeStop()
-                    }
-                    showSwitchError()
-                }
+                performScenarioSwitch(target, openEditor = target.itemCount == 0)
             }
-            scenarioSwitchJob = null
+        }
+    }
+
+    private suspend fun performScenarioSwitch(target: RuntimeScenarioTarget, openEditor: Boolean): Boolean {
+        val previous = sessionState.beginSwitch(target.toKey()) ?: return false
+        try {
+            val switched = when (target) {
+                is RuntimeScenarioTarget.Smart -> switchToSmartScenario(target.scenario, previous, openEditor)
+                is RuntimeScenarioTarget.Dumb -> switchToDumbScenario(target.scenario, previous, openEditor)
+            }
+            if (switched && sessionState.state.value is RuntimeSessionState.Switching) {
+                sessionState.completeSwitch(
+                    if (dumbRuntime.isRunning || smartRuntime.isRunning) RuntimePlaybackState.RUNNING
+                    else RuntimePlaybackState.PAUSED
+                )
+            } else if (!switched) {
+                restorePreviousPlayback(previous)
+                sessionState.rollbackSwitch()
+                showSwitchError()
+            }
+            return switched
+        } catch (exception: CancellationException) {
+            sessionState.rollbackSwitch()
+            throw exception
+        } catch (exception: Exception) {
+            Log.e(TAG, "Failed to switch runtime scenario to ${target.databaseId}", exception)
+            if (recoverPreviousScenario(previous)) {
+                sessionState.rollbackSwitch()
+            } else {
+                sessionState.beginStop(isPermissionHandoff = false)
+                stopScenarioInternal(isScenarioHandoff = false)
+                sessionState.completeStop()
+            }
+            showSwitchError()
+            return false
         }
     }
 
     private suspend fun switchToDumbScenario(
         scenario: DumbScenario,
         previous: RuntimeSessionState.Active,
+        openEditor: Boolean,
     ): Boolean {
         val wasRunning = if (previous.target.kind == RuntimeScenarioKind.SMART) {
             smartRuntime.prepareForSwitch() ?: return false
@@ -384,16 +454,17 @@ class LocalService(
         if (previous.hasMediaProjection) {
             smartProcessingRepository.setProjectionErrorHandler(::stopScenario)
         }
-        overlayCoordinator.replaceRoot(createDumbMainMenu(scenario))
+        overlayCoordinator.replaceRoot(createDumbMainMenu(scenario, openEditor))
         updateScenarioMetadata(scenario.id.databaseId, isSmart = false, scenario.name)
 
-        if (wasRunning) dumbRuntime.start()
+        if (wasRunning && !openEditor) dumbRuntime.start()
         return true
     }
 
     private suspend fun switchToSmartScenario(
         scenario: Scenario,
         previous: RuntimeSessionState.Active,
+        openEditor: Boolean,
     ): Boolean {
         if (!previous.hasMediaProjection) {
             sessionState.beginStop(isPermissionHandoff = true)
@@ -413,11 +484,11 @@ class LocalService(
         dumbRuntime.release()
         smartRuntime.load(scenario)
 
-        if (!wasSmartLoaded || overlayManager.getBackStackTop() !is MainMenu) {
-            overlayCoordinator.replaceRoot(createSmartMainMenu())
+        if (openEditor || !wasSmartLoaded || overlayManager.getBackStackTop() !is MainMenu) {
+            overlayCoordinator.replaceRoot(createSmartMainMenu(openEditor))
         }
         updateScenarioMetadata(scenario.id.databaseId, isSmart = true, scenario.name)
-        if (wasRunning) smartRuntime.start()
+        if (wasRunning && !openEditor) smartRuntime.start()
         return true
     }
 

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_create_title">Новый сценарий</string>
+    <string name="runtime_create_hint">Текущий сценарий приостановлен. Создайте и отредактируйте новый здесь, не возвращаясь на главный экран. Автоматического запуска не будет.</string>
+    <string name="runtime_create_and_edit">Создать и изменить</string>
+    <string name="runtime_creating">Создание…</string>
+    <string name="runtime_create_name_required">Введите название сценария.</string>
+    <string name="runtime_create_error">Не удалось создать сценарий. Предыдущий сценарий не изменён. Повторите попытку.</string>
+    <string name="runtime_create_success">Сценарий «%1$s» создан. Добавьте события или действия перед запуском.</string>
+    <string name="runtime_create_saved_not_opened">Сценарий «%1$s» сохранён, но его не удалось открыть. Выберите его в списке переключения сценариев или на главном экране для редактирования.</string>
+</resources>

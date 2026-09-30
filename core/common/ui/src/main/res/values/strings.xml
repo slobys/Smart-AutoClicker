@@ -16,6 +16,7 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+    <string name="content_desc_create_scenario">New script</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
 

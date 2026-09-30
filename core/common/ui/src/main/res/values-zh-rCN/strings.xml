@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="content_desc_create_scenario">新增脚本</string>
     <string name="yes">是</string>
     <string name="no">否</string>
     <string name="dialog_overlay_title_copy_from">复制来源</string>

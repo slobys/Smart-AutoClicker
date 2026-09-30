@@ -47,6 +47,9 @@ class DumbMainMenu(
     private val onScenarioSwitchClicked: () -> Unit,
     private val canSwitchScenario: StateFlow<Boolean>,
     autoCollapseDelayMs: Long?,
+    private val onScenarioCreateClicked: () -> Unit,
+    private val canCreateScenario: StateFlow<Boolean>,
+    private var openEditorOnStart: Boolean = false,
 ) : OverlayMenu(theme = R.style.AppTheme, autoCollapseDelayMs = autoCollapseDelayMs) {
 
     /** The view model for this menu. */
@@ -78,6 +81,7 @@ class DumbMainMenu(
                 launch { viewModel.isPlaying.collect(::updateMenuPlayingState) }
                 launch { viewModel.canPlay.collect(::updatePlayPauseButtonEnabledState) }
                 launch { canSwitchScenario.collect(::updateScenarioSwitchButtonEnabledState) }
+                launch { canCreateScenario.collect { setMenuItemViewEnabled(viewBinding.btnCreateScenario, it) } }
             }
         }
     }
@@ -96,6 +100,14 @@ class DumbMainMenu(
         }
 
         return viewBinding.root
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (openEditorOnStart) {
+            openEditorOnStart = false
+            onDumbScenarioConfigClicked()
+        }
     }
 
     override fun onDestroy() {
@@ -165,6 +177,7 @@ class DumbMainMenu(
             R.id.btn_play -> onPlayPauseClicked()
             R.id.btn_stop -> onStopClicked()
             R.id.btn_switch_scenario -> onScenarioSwitchClicked()
+            R.id.btn_create_scenario -> onScenarioCreateClicked()
             R.id.btn_show_actions -> onShowBriefClicked()
             R.id.btn_action_list -> onDumbScenarioConfigClicked()
         }

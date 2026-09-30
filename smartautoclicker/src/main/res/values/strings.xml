@@ -24,6 +24,14 @@
     <string name="runtime_switcher_empty">Create at least one other valid script to switch here.</string>
     <string name="runtime_switcher_error">The script could not be switched safely. Pause it and try again.</string>
     <string name="runtime_switcher_projection_required">Android will ask for screen recording permission before starting this smart script.</string>
+    <string name="runtime_create_title">New script</string>
+    <string name="runtime_create_hint">The current script is paused. Create a new script and edit it here without returning to the home screen. Nothing will run automatically.</string>
+    <string name="runtime_create_and_edit">Create and edit</string>
+    <string name="runtime_creating">Creating…</string>
+    <string name="runtime_create_name_required">Enter a script name.</string>
+    <string name="runtime_create_error">Unable to create the script. Your previous script is unchanged. Please try again.</string>
+    <string name="runtime_create_success">Created “%1$s”. Add events or actions before running it.</string>
+    <string name="runtime_create_saved_not_opened">“%1$s” was saved, but could not be opened. Select it from Switch script or the home screen to edit it.</string>
 
     <string name="app_name" translatable="false">Klick\'r</string>
 

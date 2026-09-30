@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_create_title">スクリプトを新規作成</string>
+    <string name="runtime_create_hint">現在のスクリプトは一時停止中です。ホーム画面に戻らずに新しいスクリプトを作成・編集できます。自動実行はされません。</string>
+    <string name="runtime_create_and_edit">作成して編集</string>
+    <string name="runtime_creating">作成中…</string>
+    <string name="runtime_create_name_required">スクリプト名を入力してください。</string>
+    <string name="runtime_create_error">スクリプトを作成できませんでした。元のスクリプトは変更されていません。再試行してください。</string>
+    <string name="runtime_create_success">「%1$s」を作成しました。実行前にイベントや操作を追加してください。</string>
+    <string name="runtime_create_saved_not_opened">「%1$s」は保存されましたが、開けませんでした。スクリプト切り替えまたはホーム画面から選択して編集してください。</string>
+</resources>

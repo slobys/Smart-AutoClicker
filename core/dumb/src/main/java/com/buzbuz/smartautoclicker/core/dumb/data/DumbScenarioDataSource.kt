@@ -63,13 +63,14 @@ class DumbScenarioDataSource @Inject constructor(
         dumbScenarioDao.getAllDumbActionsExcept(scenarioDbId)
             .mapList { it.toDomain() }
 
-    suspend fun addDumbScenario(scenario: DumbScenario) {
+    suspend fun addDumbScenario(scenario: DumbScenario): Long {
         Log.d(TAG, "Add dumb scenario $scenario")
-
+        val scenarioId = dumbScenarioDao.addDumbScenario(scenario.toEntity())
         updateDumbScenarioActions(
-            scenarioDbId = dumbScenarioDao.addDumbScenario(scenario.toEntity()),
+            scenarioDbId = scenarioId,
             actions = scenario.dumbActions,
         )
+        return scenarioId
     }
 
     suspend fun addDumbScenarioCopy(scenarioDbId: Long, copyName: String): Long? =

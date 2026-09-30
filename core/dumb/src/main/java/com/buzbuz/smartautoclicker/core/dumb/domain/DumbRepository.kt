@@ -53,9 +53,8 @@ class DumbRepository @Inject constructor(
     override fun getAllDumbActionsFlowExcept(scenarioDbId: Long): Flow<List<DumbAction>> =
         dumbScenarioDataSource.getAllDumbActionsExcept(scenarioDbId)
 
-    override suspend fun addDumbScenario(scenario: DumbScenario) {
+    override suspend fun addDumbScenario(scenario: DumbScenario): Long =
         dumbScenarioDataSource.addDumbScenario(scenario)
-    }
 
     override suspend fun addDumbScenarioCopy(scenario: DumbScenarioWithActions): Long? =
         dumbScenarioDataSource.addDumbScenarioCopy(scenario)

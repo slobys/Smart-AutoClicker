@@ -33,7 +33,7 @@ interface IDumbRepository {
 
     fun getAllDumbActionsFlowExcept(scenarioDbId: Long): Flow<List<DumbAction>>
 
-    suspend fun addDumbScenario(scenario: DumbScenario)
+    suspend fun addDumbScenario(scenario: DumbScenario): Long
 
     suspend fun addDumbScenarioCopy(scenario: DumbScenarioWithActions): Long?
 

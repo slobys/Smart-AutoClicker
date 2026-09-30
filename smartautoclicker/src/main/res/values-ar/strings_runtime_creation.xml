@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_create_title">برنامج نصي جديد</string>
+    <string name="runtime_create_hint">تم إيقاف البرنامج النصي الحالي مؤقتًا. أنشئ برنامجًا نصيًا جديدًا وحرره هنا دون العودة إلى الشاشة الرئيسية. لن يبدأ التشغيل تلقائيًا.</string>
+    <string name="runtime_create_and_edit">إنشاء وتحرير</string>
+    <string name="runtime_creating">جارٍ الإنشاء…</string>
+    <string name="runtime_create_name_required">أدخل اسم البرنامج النصي.</string>
+    <string name="runtime_create_error">تعذر إنشاء البرنامج النصي. لم يتغير البرنامج السابق. حاول مجددًا.</string>
+    <string name="runtime_create_success">تم إنشاء «%1$s». أضف أحداثًا أو إجراءات قبل التشغيل.</string>
+    <string name="runtime_create_saved_not_opened">تم حفظ «%1$s» ولكن تعذر فتحه. حدده من تبديل البرنامج النصي أو الشاشة الرئيسية لتحريره.</string>
+</resources>

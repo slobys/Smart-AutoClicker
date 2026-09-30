@@ -6,29 +6,27 @@
     android:id="@+id/scenario_card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="@dimen/margin_horizontal_small"
-    android:layout_marginVertical="@dimen/margin_vertical_small"
+    android:layout_margin="4dp"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground"
-    android:minHeight="76dp"
-    app:cardCornerRadius="16dp"
+    android:minHeight="72dp"
+    app:cardCornerRadius="12dp"
     app:cardElevation="0dp"
     app:strokeWidth="1dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="76dp"
-        android:padding="@dimen/margin_horizontal_intermediate">
+        android:layout_height="match_parent"
+        android:minHeight="72dp"
+        android:padding="8dp">
 
         <ImageView
             android:id="@+id/scenario_icon"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
             android:background="@drawable/bg_runtime_scenario_icon"
-            android:padding="8dp"
-            app:layout_constraintBottom_toBottomOf="parent"
+            android:padding="4dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:ignore="ContentDescription"
@@ -39,14 +37,13 @@
             style="@style/AppTheme.TextAppearance.ListItemTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/margin_horizontal_intermediate"
+            android:layout_marginStart="8dp"
             android:ellipsize="end"
-            android:maxLines="1"
-            app:layout_constraintBottom_toTopOf="@id/scenario_details"
-            app:layout_constraintEnd_toStartOf="@id/current_badge"
+            android:maxLines="2"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@id/scenario_icon"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_chainStyle="packed"
             tools:text="Daily rewards" />
 
         <TextView
@@ -54,30 +51,29 @@
             style="@style/AppTheme.TextAppearance.ListItemSubText"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/margin_horizontal_intermediate"
             android:ellipsize="end"
             android:maxLines="1"
+            android:textSize="12sp"
             android:textColor="?attr/colorOnSurfaceVariant"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/current_badge"
-            app:layout_constraintStart_toEndOf="@id/scenario_icon"
-            app:layout_constraintTop_toBottomOf="@id/scenario_name"
+            app:layout_constraintStart_toStartOf="parent"
             tools:text="Smart script · 6 events" />
 
-        <com.google.android.material.chip.Chip
+        <TextView
             android:id="@+id/current_badge"
-            style="@style/Widget.Material3.Chip.Assist"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:clickable="false"
             android:focusable="false"
             android:text="@string/runtime_switcher_current"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorPrimary"
+            android:layout_marginStart="4dp"
             android:visibility="gone"
-            app:chipMinHeight="32dp"
-            app:ensureMinTouchTargetSize="false"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
             tools:visibility="visible" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
