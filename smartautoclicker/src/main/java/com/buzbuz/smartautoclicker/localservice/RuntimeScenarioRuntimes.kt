@@ -24,7 +24,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 internal class DumbScenarioRuntime(private val engine: DumbEngine) {
     val isRunning: Boolean get() = engine.isRunning.value
 
-    fun prepareForSwitch(): Boolean = isRunning.also { if (it) engine.stopDumbScenario() }
+    fun prepareForSwitch(): Boolean = isRunning.also { engine.stopDumbScenario() }
     fun load(scenario: DumbScenario) { engine.release(); engine.init(scenario) }
     fun start() = engine.startDumbScenario()
     fun stop() = engine.stopDumbScenario()
@@ -60,9 +60,9 @@ internal class SmartScenarioRuntime(
             }
         } ?: return null
         if (state.isRuntimeError()) return null
-        if (state != DetectionState.DETECTING) return false
-
+        // Even RECORDING can have a pending database load; invalidate it before switching/editing.
         repository.stopDetection()
+        if (state != DetectionState.DETECTING) return false
         val readyState = withTimeoutOrNull(RUNTIME_TRANSITION_TIMEOUT_MS) {
             repository.detectionState.first { value ->
                 value == DetectionState.RECORDING || value.isRuntimeError()

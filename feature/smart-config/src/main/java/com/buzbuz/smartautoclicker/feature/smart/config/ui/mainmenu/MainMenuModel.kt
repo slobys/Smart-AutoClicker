@@ -37,9 +37,11 @@ import com.buzbuz.smartautoclicker.feature.smart.config.domain.EditionRepository
 import com.buzbuz.smartautoclicker.feature.smart.config.domain.usecase.alphabet.AreRequiredAlphabetModelsInstalledUseCase
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -74,6 +76,8 @@ class MainMenuModel @Inject constructor(
         )
 
     private var paywallResultJob: Job? = null
+    private var startJob: Job? = null
+    private val isStarting = MutableStateFlow(false)
 
     /** Tells if the paywall is currently displayed. */
     val paywallIsVisible: Flow<Boolean> =
@@ -85,7 +89,9 @@ class MainMenuModel @Inject constructor(
 
     /** The current of the detection. */
     val detectionState: StateFlow<UiState> = smartProcessingRepository.detectionState
-        .map { if (it == DetectionState.DETECTING) UiState.Detecting else UiState.Idle }
+        .combine(isStarting) { state, starting ->
+            if (starting || state == DetectionState.DETECTING) UiState.Detecting else UiState.Idle
+        }
         .distinctUntilChanged()
         .stateIn(
             viewModelScope,
@@ -133,21 +139,25 @@ class MainMenuModel @Inject constructor(
 
     /** Start/Stop the detection. */
     fun toggleDetection(context: Context) {
-        when (detectionState.value) {
-            UiState.Detecting -> stopDetection()
-            UiState.Idle -> {
-                if (shouldStartPaywall()) startPaywall(context)
-                else startDetection(context)
-            }
+        if (isStarting.value || paywallResultJob?.isActive == true || smartProcessingRepository.isRunning()) {
+            stopDetection()
+            return
         }
+        if (shouldStartPaywall()) startPaywall(context)
+        else startDetection(context)
     }
 
-    /** Stop the detection. Returns true if it was started, false if not. */
+    /** Stops pending loads too. Returns whether the stop key was handled. */
     fun stopDetection(): Boolean {
-        if (detectionState.value !is UiState.Detecting) return false
-
+        val wasActive = isStarting.value || paywallResultJob?.isActive == true ||
+            detectionState.value == UiState.Detecting || smartProcessingRepository.isRunning()
+        startJob?.cancel()
+        startJob = null
+        isStarting.value = false
+        paywallResultJob?.cancel()
+        paywallResultJob = null
         smartProcessingRepository.stopDetection()
-        return true
+        return wasActive
     }
 
     private fun shouldStartPaywall(): Boolean =
@@ -169,7 +179,9 @@ class MainMenuModel @Inject constructor(
     }
 
     private fun startDetection(context: Context) {
-        viewModelScope.launch {
+        if (startJob?.isActive == true) return
+        isStarting.value = true
+        val request = viewModelScope.launch(start = CoroutineStart.LAZY) {
             smartProcessingRepository.startDetection(
                 context = context,
                 autoStopDuration = revenueRepository.consumeTrial(),
@@ -177,6 +189,12 @@ class MainMenuModel @Inject constructor(
                 generateReport = debuggingRepository.isDebugReportEnabled(),
             )
         }
+        startJob = request
+        request.invokeOnCompletion {
+            // An older cancelled load must not clear the state of a newer start.
+            if (startJob === request) isStarting.value = false
+        }
+        request.start()
     }
 
     fun startScenarioEdition(onEditionStarted: () -> Unit) {
@@ -228,7 +246,7 @@ class MainMenuModel @Inject constructor(
         !isMediaProjectionStarted.value
 
     fun shouldShowStopVolumeDownTutorialDialog(): Boolean =
-        detectionState.value == UiState.Idle && shouldShowStopWithVolumeDownTip.value
+        !isStarting.value && detectionState.value == UiState.Idle && shouldShowStopWithVolumeDownTip.value
 
     private fun UserBillingState.isAdRequested(): Boolean =
         this == UserBillingState.AD_REQUESTED

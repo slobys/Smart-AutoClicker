@@ -260,10 +260,16 @@ internal class ActionExecutor(
         return dispatchGesture(swipeGesture, swipe.swipeDuration!!)
     }
 
-    private suspend fun dispatchGesture(gesture: GestureDescription, durationMs: Long): ActionExecutionResult =
-        withTimeoutOrNull(durationMs.coerceIn(0, 59_999) + ACTION_TIMEOUT_GRACE_MS) {
-            withContext(Dispatchers.Main) { androidExecutor.dispatchGesture(gesture) }.toExecutionResult()
-        } ?: ActionExecutionResult.TimedOut(durationMs + ACTION_TIMEOUT_GRACE_MS)
+    private suspend fun dispatchGesture(gesture: GestureDescription, durationMs: Long): ActionExecutionResult {
+        val outcome = withTimeoutOrNull(durationMs.coerceIn(0, 59_999) + ACTION_TIMEOUT_GRACE_MS) {
+            withContext(Dispatchers.Main) { androidExecutor.dispatchGesture(gesture) }
+        }
+        // Also stop event-level retries: the target may already have consumed this click/swipe.
+        if (outcome == null || outcome == AndroidGestureResult.TIMED_OUT || outcome == AndroidGestureResult.ERROR) {
+            stopAfterAction = true
+        }
+        return outcome?.toExecutionResult() ?: ActionExecutionResult.TimedOut(durationMs + ACTION_TIMEOUT_GRACE_MS)
+    }
 
     private suspend fun executeSwipeSearch(event: Event, swipe: Swipe): ActionExecutionResult {
         val targetId = swipe.verificationEventId ?: return executeSwipe(swipe)
@@ -540,6 +546,8 @@ private fun AndroidGestureResult.toExecutionResult(): ActionExecutionResult = wh
     AndroidGestureResult.COMPLETED -> ActionExecutionResult.Success
     AndroidGestureResult.CANCELLED -> ActionExecutionResult.Cancelled("Gesture was cancelled by Android")
     AndroidGestureResult.REJECTED -> ActionExecutionResult.Failed("Gesture was rejected by Android")
+    AndroidGestureResult.TIMED_OUT -> ActionExecutionResult.Failed("Gesture callback timed out; execution is unconfirmed. Stopped to prevent duplicate input")
+    AndroidGestureResult.ERROR -> ActionExecutionResult.Failed("Gesture dispatch failed with an unknown outcome. Stopped to prevent duplicate input")
     AndroidGestureResult.SERVICE_UNAVAILABLE -> ActionExecutionResult.Failed("Accessibility service is unavailable")
 }
 

@@ -703,6 +703,41 @@ class ActionExecutorTests {
     }
 
     @Test
+    fun execute_unconfirmedGesture_stopsImmediatelyAndSkipsRemainingActions() = runTest {
+        for (outcome in listOf(AndroidGestureResult.TIMED_OUT, AndroidGestureResult.ERROR)) {
+            whenever(mockAndroidExecutor.dispatchGesture(any())).thenReturn(outcome)
+            var stopRequests = 0
+            val results = mutableListOf<ActionExecutionResult>()
+            val executor = ActionExecutor(mockAndroidExecutor, mockProcessingState, false,
+                onStopRequested = { stopRequests++ },
+                onActionResult = { _, _, result -> results += result })
+            executor.executeActions(getNewDefaultEvent(actions = listOf(
+                getNewDefaultClickUserPos(1), getNewDefaultClickUserPos(2))))
+            assertEquals(1, stopRequests)
+            assertTrue(results.single() is ActionExecutionResult.Failed)
+        }
+        verify(mockAndroidExecutor, times(2)).dispatchGesture(any())
+    }
+
+    @Test
+    fun execute_gestureWatchdogAlsoStopsBeforeAnotherAction() = runTest {
+        var dispatches = 0
+        val stalledAndroid = object : AndroidActionExecutor by mockAndroidExecutor {
+            override suspend fun dispatchGesture(gestureDescription: GestureDescription): AndroidGestureResult {
+                dispatches++
+                awaitCancellation()
+            }
+        }
+        var stops = 0
+        val executor = ActionExecutor(stalledAndroid, mockProcessingState, false, onStopRequested = { stops++ })
+        val result = executor.executeActions(getNewDefaultEvent(actions = listOf(
+            getNewDefaultClickUserPos(1), getNewDefaultClickUserPos(2))))
+        assertTrue(result is ActionExecutionResult.TimedOut)
+        assertEquals(1, stops)
+        assertEquals(1, dispatches)
+    }
+
+    @Test
     fun execute_smartWaitSkip_recordsTimeoutAndReturnsSkipped() = runTest {
         val results = mutableListOf<ActionExecutionResult>()
         val smartPause = getNewDefaultPause(1).copy(

@@ -19,6 +19,7 @@ plugins {
     alias(libs.plugins.buzbuz.androidLibrary)
     alias(libs.plugins.buzbuz.flavour)
     alias(libs.plugins.buzbuz.hilt)
+    alias(libs.plugins.buzbuz.androidUnitTest)
 }
 
 android {

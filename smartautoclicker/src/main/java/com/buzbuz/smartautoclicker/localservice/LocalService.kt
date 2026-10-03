@@ -92,6 +92,7 @@ class LocalService(
     private var releaseRequested = false
     /** Coroutine job for the paywall result upon start from notification. */
     private var paywallResultJob: Job? = null
+    private var playbackJob: Job? = null
     /** Coroutine job serialising runtime script switches. */
     private var scenarioSwitchJob: Job? = null
     /** Service-owned dialogs must not outlive their runtime session. */
@@ -225,6 +226,13 @@ class LocalService(
         startJob?.cancel()
         scenarioSwitchJob?.cancel()
         paywallResultJob?.cancel()
+        playbackJob?.cancel()
+        try {
+            dumbRuntime.stop()
+        } catch (error: Exception) {
+            // Continue full cleanup even if immediate pause fails.
+            Log.w(TAG, "Unable to pause simple runtime before cleanup", error)
+        }
         // Request cancellation before waiting for overlay animations or the transition mutex.
         smartProcessingRepository.stopScreenRecord(
             if (releaseRequested) RuntimeStopReason.SERVICE_DISCONNECTED else RuntimeStopReason.SESSION_CLOSED)
@@ -258,8 +266,8 @@ class LocalService(
     }
 
     private fun play() {
-        if (runtimeDialog != null || scenarioSwitchJob?.isActive == true) return
-        serviceScope.launch {
+        if (runtimeDialog != null || scenarioSwitchJob?.isActive == true || playbackJob?.isActive == true) return
+        playbackJob = serviceScope.launch {
             val active = sessionState.active ?: return@launch
             if (active.target.kind == RuntimeScenarioKind.SMART && !smartRuntime.isRunning) {
                 if (shouldStartPaywall()) startPaywall()
@@ -271,12 +279,11 @@ class LocalService(
     }
 
     private fun pause() {
-        serviceScope.launch {
-            when {
-                dumbRuntime.isRunning -> dumbRuntime.stop()
-                smartRuntime.isRunning -> smartRuntime.stop()
-            }
-        }
+        playbackJob?.cancel()
+        paywallResultJob?.cancel()
+        // Do not gate pause on isRunning: a pending database load is not running yet.
+        dumbRuntime.stop()
+        smartRuntime.stop()
     }
 
     private fun shouldStartPaywall(): Boolean =
@@ -295,11 +302,7 @@ class LocalService(
         }.launchIn(serviceScope)
     }
 
-    private fun startSmartDetection() {
-        serviceScope.launch {
-            smartRuntime.start()
-        }
-    }
+    private suspend fun startSmartDetection() = smartRuntime.start()
 
     private fun hideMenu() {
         overlayManager.hideAll()

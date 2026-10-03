@@ -117,6 +117,9 @@ enum class AndroidGestureResult {
     COMPLETED,
     CANCELLED,
     REJECTED,
+    TIMED_OUT,
+    /** Dispatch raised an exception; the gesture must not be replayed automatically. */
+    ERROR,
     SERVICE_UNAVAILABLE,
 }
 

@@ -135,7 +135,16 @@ documentation/     使用指南与版本记录
 ./gradlew testFDroidDebugUnitTest lintFDroidDebug
 ```
 
-Windows PowerShell 中将 `./gradlew` 换成 `.\gradlew.bat`。连接 Android 设备或模拟器后，可运行图片与文字识别测试：
+Windows（特别是仓库目录含中文时）使用项目构建入口，自动通过临时 ASCII 盘符调用 Gradle，并校验 JDK 21；不会修改全局 Java 设置或移动源码：
+
+```powershell
+.\scripts\build-windows.ps1 -JavaHome 'C:\path\to\jdk-21'
+.\scripts\build-windows.ps1 -JavaHome 'C:\path\to\jdk-21' -Tasks 'testFDroidDebugUnitTest','lintFDroidDebug'
+```
+
+若 `JAVA_HOME` 已指向 JDK 21，可以省略 `-JavaHome`。默认使用 `%LOCALAPPDATA%\Android\Sdk`；其他安装位置用 `-AndroidSdk` 指定，`K:` 已占用时用 `-DriveLetter` 指定空闲盘符。脚本不安装或升级依赖；Android Studio 自带的 JDK 不一定是 21。
+
+连接 Android 设备或模拟器后，可运行图片与文字识别测试（Windows 可将任务名传给上述脚本）：
 
 ```shell
 ./gradlew :core:smart:detection:connectedFDroidDebugAndroidTest

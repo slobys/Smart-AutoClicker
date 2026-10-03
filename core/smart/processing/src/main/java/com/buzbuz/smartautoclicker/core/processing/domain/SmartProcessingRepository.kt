@@ -90,6 +90,7 @@ interface SmartProcessingRepository : Dumpable {
     /**
      * Start the processing for the current [Scenario].
      * Ignored if the state is different from [DetectionState.RECORDING].
+     * Suspends through data loading and engine initialization until running, stopped or failed.
      *
      * @param context the Android context.
      * @param liveDebugging true if the session should generate live debugging events.
@@ -100,7 +101,7 @@ interface SmartProcessingRepository : Dumpable {
 
     /**
      * Stop the processing for the current [Scenario].
-     * Ignored if the state is different than [DetectionState.DETECTING].
+     * Also invalidates a pending start while scenario data is still loading.
      */
     fun stopDetection()
 

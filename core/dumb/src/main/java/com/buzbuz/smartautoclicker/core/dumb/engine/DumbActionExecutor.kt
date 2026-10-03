@@ -23,6 +23,7 @@ import android.util.Log
 import com.buzbuz.smartautoclicker.core.base.workarounds.UnblockGestureScheduler
 import com.buzbuz.smartautoclicker.core.base.workarounds.buildUnblockGesture
 import com.buzbuz.smartautoclicker.core.common.actions.AndroidActionExecutor
+import com.buzbuz.smartautoclicker.core.common.actions.AndroidGestureResult
 import com.buzbuz.smartautoclicker.core.common.actions.gesture.buildSingleStroke
 import com.buzbuz.smartautoclicker.core.common.actions.gesture.line
 import com.buzbuz.smartautoclicker.core.common.actions.gesture.moveTo
@@ -107,11 +108,17 @@ class DumbActionExecutor @Inject constructor(
 
     private suspend fun executeRepeatableGesture(gesture: GestureDescription, repeatable: Repeatable) {
         repeatable.repeat {
-            withContext(Dispatchers.Main) {
+            val result = withContext(Dispatchers.Main) {
                 androidExecutor.dispatchGesture(gesture)
+            }
+            if (result == AndroidGestureResult.TIMED_OUT || result == AndroidGestureResult.ERROR) {
+                throw UnconfirmedGestureException(result)
             }
         }
     }
 }
 
 private const val TAG = "DumbActionExecutor"
+
+internal class UnconfirmedGestureException(result: AndroidGestureResult) :
+    IllegalStateException("Gesture outcome is unknown ($result); automatic repetition has been stopped")

@@ -20,12 +20,19 @@ import android.util.Log
 
 import com.buzbuz.smartautoclicker.core.base.Dumpable
 import com.buzbuz.smartautoclicker.core.base.addDumpTabulationLvl
+import com.buzbuz.smartautoclicker.core.base.di.Dispatcher
+import com.buzbuz.smartautoclicker.core.base.di.HiltCoroutineDispatchers.IO
 import com.buzbuz.smartautoclicker.core.dumb.domain.IDumbRepository
 import com.buzbuz.smartautoclicker.core.dumb.domain.model.DumbAction
 import com.buzbuz.smartautoclicker.core.dumb.domain.model.DumbScenario
 import com.buzbuz.smartautoclicker.core.settings.domain.SettingsRepository
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -48,7 +55,8 @@ import javax.inject.Singleton
 class DumbEngine @Inject constructor(
     private val dumbRepository: IDumbRepository,
     private val dumbActionExecutor: DumbActionExecutor,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    @param:Dispatcher(IO) private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ): Dumpable {
 
     /** Coroutine scope for the dumb scenario processing. */
@@ -57,6 +65,9 @@ class DumbEngine @Inject constructor(
     private var timeoutJob: Job? = null
     /** Job for the scenario execution. */
     private var executionJob: Job? = null
+    private var startupJob: Job? = null
+    private val _isStarting = MutableStateFlow(false)
+    val isStarting: StateFlow<Boolean> = _isStarting
     /** Completion listener on dumb actions tries.*/
     private var onTryCompletedListener: (() -> Unit)? = null
 
@@ -70,36 +81,58 @@ class DumbEngine @Inject constructor(
     private val _isRunning: MutableStateFlow<Boolean> = MutableStateFlow(false)
     val isRunning: StateFlow<Boolean> = _isRunning
 
-    fun init(dumbScenario: DumbScenario) {
+    @Synchronized fun init(dumbScenario: DumbScenario) {
+        release()
         dumbActionExecutor.setUnblockWorkaround(settingsRepository.isInputBlockWorkaroundEnabled())
         dumbScenarioDbId.value = dumbScenario.id.databaseId
 
-        processingScope = CoroutineScope(Dispatchers.IO)
+        processingScope = CoroutineScope(ioDispatcher)
         processingScope?.launch {
             dumbRepository.markAsUsed(dumbScenario.id)
         }
     }
 
-    fun startDumbScenario() {
-        if (_isRunning.value) return
-
-        processingScope?.launch {
-            dumbScenarioDbId.value?.let { dbId ->
-                dumbRepository.getDumbScenario(dbId)?.let { scenario ->
-                    startEngine(scenario)
+    @Synchronized fun startDumbScenario() {
+        if (_isRunning.value || startupJob != null) return
+        val scope = processingScope ?: return
+        val dbId = dumbScenarioDbId.value ?: return
+        _isStarting.value = true
+        startupJob = scope.launch(start = CoroutineStart.LAZY) {
+            val request = coroutineContext.job
+            try {
+                val scenario = dumbRepository.getDumbScenario(dbId) ?: return@launch
+                coroutineContext.ensureActive()
+                synchronized(this@DumbEngine) {
+                    if (startupJob === request && dumbScenarioDbId.value == dbId) startEngine(scenario)
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Log.e(TAG, "Unable to load simple scenario", error)
+            } finally {
+                synchronized(this@DumbEngine) {
+                    if (startupJob === request) {
+                        startupJob = null
+                        _isStarting.value = false
+                    }
                 }
             }
         }
+        startupJob?.start()
     }
 
-    fun tryDumbAction(dumbAction: DumbAction, completionListener: () -> Unit) {
+    @Synchronized fun tryDumbAction(dumbAction: DumbAction, completionListener: () -> Unit) {
+        stopDumbScenario()
         Log.i(TAG, "Trying dumb action: $dumbAction")
         onTryCompletedListener = completionListener
         startEngine(dumbAction.toDumbScenarioTry())
     }
 
-    fun stopDumbScenario() {
-        if (!isRunning.value) return
+    @Synchronized fun stopDumbScenario() {
+        // Loading is cancellable too, even before the engine reports itself as running.
+        startupJob?.cancel()
+        startupJob = null
+        _isStarting.value = false
         _isRunning.value = false
 
         Log.d(TAG, "stopDumbScenario")
@@ -109,12 +142,13 @@ class DumbEngine @Inject constructor(
         executionJob?.cancel()
         executionJob = null
 
-        onTryCompletedListener?.invoke()
+        val completedListener = onTryCompletedListener
         onTryCompletedListener = null
+        completedListener?.invoke()
     }
 
-    fun release() {
-        if (isRunning.value) stopDumbScenario()
+    @Synchronized fun release() {
+        stopDumbScenario()
 
         dumbScenarioDbId.value = null
         processingScope?.cancel()
@@ -122,34 +156,47 @@ class DumbEngine @Inject constructor(
     }
 
     private fun startEngine(scenario: DumbScenario) {
-        if (_isRunning.value || scenario.dumbActions.isEmpty()) return
+        if (processingScope == null || _isRunning.value || scenario.dumbActions.isEmpty()) return
         _isRunning.value = true
 
         Log.d(TAG, "startDumbScenario ${scenario.id} with ${scenario.dumbActions.size} actions")
 
         if (!scenario.isDurationInfinite) timeoutJob = startTimeoutJob(scenario.maxDurationMin)
         executionJob = startScenarioExecutionJob(scenario)
+        timeoutJob?.start()
+        executionJob?.start()
     }
 
     private fun startTimeoutJob(timeoutDurationMinutes: Int): Job? =
-        processingScope?.launch {
+        processingScope?.launch(start = CoroutineStart.LAZY) {
             Log.d(TAG, "startTimeoutJob: timeoutDurationMinutes=$timeoutDurationMinutes")
             delay(timeoutDurationMinutes.minutes.inWholeMilliseconds)
 
-            processingScope?.launch { stopDumbScenario() }
+            synchronized(this@DumbEngine) {
+                if (timeoutJob === coroutineContext.job) stopDumbScenario()
+            }
         }
 
     private fun startScenarioExecutionJob(dumbScenario: DumbScenario): Job? =
-        processingScope?.launch {
-            dumbScenario.repeat {
-                dumbScenario.dumbActions.forEach { dumbAction ->
-                    dumbActionExecutor.executeDumbAction(dumbAction, dumbScenario.randomize)
+        processingScope?.launch(start = CoroutineStart.LAZY) {
+            try {
+                dumbScenario.repeat {
+                    dumbScenario.dumbActions.forEach { dumbAction ->
+                        coroutineContext.ensureActive()
+                        dumbActionExecutor.executeDumbAction(dumbAction, dumbScenario.randomize)
+                    }
+                    coroutineContext.ensureActive()
+                    dumbActionExecutor.onScenarioLoopFinished()
                 }
-
-                dumbActionExecutor.onScenarioLoopFinished()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: UnconfirmedGestureException) {
+                Log.w(TAG, "Stopping simple scenario to prevent duplicate input", error)
+            } finally {
+                synchronized(this@DumbEngine) {
+                    if (executionJob === coroutineContext.job) stopDumbScenario()
+                }
             }
-
-            processingScope?.launch { stopDumbScenario() }
         }
 
     override fun dump(writer: PrintWriter, prefix: CharSequence) {

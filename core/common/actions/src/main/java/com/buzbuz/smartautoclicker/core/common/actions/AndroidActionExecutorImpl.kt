@@ -84,7 +84,9 @@ internal class AndroidActionExecutorImpl @Inject constructor(
                     delay(GESTURE_DISPATCH_CANCELLED_BACKOFF_MS)
                     return AndroidGestureResult.CANCELLED
                 }
-                GestureDispatchResult.ERROR -> Unit
+                GestureDispatchResult.TIMED_OUT -> return AndroidGestureResult.TIMED_OUT
+                GestureDispatchResult.ERROR -> return AndroidGestureResult.ERROR
+                GestureDispatchResult.REJECTED -> Unit
             }
 
             if (attempt < GESTURE_DISPATCH_MAX_ATTEMPTS - 1) {

@@ -56,7 +56,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -100,6 +103,8 @@ internal class SmartProcessingRepositoryImpl @Inject constructor(
 
     /** Stop the detection automatically after selected delay */
     private var autoStopJob: Job? = null
+    /** Invalidates database loads that outlive pause, close, switching or a newer start. */
+    private var startGeneration = 0L
 
     private val _scenarioId: MutableStateFlow<Identifier?> = MutableStateFlow(null)
     override val scenarioId: StateFlow<Identifier?> = _scenarioId
@@ -138,7 +143,8 @@ internal class SmartProcessingRepositoryImpl @Inject constructor(
         shouldKeepScreenOn.onEach(::updateWakeLockState).launchIn(coroutineScopeIo)
     }
 
-    override fun setScenarioId(identifier: Identifier, markAsUsed: Boolean) {
+    @Synchronized override fun setScenarioId(identifier: Identifier, markAsUsed: Boolean) {
+        invalidatePendingStart()
         _scenarioId.value = identifier
 
         if (markAsUsed) {
@@ -157,39 +163,73 @@ internal class SmartProcessingRepositoryImpl @Inject constructor(
 
     override fun startScreenRecord(resultCode: Int, data: Intent) {
         detectorEngine.startScreenRecord(resultCode, data) {
+            synchronized(this) { invalidatePendingStart() }
             coroutineScopeMain.launch { projectionErrorHandler?.invoke() }
         }
     }
 
     override suspend fun startDetection(context: Context, liveDebugging: Boolean, generateReport: Boolean, autoStopDuration: Duration?) {
-        autoStopJob?.cancel()
-        autoStopJob = null
+        val generation = beginStartRequest() ?: return
         val id = scenarioId.value?.databaseId ?: return
         val scenario = scenarioRepository.getScenario(id) ?: return
         val events = scenarioRepository.getScreenEvents(id)
         val triggerEvents = scenarioRepository.getTriggerEvents(id)
         val counters = scenarioRepository.getCounters(id)
 
-        detectorEngine.startDetection(
-            context = context,
-            scenario = scenario,
-            screenEvents = events,
-            triggerEvents = triggerEvents,
-            counters = counters,
-            liveDebugging = liveDebugging,
-            generateReport = generateReport,
-        )
+        val requested = startIfCurrent(generation) {
+            detectorEngine.startDetection(
+                context = context,
+                scenario = scenario,
+                screenEvents = events,
+                triggerEvents = triggerEvents,
+                counters = counters,
+                liveDebugging = liveDebugging,
+                generateReport = generateReport,
+            )
 
-        autoStopDuration?.let { duration ->
-            autoStopJob = coroutineScopeIo.launch {
-                delay(duration)
-                detectorEngine.stopDetection(RuntimeStopReason.AUTO_STOP)
+            autoStopDuration?.let { duration ->
+                autoStopJob = coroutineScopeIo.launch {
+                    delay(duration)
+                    synchronized(this@SmartProcessingRepositoryImpl) {
+                        if (generation == startGeneration) {
+                            invalidatePendingStart()
+                            detectorEngine.stopDetection(RuntimeStopReason.AUTO_STOP)
+                        }
+                    }
+                }
+            }
+        }
+        if (requested) {
+            // Keep the caller's loading/pause control alive while native models are being initialized.
+            detectorEngine.state.first { it != DetectorState.TRANSITIONING }
+        }
+    }
+
+    @Synchronized override fun stopDetection() {
+        invalidatePendingStart()
+        detectorEngine.stopDetection()
+    }
+
+    @Synchronized private fun beginStartRequest(): Long? {
+        if (detectorEngine.state.value != DetectorState.RECORDING) return null
+        invalidatePendingStart()
+        return startGeneration
+    }
+
+    private suspend fun startIfCurrent(generation: Long, start: () -> Unit): Boolean {
+        currentCoroutineContext().ensureActive()
+        return synchronized(this) {
+            if (generation != startGeneration || detectorEngine.state.value != DetectorState.RECORDING) false
+            else {
+                start()
+                true
             }
         }
     }
 
-    override fun stopDetection() {
-        detectorEngine.stopDetection()
+    // Call only while holding this repository's monitor; final start and stop share the same lock.
+    private fun invalidatePendingStart() {
+        startGeneration++
         autoStopJob?.cancel()
         autoStopJob = null
     }
@@ -202,9 +242,8 @@ internal class SmartProcessingRepositoryImpl @Inject constructor(
 
     override fun stepDebugExecution() = detectorEngine.stepDebugExecution()
 
-    override fun stopScreenRecord(reason: RuntimeStopReason) {
-        autoStopJob?.cancel()
-        autoStopJob = null
+    @Synchronized override fun stopScreenRecord(reason: RuntimeStopReason) {
+        invalidatePendingStart()
         projectionErrorHandler = null
         detectorEngine.stopScreenRecord(reason)
 
@@ -214,32 +253,26 @@ internal class SmartProcessingRepositoryImpl @Inject constructor(
     override suspend fun awaitStopped() = detectorEngine.awaitStopped()
 
     override suspend fun tryEvent(context: Context, scenario: Scenario, event: ScreenEvent) {
+        val generation = beginStartRequest() ?: return
         val counters = scenarioRepository.getCounters(scenario.id.databaseId)
         val triedElement = ImageEventTry(scenario, counters, event)
 
-        tryElement(
-            context,
-            triedElement,
-        )
+        startIfCurrent(generation) { tryElement(context, triedElement) }
     }
 
     override suspend fun tryScreenCondition(context: Context, scenario: Scenario, condition: ScreenCondition) {
+        val generation = beginStartRequest() ?: return
         val counters = scenarioRepository.getCounters(scenario.id.databaseId)
         val triedElement = ScreenConditionTry(scenario, counters, condition)
 
-        tryElement(
-            context = context,
-            elementTry = triedElement,
-        )
+        startIfCurrent(generation) { tryElement(context, triedElement) }
     }
 
     override suspend fun tryAction(context: Context,  scenario: Scenario, action: Action) {
+        val generation = beginStartRequest() ?: return
         val counters = scenarioRepository.getCounters(scenario.id.databaseId)
 
-        tryElement(
-            context = context,
-            elementTry = ActionTry(scenario, counters, action),
-        )
+        startIfCurrent(generation) { tryElement(context, ActionTry(scenario, counters, action)) }
     }
 
     private fun tryElement(context: Context, elementTry: ScenarioTry) {

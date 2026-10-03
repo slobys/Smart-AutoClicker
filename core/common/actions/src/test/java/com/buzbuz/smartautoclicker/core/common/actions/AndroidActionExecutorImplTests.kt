@@ -22,6 +22,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.advanceTimeBy
 
 import org.junit.Test
 import org.junit.Assert.assertEquals
@@ -39,6 +40,47 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Build.VERSION_CODES.Q])
 class AndroidActionExecutorImplTests {
+
+    @Test
+    fun dispatchGesture_acceptedButCallbackMissing_neverReplays() = runTest {
+        val service = mock(AccessibilityService::class.java)
+        `when`(service.dispatchGesture(any(), any(), any())).thenReturn(true)
+        assertEquals(AndroidGestureResult.TIMED_OUT, actionExecutor(service).dispatchGesture(gesture()))
+        verify(service, times(1)).dispatchGesture(any(), any(), any())
+    }
+
+    @Test
+    fun dispatchGesture_exceptionHasUnknownOutcome_neverReplays() = runTest {
+        val service = mock(AccessibilityService::class.java)
+        `when`(service.dispatchGesture(any(), any(), any())).thenThrow(IllegalStateException("binder failure"))
+        assertEquals(AndroidGestureResult.ERROR, actionExecutor(service).dispatchGesture(gesture()))
+        verify(service, times(1)).dispatchGesture(any(), any(), any())
+    }
+
+    @Test
+    fun dispatchGesture_completionArrivesAfterTimeout_neverReplays() = runTest {
+        val service = mock(AccessibilityService::class.java)
+        val callback = ArgumentCaptor.forClass(GestureResultCallback::class.java)
+        `when`(service.dispatchGesture(any(), any(), any())).thenReturn(true)
+        val result = async { actionExecutor(service).dispatchGesture(gesture()) }
+        runCurrent()
+        verify(service).dispatchGesture(any(), callback.capture(), any())
+        advanceTimeBy(201)
+        callback.value.onCompleted(null)
+        assertEquals(AndroidGestureResult.TIMED_OUT, result.await())
+        verify(service, times(1)).dispatchGesture(any(), any(), any())
+    }
+
+    @Test
+    fun dispatchGesture_callerCancelledWhileWaiting_neverReplays() = runTest {
+        val service = mock(AccessibilityService::class.java)
+        `when`(service.dispatchGesture(any(), any(), any())).thenReturn(true)
+        val result = async { actionExecutor(service).dispatchGesture(gesture()) }
+        runCurrent()
+        result.cancel()
+        runCurrent()
+        verify(service, times(1)).dispatchGesture(any(), any(), any())
+    }
 
     @Test
     fun dispatchGesture_systemRejectsRequest_retriesOnce() = runTest {

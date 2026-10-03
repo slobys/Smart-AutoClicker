@@ -57,6 +57,7 @@ internal class GestureExecutor @Inject constructor() : Dumpable {
     ): GestureDispatchResult {
         val result = withTimeoutOrNull(gesture.timeoutDurationMs().milliseconds) {
             suspendCancellableCoroutine { continuation ->
+                if (!continuation.isActive) return@suspendCancellableCoroutine
                 try {
                     val isAccepted = service.dispatchGesture(
                         /* gesture = */ gesture,
@@ -70,7 +71,7 @@ internal class GestureExecutor @Inject constructor() : Dumpable {
                         /* handler = */ null,
                     )
                     if (!isAccepted) {
-                        continuation.safeResume(GestureDispatchResult.ERROR)
+                        continuation.safeResume(GestureDispatchResult.REJECTED)
                     }
                 } catch (rEx: RuntimeException) {
                     Log.w(TAG, "System is not responsive, the user might be spamming gesture too quickly", rEx)
@@ -80,9 +81,9 @@ internal class GestureExecutor @Inject constructor() : Dumpable {
         }
 
         if (result == null) {
-            Log.w(TAG, "Gesture error, timeout or system error occurred.")
+            Log.w(TAG, "Gesture callback timed out; execution outcome is unknown. Do not replay.")
             errorGestures++
-            return GestureDispatchResult.ERROR
+            return GestureDispatchResult.TIMED_OUT
         }
 
         when (result) {
@@ -91,10 +92,11 @@ internal class GestureExecutor @Inject constructor() : Dumpable {
                 Log.w(TAG, "Gesture has been cancelled.")
                 cancelledGestures++
             }
-            GestureDispatchResult.ERROR -> {
+            GestureDispatchResult.REJECTED -> {
                 Log.w(TAG, "Gesture was rejected by the system.")
                 errorGestures++
             }
+            GestureDispatchResult.ERROR, GestureDispatchResult.TIMED_OUT -> errorGestures++
         }
 
         return result
@@ -115,6 +117,11 @@ internal class GestureExecutor @Inject constructor() : Dumpable {
 internal enum class GestureDispatchResult {
     COMPLETED,
     CANCELLED,
+    /** Android explicitly returned false: no gesture was dispatched. Only this is safe to retry. */
+    REJECTED,
+    /** The gesture may already have reached the target, but its callback never arrived. */
+    TIMED_OUT,
+    /** A framework exception leaves dispatch acceptance unknown. */
     ERROR,
 }
 

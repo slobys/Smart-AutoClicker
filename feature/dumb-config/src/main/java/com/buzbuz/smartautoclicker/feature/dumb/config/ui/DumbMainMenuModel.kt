@@ -46,7 +46,8 @@ class DumbMainMenuModel @Inject constructor(
             isSync && scenario?.isValid() ?: false
         }
     val isPlaying: StateFlow<Boolean> =
-        dumbEngine.isRunning
+        combine(dumbEngine.isRunning, dumbEngine.isStarting) { running, starting -> running || starting }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     val shouldShowStopWithVolumeDownTip: StateFlow<Boolean> = tutorialRepository
         .shouldShowTip(Tip.STOP_WITH_VOLUME_DOWN)
@@ -75,22 +76,17 @@ class DumbMainMenuModel @Inject constructor(
     }
 
     fun toggleScenarioPlay() {
-        viewModelScope.launch {
-            if (isPlaying.value) dumbEngine.stopDumbScenario()
-            else dumbEngine.startDumbScenario()
-        }
+        if (dumbEngine.isRunning.value || dumbEngine.isStarting.value) dumbEngine.stopDumbScenario()
+        else dumbEngine.startDumbScenario()
     }
 
     fun stopScenarioPlay(): Boolean {
-        if (!isPlaying.value) return false
-
-        viewModelScope.launch {
-            dumbEngine.stopDumbScenario()
-        }
-        return true
+        val wasActive = dumbEngine.isRunning.value || dumbEngine.isStarting.value
+        dumbEngine.stopDumbScenario()
+        return wasActive
     }
 
     fun shouldShowStopVolumeDownTutorialDialog(): Boolean =
-        !isPlaying.value && shouldShowStopWithVolumeDownTip.value
+        !dumbEngine.isRunning.value && !dumbEngine.isStarting.value && shouldShowStopWithVolumeDownTip.value
 
 }

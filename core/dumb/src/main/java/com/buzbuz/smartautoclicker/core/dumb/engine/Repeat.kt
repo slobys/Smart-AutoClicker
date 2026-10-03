@@ -19,14 +19,18 @@ package com.buzbuz.smartautoclicker.core.dumb.engine
 import com.buzbuz.smartautoclicker.core.dumb.domain.model.Repeatable
 import com.buzbuz.smartautoclicker.core.dumb.domain.model.RepeatableWithDelay
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 
 internal suspend fun Repeatable.repeat(action: suspend () -> Unit): Unit =
     when {
         isRepeatInfinite -> while (true) {
+            currentCoroutineContext().ensureActive()
             action()
             delayNextActionIfNeeded()
         }
         repeatCount > 0 -> repeat(repeatCount) {
+            currentCoroutineContext().ensureActive()
             action()
             delayNextActionIfNeeded()
         }
