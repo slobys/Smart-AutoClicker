@@ -65,7 +65,7 @@ class AndroidActionExecutorImplTests {
         val result = async { actionExecutor(service).dispatchGesture(gesture()) }
         runCurrent()
         verify(service).dispatchGesture(any(), callback.capture(), any())
-        advanceTimeBy(201)
+        advanceTimeBy(2_101)
         callback.value.onCompleted(null)
         assertEquals(AndroidGestureResult.TIMED_OUT, result.await())
         verify(service, times(1)).dispatchGesture(any(), any(), any())

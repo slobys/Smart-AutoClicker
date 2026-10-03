@@ -115,6 +115,12 @@ namespace smartautoclicker {
         std::vector<TextRecognizerResult> recognizeForegroundText(
                 const cv::Mat& rgbCrop, const std::string& recognitionModelId, bool darkText);
 
+        /** Separates a bounded number of saturated foreground colours on the current frame. */
+        bool matchChromaticText(
+                const cv::Mat& rgbCrop, const std::string& recognitionModelId,
+                const std::string& conditionText, const cv::Rect& detectionArea, int threshold,
+                std::vector<cv::Rect>& confidentNonTargetAreas);
+
         /** Scores one OCR pass and keeps the best result found across all passes. */
         bool updateTextMatchingResult(
                 const std::vector<TextRecognizerResult>& recognizerResults,

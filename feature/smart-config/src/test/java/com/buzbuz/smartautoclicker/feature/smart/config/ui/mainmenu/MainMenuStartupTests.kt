@@ -28,7 +28,12 @@ import org.robolectric.annotation.Config
 @Config(sdk = [29])
 class MainMenuStartupTests {
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val processing = mockk<SmartProcessingRepository>(relaxed = true)
+    // scenarioId's getter and getScenarioId() share a JVM name with different return types.
+    // A relaxed MockK proxy can confuse them depending on class-loading order. Keep the flow real
+    // and delegate the operations to the mock so these tests exercise startup, not proxy casting.
+    private val processing = object : SmartProcessingRepository by mockk(relaxed = true) {
+        override val scenarioId = MutableStateFlow<Identifier?>(Identifier(databaseId = 1))
+    }
     private val revenue = mockk<IRevenueRepository>(relaxed = true)
     private val billingState = MutableStateFlow(UserBillingState.EXEMPTED)
     private val billingInProgress = MutableStateFlow(false)
@@ -38,7 +43,6 @@ class MainMenuStartupTests {
 
     private fun TestScope.model(): MainMenuModel {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-        every { processing.scenarioId } returns MutableStateFlow(Identifier(databaseId = 1))
         every { processing.detectionState } returns flowOf(DetectionState.RECORDING)
         every { processing.canStartDetection } returns flowOf(true)
         every { processing.isRunning() } returns false

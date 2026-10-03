@@ -19,6 +19,7 @@
 #define KLICK_R_TEXT_RECOGNIZER_RESULT_HPP
 
 #include <opencv2/core.hpp>
+#include <vector>
 
 namespace smartautoclicker {
 
@@ -28,8 +29,8 @@ namespace smartautoclicker {
      */
     struct TextRecognizerResult {
         TextRecognizerResult() = default;
-        TextRecognizerResult(cv::Rect box, std::string txt, float conf)
-            : boundingBox(box), text(std::move(txt)), confidence(conf) {}
+        TextRecognizerResult(cv::Rect box, std::string txt, float conf, std::vector<float> chars = {})
+            : boundingBox(box), text(std::move(txt)), confidence(conf), characterConfidences(std::move(chars)) {}
 
         /** Box around the text. */
         cv::Rect boundingBox;
@@ -37,6 +38,8 @@ namespace smartautoclicker {
         std::string text;
         /** Confidence of the result. */
         float confidence = 0;
+        /** One confidence per Unicode code point, in the same reading order as text. */
+        std::vector<float> characterConfidences;
     };
 
 }

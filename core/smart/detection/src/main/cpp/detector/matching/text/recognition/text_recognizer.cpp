@@ -135,6 +135,8 @@ TextRecognizerResult TextRecognizer::decode(
     float totalConfidence = 0.f;
     int confidenceCount = 0;
     int previousIndex = 0;
+    std::vector<float> tokenConfidences;
+    tokenConfidences.reserve(sequenceLength);
 
     tokens.clear();
     for (int t = 0; t < sequenceLength; t++) {
@@ -159,24 +161,33 @@ TextRecognizerResult TextRecognizer::decode(
 
         if (bestIndex >= 0 && static_cast<size_t>(bestIndex) < dictionary.size()) {
             tokens.push_back(dictionary[bestIndex]);
+            tokenConfidences.push_back(bestScore);
             totalConfidence += bestScore;
             confidenceCount++;
         }
     }
 
     // Reverse token order for RTL alphabets
-    if (isRtlAlphabet) std::reverse(tokens.begin(), tokens.end());
+    if (isRtlAlphabet) {
+        std::reverse(tokens.begin(), tokens.end());
+        std::reverse(tokenConfidences.begin(), tokenConfidences.end());
+    }
 
     std::string recognizedText;
     size_t totalLen = 0;
     for (const auto& t : tokens) totalLen += t.size();
     recognizedText.reserve(totalLen);
-    for (const auto& token : tokens) {
+    std::vector<float> characterConfidences;
+    for (size_t i = 0; i < tokens.size(); ++i) {
+        const auto& token = tokens[i];
         recognizedText += token;
+        for (unsigned char byte : token) {
+            if ((byte & 0xC0u) != 0x80u) characterConfidences.push_back(tokenConfidences[i]);
+        }
     }
 
     float confidence = confidenceCount > 0 ? totalConfidence / static_cast<float>(confidenceCount) : 0.f;
     LOGD("TextRecognizer", "\"%s\" (conf=%.3f)", recognizedText.c_str(), confidence);
 
-    return {boundingBox, recognizedText, confidence};
+    return {boundingBox, recognizedText, confidence, std::move(characterConfidences)};
 }

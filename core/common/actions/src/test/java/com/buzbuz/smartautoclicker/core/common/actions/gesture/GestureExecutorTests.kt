@@ -29,6 +29,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -72,7 +73,7 @@ class GestureExecutorTests {
 
         val result = async { executor.dispatchGesture(service, gesture()) }
         runCurrent()
-        advanceTimeBy(200.milliseconds)
+        advanceTimeBy(2_100.milliseconds)
 
         assertFalse(result.await())
     }
@@ -110,7 +111,7 @@ class GestureExecutorTests {
         verify(service).dispatchGesture(any(), callbackCaptor.capture(), any())
         val timedOutCallback = callbackCaptor.value
 
-        advanceTimeBy(200.milliseconds)
+        advanceTimeBy(2_100.milliseconds)
         assertFalse(timedOutResult.await())
 
         val nextResult = async { executor.dispatchGesture(service, gesture()) }
@@ -126,15 +127,77 @@ class GestureExecutorTests {
         assertTrue(nextResult.await())
     }
 
-    private fun gesture(): GestureDescription = GestureDescription.Builder()
+    @Test
+    fun shortTap_delayedCompletion_isNotMistakenForTimeoutOrReplayed() = runTest {
+        val service = mock(AccessibilityService::class.java)
+        val callbacks = ArgumentCaptor.forClass(GestureResultCallback::class.java)
+        `when`(service.dispatchGesture(any(), any(), any())).thenReturn(true)
+        val result = async { GestureExecutor().dispatchGestureWithResult(service, gesture(duration = 25L)) }
+        runCurrent()
+        verify(service).dispatchGesture(any(), callbacks.capture(), any())
+
+        advanceTimeBy(600.milliseconds)
+        runCurrent()
+        assertFalse("A slow callback must not stop a valid short tap", result.isCompleted)
+        callbacks.value.onCompleted(null)
+        assertEquals(GestureDispatchResult.COMPLETED, result.await())
+        verify(service, times(1)).dispatchGesture(any(), any(), any())
+    }
+
+    @Test
+    fun missingCallback_isStillBoundedAndNotReplayed() = runTest {
+        val service = mock(AccessibilityService::class.java)
+        `when`(service.dispatchGesture(any(), any(), any())).thenReturn(true)
+        val result = async { GestureExecutor().dispatchGestureWithResult(service, gesture(duration = 25L)) }
+        runCurrent()
+        advanceTimeBy(2_024.milliseconds)
+        runCurrent()
+        assertFalse(result.isCompleted)
+        advanceTimeBy(1.milliseconds)
+        runCurrent()
+        assertEquals(GestureDispatchResult.TIMED_OUT, result.await())
+        verify(service, times(1)).dispatchGesture(any(), any(), any())
+    }
+
+    @Test
+    fun delayedStroke_waitsForStartAndDurationBeforeGraceExpires() = runTest {
+        val service = mock(AccessibilityService::class.java)
+        val callbacks = ArgumentCaptor.forClass(GestureResultCallback::class.java)
+        `when`(service.dispatchGesture(any(), any(), any())).thenReturn(true)
+        val result = async { GestureExecutor().dispatchGestureWithResult(service, gesture(start = 3_000L)) }
+        runCurrent()
+        verify(service).dispatchGesture(any(), callbacks.capture(), any())
+        advanceTimeBy(4_000.milliseconds)
+        runCurrent()
+        assertFalse(result.isCompleted)
+        callbacks.value.onCompleted(null)
+        assertEquals(GestureDispatchResult.COMPLETED, result.await())
+    }
+
+    @Test
+    fun cancelWhileWaiting_doesNotWaitForGraceOrReplay() = runTest {
+        val service = mock(AccessibilityService::class.java)
+        val callbacks = ArgumentCaptor.forClass(GestureResultCallback::class.java)
+        `when`(service.dispatchGesture(any(), any(), any())).thenReturn(true)
+        val result = async { GestureExecutor().dispatchGestureWithResult(service, gesture()) }
+        runCurrent()
+        verify(service).dispatchGesture(any(), callbacks.capture(), any())
+        result.cancel()
+        runCurrent()
+        assertTrue(result.isCancelled)
+        callbacks.value.onCompleted(null)
+        verify(service, times(1)).dispatchGesture(any(), any(), any())
+    }
+
+    private fun gesture(start: Long = 0L, duration: Long = 100L): GestureDescription = GestureDescription.Builder()
         .addStroke(
             GestureDescription.StrokeDescription(
                 Path().apply {
                     moveTo(0f, 0f)
                     lineTo(1f, 1f)
                 },
-                0L,
-                100L,
+                start,
+                duration,
             )
         )
         .build()

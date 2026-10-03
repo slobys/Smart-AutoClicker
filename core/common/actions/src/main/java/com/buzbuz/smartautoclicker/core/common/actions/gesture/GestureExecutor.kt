@@ -144,11 +144,12 @@ private fun GestureDescription.durationMs(): Long {
 }
 
 private fun GestureDescription.timeoutDurationMs(): Long =
-    (durationMs() * GESTURE_CALLBACK_TIMEOUT_DURATION_RATIO_MS)
-        .coerceIn(GESTURE_CALLBACK_TIMEOUT_MIN_MS, GESTURE_CALLBACK_TIMEOUT_MAX_MS)
+    // Callbacks run on the accessibility service's main thread. A short tap still needs scheduling
+    // slack on a busy device; a duration multiplier gave 25ms taps only 100ms before a false stop.
+    // This is a maximum wait, not an added delay: a completed/cancelled callback returns immediately.
+    (durationMs() + GESTURE_CALLBACK_GRACE_MS).coerceAtMost(GESTURE_CALLBACK_TIMEOUT_MAX_MS)
 
-private const val GESTURE_CALLBACK_TIMEOUT_MIN_MS = 100L
+private const val GESTURE_CALLBACK_GRACE_MS = 2_000L
 private const val GESTURE_CALLBACK_TIMEOUT_MAX_MS = 65_000L
-private const val GESTURE_CALLBACK_TIMEOUT_DURATION_RATIO_MS = 2
 
 private const val TAG = "GestureExecutor"

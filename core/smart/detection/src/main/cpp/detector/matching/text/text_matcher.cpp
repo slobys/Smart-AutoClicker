@@ -19,6 +19,7 @@
 #include <opencv2/imgproc/imgproc_c.h>
 #include <cctype>
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <limits>
 
@@ -46,6 +47,46 @@ namespace {
     constexpr float MAX_DIRECT_NUMBER_ASPECT_RATIO = 8.0f;
     constexpr float MIN_FOREGROUND_TEXT_CONFIDENCE = 0.60f;
     constexpr int MAX_FOREGROUND_OCR_PIXELS = 512 * 512;
+    constexpr int MAX_CHROMATIC_PASSES = 3;
+    constexpr int MAX_CHROMATIC_LINES = 12;
+    constexpr int MIN_CHROMATIC_SATURATION = 96;
+    constexpr int MIN_CHROMATIC_BRIGHTNESS = 192;
+    constexpr float MIN_CHROMATIC_TEXT_CONFIDENCE = 0.80f;
+
+    std::vector<TextDetectorResult> chromaticLines(const cv::Mat& ink) {
+        std::vector<TextDetectorResult> lines;
+        int top = -1;
+        int lastInk = -1;
+        auto addLine = [&]() {
+            if (top < 0 || lastInk - top + 1 < 8 || lastInk - top + 1 > 96) return;
+            cv::Mat band = ink.rowRange(top, lastInk + 1);
+            std::vector<cv::Point> pixels;
+            cv::findNonZero(band < 128, pixels);
+            if (pixels.empty()) return;
+            cv::Rect box = cv::boundingRect(pixels);
+            box.y += top;
+            const double occupancy = static_cast<double>(pixels.size()) / box.area();
+            if (box.width < box.height || box.width > box.height * 12 ||
+                occupancy < 0.04 || occupancy > 0.70) return;
+            // Tight line crops keep short CJK glyphs large at the recognizer's fixed 48px height.
+            // The detector's dilation/margins can otherwise shrink them into a large blank band.
+            cv::Mat padded, rgb;
+            cv::copyMakeBorder(ink(box), padded, 3, 3, 3, 3, cv::BORDER_CONSTANT, cv::Scalar(255));
+            cv::cvtColor(padded, rgb, cv::COLOR_GRAY2RGB);
+            lines.emplace_back(box, rgb);
+        };
+        for (int y = 0; y < ink.rows && lines.size() < MAX_CHROMATIC_LINES; ++y) {
+            if (cv::countNonZero(ink.row(y) < 128) >= 2) {
+                if (top < 0) top = y;
+                lastInk = y;
+            } else if (top >= 0 && y - lastInk > 2) {
+                addLine();
+                top = -1;
+            }
+        }
+        if (top >= 0 && lines.size() < MAX_CHROMATIC_LINES) addLine();
+        return lines;
+    }
 }
 
 bool TextMatcher::init(const std::string& detectionModelPath, const std::map<std::string, std::string>& recognitionModels) {
@@ -109,9 +150,27 @@ TextMatchingResult* TextMatcher::matchText(
     if (detectionArea.area() <= MAX_FOREGROUND_OCR_PIXELS) {
         cv::Mat rgbCrop;
         cv::cvtColor(screenImage.cropColor(detectionArea), rgbCrop, cv::COLOR_RGBA2RGB);
+        std::vector<cv::Rect> confidentNonTargetAreas;
+        if (matchChromaticText(rgbCrop, recognitionModelId, conditionText, detectionArea, threshold,
+                               confidentNonTargetAreas))
+            return &currentMatchingResult;
         for (bool darkText : {false, true}) {
+            auto foregroundResults = recognizeForegroundText(rgbCrop, recognitionModelId, darkText);
+            // Don't let an uncertain residual-image reading overwrite a confident, different word
+            // from the same location (e.g. 帅门 -> 师门). Other locations/strong readings remain usable.
+            foregroundResults.erase(std::remove_if(foregroundResults.begin(), foregroundResults.end(),
+                    [&](const TextRecognizerResult& result) {
+                        if (result.confidence >= MIN_CHROMATIC_TEXT_CONFIDENCE) return false;
+                        return std::any_of(confidentNonTargetAreas.begin(), confidentNonTargetAreas.end(),
+                                [&](const cv::Rect& box) {
+                                    const int smaller = std::min(box.area(), result.boundingBox.area());
+                                    const int larger = std::max(box.area(), result.boundingBox.area());
+                                    return smaller > 0 && larger <= smaller * 4 &&
+                                        (box & result.boundingBox).area() >= smaller * 0.75;
+                                });
+                    }), foregroundResults.end());
             if (updateTextMatchingResult(
-                    recognizeForegroundText(rgbCrop, recognitionModelId, darkText),
+                    foregroundResults,
                     conditionText, detectionArea, threshold, MIN_FOREGROUND_TEXT_CONFIDENCE,
                     darkText ? "dark-foreground" : "light-foreground")) break;
         }
@@ -375,6 +434,61 @@ std::vector<TextRecognizerResult> TextMatcher::recognizeEnhancedText(
     return results;
 }
 
+bool TextMatcher::matchChromaticText(
+        const cv::Mat& rgbCrop, const std::string& recognitionModelId,
+        const std::string& conditionText, const cv::Rect& detectionArea, int threshold,
+        std::vector<cv::Rect>& confidentNonTargetAreas
+) {
+    if (rgbCrop.empty() || rgbCrop.total() > MAX_FOREGROUND_OCR_PIXELS ||
+        std::min(rgbCrop.cols, rgbCrop.rows) < MIN_DIRECT_TEXT_SIDE) return false;
+
+    // Luminance enhancement alone blends coloured HUD lettering into the scenery. Select actual
+    // colour populations, not a game-specific colour or target word. Circular hue bins include red
+    // on both sides of the HSV boundary. The small fixed pass budget bounds both memory and latency.
+    cv::Mat hsv;
+    cv::cvtColor(rgbCrop, hsv, cv::COLOR_RGB2HSV);
+    std::array<int, 18> histogram{};
+    for (int y = 0; y < hsv.rows; ++y) {
+        const auto* row = hsv.ptr<cv::Vec3b>(y);
+        for (int x = 0; x < hsv.cols; ++x) {
+            if (row[x][1] >= MIN_CHROMATIC_SATURATION && row[x][2] >= MIN_CHROMATIC_BRIGHTNESS)
+                ++histogram[row[x][0] / 10];
+        }
+    }
+    for (int pass = 0; pass < MAX_CHROMATIC_PASSES; ++pass) {
+        const auto peak = std::max_element(histogram.begin(), histogram.end());
+        if (*peak < 16) break;
+        const int bin = static_cast<int>(std::distance(histogram.begin(), peak));
+        const int hue = bin * 10 + 5;
+        for (int offset = -2; offset <= 2; ++offset) histogram[(bin + offset + 18) % 18] = 0;
+
+        cv::Mat ink(hsv.size(), CV_8UC1, cv::Scalar(255));
+        for (int y = 0; y < hsv.rows; ++y) {
+            const auto* source = hsv.ptr<cv::Vec3b>(y);
+            auto* target = ink.ptr<uchar>(y);
+            for (int x = 0; x < hsv.cols; ++x) {
+                const int difference = std::abs(static_cast<int>(source[x][0]) - hue);
+                if (std::min(difference, 180 - difference) <= 12 &&
+                    source[x][1] >= MIN_CHROMATIC_SATURATION && source[x][2] >= MIN_CHROMATIC_BRIGHTNESS) {
+                    target[x] = 0;
+                }
+            }
+        }
+        // Bright ink excludes darker, same-hue outlines/old lettering visible behind a translucent
+        // HUD. Dim/neutral text still has the existing original, contrast and residual passes.
+        auto results = textRecognizer->recognizeText(recognitionModelId, chromaticLines(ink));
+        if (updateTextMatchingResult(results, conditionText, detectionArea, threshold,
+                                     MIN_CHROMATIC_TEXT_CONFIDENCE, "chromatic")) return true;
+        const float requiredSimilarity = std::clamp(1.f - threshold / 100.f, 0.f, 1.f);
+        for (const auto& result : results) {
+            if (result.confidence >= 0.90f &&
+                bestSubstringMatch(result.text, conditionText, requiredSimilarity).similarity < requiredSimilarity)
+                confidentNonTargetAreas.push_back(result.boundingBox);
+        }
+    }
+    return false;
+}
+
 std::vector<TextRecognizerResult> TextMatcher::recognizeForegroundText(
         const cv::Mat& rgbCrop, const std::string& recognitionModelId, bool darkText
 ) {
@@ -433,19 +547,30 @@ bool TextMatcher::updateTextMatchingResult(
             1.0f);
 
     for (const auto& recognizerResult: recognizerResults) {
-        if (recognizerResult.confidence < minimumRecognizerConfidence) continue;
-
         const auto substringMatch = bestSubstringMatch(
                 recognizerResult.text,
                 conditionText,
                 minimumSimilarity);
         const float score = substringMatch.similarity * 100.0f;
+        // A clipped punctuation mark elsewhere in the line must not suppress a confident target;
+        // conversely, unrelated high-confidence words must not hide uncertainty in the target.
+        // Number detection continues to use the full reading's unchanged confidence.
+        float targetConfidence = recognizerResult.confidence;
+        const auto& characterConfidences = recognizerResult.characterConfidences;
+        if (substringMatch.length > 0 && substringMatch.start >= 0 &&
+            substringMatch.start + substringMatch.length <= static_cast<int>(characterConfidences.size())) {
+            float total = 0.f;
+            for (int i = substringMatch.start; i < substringMatch.start + substringMatch.length; ++i)
+                total += characterConfidences[i];
+            targetConfidence = total / static_cast<float>(substringMatch.length);
+        }
+        if (targetConfidence < minimumRecognizerConfidence) continue;
         LOGD(
                 "TextMatcher",
                 "Pass=%s; score=%f; ocrConfidence=%f; recognized=%s",
                 passName,
                 score,
-                recognizerResult.confidence,
+                targetConfidence,
                 recognizerResult.text.c_str());
 
         const float normalizedScore = score / 100.0f;
