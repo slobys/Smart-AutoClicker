@@ -46,6 +46,8 @@ private fun ScreenCondition.Color.toColorConditionEntity() = ConditionEntity(
     threshold = threshold,
     shouldBeDetected = shouldBeDetected,
     colorRgba = color,
+    // Existing type-specific nullable field; null preserves old scripts and backups.
+    detectionType = if (findInArea) COLOR_FIND_IN_AREA else null,
     detectionAreaLeft = detectionArea.left,
     detectionAreaTop = detectionArea.top,
     detectionAreaRight = detectionArea.right,
@@ -172,7 +174,10 @@ private fun ConditionEntity.toDomainColorCondition(cleanIds: Boolean = false): S
         shouldBeDetected = shouldBeDetected ?: true,
         detectionArea = getDetectionArea()!!,
         color = colorRgba!!,
+        findInArea = detectionType == COLOR_FIND_IN_AREA,
     )
+
+private const val COLOR_FIND_IN_AREA = 100
 
 private fun ConditionEntity.toDomainImageCondition(cleanIds: Boolean = false): ScreenCondition.Image =
     ScreenCondition.Image(

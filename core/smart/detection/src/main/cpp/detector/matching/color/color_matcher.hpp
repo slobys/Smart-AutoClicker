@@ -36,7 +36,7 @@ namespace smartautoclicker {
                 const ScreenImage& screenImage,
                 const cv::Scalar& conditionColor,
                 const cv::Rect& detectionArea,
-                int threshold);
+                int threshold, bool findInArea);
 
         ColorMatchingResult* getMatchingResults();
 

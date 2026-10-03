@@ -53,8 +53,8 @@ sealed class ScreenCondition : Condition(), Prioritizable {
      *
      * @param color the color to be matched during detection.
      * @param shouldBeDetected
-     * @param detectionArea the area to check the color for. If more than a pixel, it will verify the average color
-     * of the detection area.
+     * @param detectionArea selected region. By default 75% of its pixels must match.
+     * @param findInArea opt-in search for a connected colour patch within the region.
      */
     data class Color(
         override val id: Identifier,
@@ -65,10 +65,15 @@ sealed class ScreenCondition : Condition(), Prioritizable {
         override var priority: Int,
         @field:ColorInt val color: Int,
         val detectionArea: Rect,
+        val findInArea: Boolean = false,
     ) : ScreenCondition(), Prioritizable {
 
+        override fun isComplete(): Boolean =
+            super.isComplete() && (!findInArea ||
+                (!detectionArea.isEmpty && detectionArea.width().toLong() * detectionArea.height() >= 9))
+
         override fun hashCodeNoIds(): Int =
-            name.hashCode() + color.hashCode() + threshold.hashCode() + shouldBeDetected.hashCode() +
+            name.hashCode() + color.hashCode() + threshold.hashCode() + shouldBeDetected.hashCode() + findInArea.hashCode() +
                     detectionArea.hashCode() + priority.hashCode()
     }
 

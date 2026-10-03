@@ -59,7 +59,7 @@ namespace smartautoclicker {
         ColorMatchingResult* detectColor(
                 int colorCondition,
                 const cv::Rect& roi,
-                int threshold);
+                int threshold, bool findInArea);
 
         TextMatchingResult* detectText(
                 const char* textCondition,

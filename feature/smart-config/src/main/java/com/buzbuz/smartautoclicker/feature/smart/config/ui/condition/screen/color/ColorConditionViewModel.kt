@@ -88,7 +88,8 @@ class ColorConditionViewModel  @Inject constructor(
         updateEditedCondition {
             val x = position.x.toInt()
             val y = position.y.toInt()
-            it.copy(detectionArea = Rect(x, y, x + 1, y + 1))
+            // Explicit point sampling returns to single-pixel matching, not a 9px patch search.
+            it.copy(detectionArea = Rect(x, y, x + 1, y + 1), findInArea = false)
         }
     }
 
@@ -101,6 +102,10 @@ class ColorConditionViewModel  @Inject constructor(
         updateEditedCondition { oldCondition ->
             oldCondition.copy(shouldBeDetected = !oldCondition.shouldBeDetected)
         }
+    }
+
+    fun toggleFindInArea() {
+        updateEditedCondition { it.copy(findInArea = !it.findInArea) }
     }
 
     fun setThreshold(value: Int) {
@@ -139,5 +144,6 @@ class ColorConditionViewModel  @Inject constructor(
             blueValue = color.getBlueValue(),
             shouldBeDetectedChecked = shouldBeDetected,
             detectionThreshold = threshold,
+            findInArea = findInArea,
         )
 }

@@ -114,7 +114,7 @@ class NativeDetector private constructor() : ImageDetector {
         }
     }
 
-    override fun detectColor(conditionColor: Int, detectionArea: Rect, threshold: Int): DetectionResult {
+    override fun detectColor(conditionColor: Int, detectionArea: Rect, threshold: Int, findInArea: Boolean): DetectionResult {
         if (isClosed) return DetectionResult()
 
         return try {
@@ -124,7 +124,8 @@ class NativeDetector private constructor() : ImageDetector {
                 detectionArea.top,
                 detectionArea.width(),
                 detectionArea.height(),
-                threshold
+                threshold,
+                findInArea,
             ).toDetectionResult()
         } catch (ex: Exception) {
             ex.throwWithKeys(
@@ -271,6 +272,7 @@ class NativeDetector private constructor() : ImageDetector {
         width: Int,
         height: Int,
         threshold: Int,
+        findInArea: Boolean,
     ): DoubleArray?
 
     /**

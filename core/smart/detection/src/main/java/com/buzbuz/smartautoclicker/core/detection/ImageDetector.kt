@@ -71,6 +71,7 @@ interface ImageDetector : AutoCloseable {
 
     /**
      * Detect if at least 75% of pixels in the area match the condition color within the threshold.
+     * With [findInArea], instead locate a connected patch of at least 9 matching pixels.
      * A single-pixel area remains an exact point sample; minority moving highlights are ignored.
      * [setScreenBitmap] must have been called first with the content of the screen.
      *
@@ -84,6 +85,7 @@ interface ImageDetector : AutoCloseable {
         @ColorInt conditionColor: Int,
         detectionArea: Rect,
         threshold: Int,
+        findInArea: Boolean = false,
     ): DetectionResult
 
     /**

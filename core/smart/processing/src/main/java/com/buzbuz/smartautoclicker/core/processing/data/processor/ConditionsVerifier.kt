@@ -182,12 +182,14 @@ internal class ConditionsVerifier(
             color = condition.color,
             detectionArea = Rect(conditionScalingInfo.detectionArea),
             threshold = condition.threshold,
+            findInArea = condition.findInArea,
         )
         val detectionResult = frameDetectionCache.getOrPut(cacheKey) {
             imageDetector.detectColor(
                 conditionColor = condition.color,
                 detectionArea = conditionScalingInfo.detectionArea,
                 threshold = condition.threshold,
+                findInArea = condition.findInArea,
             )
         }
 
@@ -364,6 +366,7 @@ private sealed interface ScreenDetectionKey {
         val color: Int,
         val detectionArea: Rect,
         val threshold: Int,
+        val findInArea: Boolean,
     ) : ScreenDetectionKey
 
     data class Image(

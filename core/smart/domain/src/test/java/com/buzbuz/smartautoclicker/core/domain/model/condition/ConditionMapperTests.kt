@@ -32,6 +32,19 @@ import org.robolectric.annotation.Config
 @Config(sdk = [Build.VERSION_CODES.Q])
 class ConditionMapperTests {
 
+    @Test fun colorSearchMode_roundTripsWithoutChangingLegacyDefaults() {
+        val condition = ScreenCondition.Color(
+            com.buzbuz.smartautoclicker.core.base.identifier.Identifier(databaseId = 8L),
+            com.buzbuz.smartautoclicker.core.base.identifier.Identifier(databaseId = 9L),
+            "colour", 4, true, 0, android.graphics.Color.GREEN, android.graphics.Rect(10, 20, 80, 90),
+        )
+        assertEquals(null, condition.toEntity().detectionType)
+        assertEquals(condition, condition.toEntity().toDomain())
+        val search = condition.copy(findInArea = true)
+        assertEquals(search, search.toEntity().toDomain())
+        assertEquals(condition, condition.toEntity().copy(detectionType = -99).toDomain())
+    }
+
     @Test
     fun imageCondition_toEntity() {
         assertEquals(

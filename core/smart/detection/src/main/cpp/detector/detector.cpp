@@ -65,7 +65,7 @@ TemplateMatchingResult* Detector::detectImage(
     return templateMatcher->getMatchingResults();
 }
 
-ColorMatchingResult* Detector::detectColor(int colorCondition, const cv::Rect& roi, int threshold) {
+ColorMatchingResult* Detector::detectColor(int colorCondition, const cv::Rect& roi, int threshold, bool findInArea) {
     colorMatcher->reset();
 
     // Verify area validity
@@ -84,7 +84,7 @@ ColorMatchingResult* Detector::detectColor(int colorCondition, const cv::Rect& r
             *screenImage,
             conditionColor,
             roi,
-            threshold);
+            threshold, findInArea);
 
     return colorMatcher->getMatchingResults();
 }

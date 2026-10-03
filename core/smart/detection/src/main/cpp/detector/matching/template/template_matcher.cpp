@@ -112,6 +112,7 @@ void TemplateMatcher::matchTemplate(
     // fallback removes broad background/lighting changes. It still checks spatial foreground RGB
     // and never reuses a position from an older frame.
     if (matchForeground(screenImage, condition, detectionArea, threshold)) return;
+    if (matchScaled(screenImage, condition, detectionArea, threshold)) return;
 
     // During a swipe, Android can capture an intermediate frame where the target is directionally
     // blurred. Keep the exact pass authoritative, then try small horizontal and vertical motion-
@@ -217,6 +218,38 @@ bool TemplateMatcher::matchForeground(
         scores(excluded).setTo(-1);
     }
     return false;
+}
+
+bool TemplateMatcher::matchScaled(
+        const ScreenImage& screenImage, const ConditionImage& condition,
+        const cv::Rect& detectionArea, int threshold
+) {
+    const auto& source = condition.getColorMat();
+    // Four nearby sizes only, after exact matching failed. Do not multiply full-screen searches
+    // or turn a few pixels into an arbitrary shape. Retain the user's stricter setting, with an
+    // additional 90% floor, and the same spatial RGB validation as the original matcher.
+    if (source.total() > 256 * 256 || std::min(source.cols, source.rows) < 24 ||
+        detectionArea.area() > 1024 * 1024) return false;
+    const auto original = currentMatchingResult;
+    auto best = original;
+    bool found = false;
+    for (double scale : {0.9, 1.1, 0.8, 1.2}) {
+        const cv::Size size(cvRound(source.cols * scale), cvRound(source.rows * scale));
+        if (size.width > detectionArea.width || size.height > detectionArea.height) continue;
+        ConditionImage resized;
+        resized.processNewData(std::make_unique<cv::Mat>(source), size.width, size.height);
+        currentMatchingResult.reset();
+        const int strictThreshold = std::min(threshold, 10);
+        const bool matched = runMatchingPass(screenImage, screenImage.cropGray(detectionArea),
+                resized.getGrayMat(), resized.getColorMat(), detectionArea, strictThreshold) ||
+                matchForeground(screenImage, resized, detectionArea, strictThreshold);
+        if (matched && (!found || currentMatchingResult.getResultConfidence() > best.getResultConfidence())) {
+            best = currentMatchingResult;
+            found = true;
+        }
+    }
+    currentMatchingResult = found ? best : original;
+    return found;
 }
 
 bool TemplateMatcher::runMatchingPass(

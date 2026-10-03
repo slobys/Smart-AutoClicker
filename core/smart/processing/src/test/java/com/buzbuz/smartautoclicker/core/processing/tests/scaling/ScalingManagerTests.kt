@@ -31,6 +31,7 @@ import com.buzbuz.smartautoclicker.core.domain.model.IN_AREA
 import com.buzbuz.smartautoclicker.core.domain.model.WHOLE_SCREEN
 import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
 import com.buzbuz.smartautoclicker.core.domain.model.condition.NumberFormatType
+import com.buzbuz.smartautoclicker.code.smart.detectionmodels.text.domain.OCRAlphabet
 import com.buzbuz.smartautoclicker.core.domain.model.counter.ComparisonOperation
 import com.buzbuz.smartautoclicker.core.domain.model.counter.CounterOperationValue
 import com.buzbuz.smartautoclicker.core.domain.model.event.ScreenEvent
@@ -167,9 +168,32 @@ class ScalingManagerTests {
 
         val scalingInfo = scalingManager.getScreenConditionScalingInfo(condition)
             as ScreenConditionScalingInfo.Number
-        Assert.assertEquals(Point(686, 1371), scaledScreenSize)
-        Assert.assertEquals(96, scalingInfo.detectionArea.width())
-        Assert.assertEquals(96, scalingInfo.detectionArea.height())
+        Assert.assertEquals(screenSize, scaledScreenSize)
+        Assert.assertEquals(condition.detectionArea, scalingInfo.detectionArea)
+    }
+
+    @Test
+    fun `large text selection and single pixel colors preserve source detail at low quality`() {
+        val text = ScreenCondition.Text(
+            id = Identifier(databaseId = 1L), eventId = Identifier(databaseId = 1L),
+            name = "small text in large panel", threshold = 20, shouldBeDetected = true, priority = 0,
+            text = "任务", detectionArea = Rect(100, 100, 800, 1000), alphabet = OCRAlphabet.CHINESE_SIMPLIFIED,
+        )
+        val color = ScreenCondition.Color(
+            id = Identifier(databaseId = 2L), eventId = Identifier(databaseId = 1L),
+            name = "pixel", threshold = 0, shouldBeDetected = true, priority = 0,
+            color = android.graphics.Color.GREEN, detectionArea = Rect(101, 103, 102, 104),
+        )
+        for (condition in listOf(text, color)) {
+            Assert.assertEquals(TEST_DEFAULT_SCREEN_SIZE, scalingManager.startScaling(
+                400.0, listOf(createTestEvent(1L, listOf(condition))),
+            ))
+            Assert.assertEquals(Point(101, 103), scalingManager.scaleUpDetectionResult(Point(101, 103)))
+            mockDisplayConfigManager.mockDisplayConfig(Point(1920, 1080))
+            Assert.assertEquals(Point(1920, 1080), scalingManager.refreshScaling())
+            mockDisplayConfigManager.mockDisplayConfig(TEST_DEFAULT_SCREEN_SIZE)
+            scalingManager.stopScaling()
+        }
     }
 
     @Test

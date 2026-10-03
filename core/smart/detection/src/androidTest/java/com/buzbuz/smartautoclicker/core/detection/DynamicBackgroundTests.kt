@@ -68,6 +68,37 @@ class DynamicBackgroundTests {
         }
     }
 
+    @Test fun color_areaSearchTracksSmallMovingPatchesAndRejectsNoise() {
+        repeat(8) { frame ->
+            withBitmap(background(240, 120, frame).apply {
+                Canvas(this).drawRect(25f + frame * 15, 40f, 36f + frame * 15, 52f,
+                    Paint().apply { color = Color.GREEN })
+            }) {
+                assertFalse("legacy coverage must not silently become search",
+                    detector.detectColor(Color.GREEN, area(it), 0).isDetected)
+                val result = detector.detectColor(Color.GREEN, Rect(10, 10, 230, 110), 0, true)
+                assertTrue(result.isDetected)
+                assertEquals(Color.GREEN, it.getPixel(result.position.x, result.position.y))
+            }
+            withBitmap(background(240, 120, frame).apply {
+                repeat(20) { index -> setPixel(5 + index * 10, 8 + index * 4, Color.GREEN) }
+            }) { assertFalse("isolated particles or stale hit", detector.detectColor(Color.GREEN, area(it), 0, true).isDetected) }
+        }
+    }
+
+    @Test fun color_areaSearchNeverClicksTheHoleInARing() {
+        withBitmap(Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888).apply {
+            eraseColor(Color.BLACK)
+            Canvas(this).drawCircle(50f, 50f, 30f, Paint().apply {
+                color = Color.RED; style = Paint.Style.STROKE; strokeWidth = 6f
+            })
+        }) {
+            val result = detector.detectColor(Color.RED, area(it), 0, true)
+            assertTrue(result.isDetected)
+            assertEquals(Color.RED, it.getPixel(result.position.x, result.position.y))
+        }
+    }
+
     @Test fun text_tracksChangingBackgroundAndRejectsAbsentTarget() {
         repeat(8) { frame ->
             withBitmap(textFrame("QUEST", frame)) {
@@ -144,6 +175,37 @@ class DynamicBackgroundTests {
                 withBitmap(iconFrame(3, 30, 10, 180, 120, true,
                     foreground = if (wrongShape) Color.WHITE else Color.RED, wrongShape = wrongShape)) {
                     assertFalse("image decoy accepted", detector.detectImage(reference, 80, 80, area(it), 8).isDetected)
+                }
+            }
+        } finally { reference.recycle() }
+    }
+
+    @Test fun image_nearbyScalesOnChangingBackgroundKeepPositionAndRejectDecoys() {
+        val reference = iconFrame(0, 0, 0, 80, 80, true)
+        try {
+            listOf(0.8f, 0.9f, 1.1f, 1.2f).forEachIndexed { frame, scale ->
+                for (decoy in listOf(false, true)) {
+                    withBitmap(background(200, 140, frame + 1).apply {
+                        val canvas = Canvas(this)
+                        canvas.translate(30f, 20f)
+                        canvas.scale(scale, scale)
+                        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                            color = if (decoy) Color.RED else Color.WHITE
+                            strokeWidth = 6f; style = Paint.Style.STROKE
+                        }
+                        canvas.drawCircle(40f, 40f, 23f, paint)
+                        canvas.drawLine(40f, 24f, 40f, 52f, paint)
+                        canvas.drawLine(40f, 52f, 54f, 46f, paint)
+                    }) {
+                        val result = detector.detectImage(reference, 80, 80, area(it), 8)
+                        if (decoy) assertFalse("scaled wrong-colour icon at $scale", result.isDetected)
+                        else {
+                            assertTrue("scaled icon at $scale: $result", result.isDetected)
+                            assertTrue("wrong scaled position: ${result.position}",
+                                kotlin.math.abs(result.position.x - (30 + 40 * scale)) <= 3 &&
+                                    kotlin.math.abs(result.position.y - (20 + 40 * scale)) <= 3)
+                        }
+                    }
                 }
             }
         } finally { reference.recycle() }

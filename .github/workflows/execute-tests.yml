@@ -74,10 +74,18 @@ jobs:
           target: google_apis
           profile: pixel_6
           disable-animations: true
-          script: ./gradlew :core:smart:detection:connectedFDroidDebugAndroidTest
+          script: |
+            ./gradlew :core:smart:detection:connectedFDroidDebugAndroidTest
+            adb install -r core/smart/detection/build/outputs/apk/androidTest/fDroid/debug/detection-fDroid-debug-androidTest.apk
+            bash scripts/prepare-chinese-ocr-tests.sh
+            adb shell am instrument -w -e requireChineseModel true -e class com.buzbuz.smartautoclicker.core.detection.ChineseTextMatcherTests com.buzbuz.smartautoclicker.core.detection.test/androidx.test.runner.AndroidJUnitRunner > chinese-native-tests.log
+            cat chinese-native-tests.log
+            grep -Eq '^OK \([0-9]+ tests?\)' chinese-native-tests.log
       - name: Upload detector test results
         uses: actions/upload-artifact@v5
         if: success() || failure()
         with:
           name: detector-test-results
-          path: core/smart/detection/build/outputs/androidTest-results/connected/
+          path: |
+            core/smart/detection/build/outputs/androidTest-results/connected/
+            chinese-native-tests.log

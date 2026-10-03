@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="color_find_in_area_title">Find colour within area</string>
+    <string name="color_find_in_area_off" formatted="false">Off: at least 75% of the selected area must match (original behaviour).</string>
+    <string name="color_find_in_area_on">On: find a connected patch of at least 9 matching pixels; clicks use a matching point. Combine colour conditions with AND to check multiple points.</string>
+    <string name="color_find_in_area_too_small">The selection is too small to find a colour patch. Select a detection area containing at least 9 pixels before saving, or turn this off for single-pixel matching.</string>
+</resources>

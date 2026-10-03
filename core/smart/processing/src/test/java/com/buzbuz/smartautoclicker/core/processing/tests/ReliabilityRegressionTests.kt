@@ -115,11 +115,31 @@ class ReliabilityRegressionTests {
         val scaling = mock<ScalingManager>()
         whenever(scaling.getScreenConditionScalingInfo(condition)).thenReturn(ScreenConditionScalingInfo.Color(condition, condition.detectionArea))
         val detector = mock<ImageDetector>()
-        whenever(detector.detectColor(any(), any(), any())).thenReturn(DetectionResult(true))
+        whenever(detector.detectColor(any(), any(), any(), any())).thenReturn(DetectionResult(true))
         val verifier = ConditionsVerifier(mock(), detector, scaling, { _, _, _ -> null })
         val result = verifier.verifyConditions(OR, listOf(invalid, condition))
         assertEquals(true, result.fulfilled)
         assertNull(result.errorReason)
+    }
+
+    @Test fun colorSearchAndCoverageDoNotShareCachedResultsAndRefreshOnNewFrame() = runTest {
+        val search = condition.copy(id = Identifier(databaseId = 7), findInArea = true)
+        val scaling = mock<ScalingManager>()
+        for (item in listOf(condition, search)) {
+            whenever(scaling.getScreenConditionScalingInfo(item))
+                .thenReturn(ScreenConditionScalingInfo.Color(item, item.detectionArea))
+        }
+        val detector = mock<ImageDetector>()
+        whenever(detector.detectColor(any(), any(), any(), eq(false))).thenReturn(DetectionResult(false))
+        whenever(detector.detectColor(any(), any(), any(), eq(true))).thenReturn(DetectionResult(true))
+        val verifier = ConditionsVerifier(mock(), detector, scaling, { _, _, _ -> null })
+        assertEquals(false, verifier.verifyConditions(AND, listOf(condition)).fulfilled)
+        assertEquals(true, verifier.verifyConditions(AND, listOf(search)).fulfilled)
+        assertEquals(true, verifier.verifyConditions(AND, listOf(search)).fulfilled)
+        verify(detector, times(1)).detectColor(any(), any(), any(), eq(true))
+        verifier.onScreenFrameStarted()
+        assertEquals(true, verifier.verifyConditions(AND, listOf(search)).fulfilled)
+        verify(detector, times(2)).detectColor(any(), any(), any(), eq(true))
     }
 
     @Test fun subflowAfterParentClick_usesNewFrameNotTriggerFrame() = runTest {
@@ -143,7 +163,7 @@ class ReliabilityRegressionTests {
                 whenever(scaling.getScreenConditionScalingInfo(it)).thenReturn(ScreenConditionScalingInfo.Color(it, it.detectionArea))
             }
             whenever(scaling.scaleUpDetectionResult(any())).thenAnswer { it.getArgument<Point>(0) }
-            whenever(detector.detectColor(any(), any(), any())).thenReturn(DetectionResult(true, 100.0, Point(5, 5), Point(10, 10)))
+            whenever(detector.detectColor(any(), any(), any(), any())).thenReturn(DetectionResult(true, 100.0, Point(5, 5), Point(10, 10)))
             val android = mock<AndroidActionExecutor>()
             whenever(android.dispatchGesture(any())).thenReturn(AndroidGestureResult.COMPLETED)
             val processor = ScenarioProcessor("test", detector, scaling, false, listOf(parent, child), emptyList(), emptyList(),
@@ -168,7 +188,7 @@ class ReliabilityRegressionTests {
         val scaling = mock<ScalingManager>()
         if (validScaling) whenever(scaling.getScreenConditionScalingInfo(condition))
             .thenReturn(ScreenConditionScalingInfo.Color(condition, condition.detectionArea))
-        whenever(detector.detectColor(any(), any(), any())).thenReturn(DetectionResult(false))
+        whenever(detector.detectColor(any(), any(), any(), any())).thenReturn(DetectionResult(false))
         return ScenarioProcessor(
             "test", detector, scaling, false, listOf(event), emptyList(), emptyList(),
             bitmapSupplier = { _, _, _ -> null }, screenFrameSupplier = frames,

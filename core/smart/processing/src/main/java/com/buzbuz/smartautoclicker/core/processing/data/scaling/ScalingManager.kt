@@ -84,31 +84,25 @@ class ScalingManager @Inject constructor(
             .map { minOf(it.area.width(), it.area.height()) }
             .filter { it > 0 }
             .minOrNull()
-        val smallestNumberAreaSide = screenConditions
-            .asSequence()
-            .filterIsInstance<ScreenCondition.Number>()
-            .map { minOf(it.detectionArea.width(), it.detectionArea.height()) }
-            .filter { it > 0 }
-            .minOrNull()
-        val smallestTextAreaSide = screenConditions
-            .asSequence()
-            .filterIsInstance<ScreenCondition.Text>()
-            .map { minOf(it.detectionArea.width(), it.detectionArea.height()) }
-            .filter { it > 0 }
-            .minOrNull()
+        // The size of a selection says nothing about the size of its letters. A large task panel
+        // can contain 12px text or a 1px decimal point. Resizing before cropping irreversibly loses
+        // those strokes; it can also blend a sampled colour with its surroundings. Keep the single
+        // captured frame at native resolution in these scenarios. Native OCR still processes only
+        // the selected crop, with bounded fallback passes, not another full-screen OCR buffer.
+        val needsSourcePixels = screenConditions.any {
+            it is ScreenCondition.Text || it is ScreenCondition.Number || it is ScreenCondition.Color
+        }
 
         scalingRatio = maxOf(
             qualityRatio,
             smallestImageSide.minimumRatioFor(MIN_SCALED_IMAGE_SIDE),
-            smallestNumberAreaSide.minimumRatioFor(MIN_SCALED_NUMBER_AREA_SIDE),
-            smallestTextAreaSide.minimumRatioFor(MIN_SCALED_TEXT_AREA_SIDE),
+            if (needsSourcePixels) 1.0 else 0.0,
         )
 
         val scaledScreenSize = displaySize.scaleDown()
 
         Log.i(TAG, "Scaling metrics refreshed: ratio=$scalingRatio, qualityRatio=$qualityRatio, " +
-                "smallestImageSide=$smallestImageSide, smallestNumberAreaSide=$smallestNumberAreaSide, " +
-                "smallestTextAreaSide=$smallestTextAreaSide, screenSize=$displaySize, " +
+                "smallestImageSide=$smallestImageSide, needsSourcePixels=$needsSourcePixels, screenSize=$displaySize, " +
                 "scaledScreenSize=$scaledScreenSize")
 
         return scaledScreenSize
@@ -190,7 +184,4 @@ class ScalingManager @Inject constructor(
 private const val QUALITY_MAX = 10000.0
 /** Keep small image templates detailed enough for reliable matching after screen downscaling. */
 private const val MIN_SCALED_IMAGE_SIDE = 32.0
-/** Preserve enough source pixels before OCR upscaling; interpolation cannot recover discarded strokes. */
-private const val MIN_SCALED_NUMBER_AREA_SIDE = 96.0
-private const val MIN_SCALED_TEXT_AREA_SIDE = 64.0
 private const val TAG = "ScalingManager"

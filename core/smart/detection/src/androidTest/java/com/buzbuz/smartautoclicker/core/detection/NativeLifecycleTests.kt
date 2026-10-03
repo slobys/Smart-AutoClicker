@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.graphics.Rect
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -26,7 +27,10 @@ class NativeLifecycleTests {
         try {
             repeat(1_000) {
                 detector.setScreenBitmap(bitmap, "native_lifecycle_test")
-                try { assertNotNull(detector.detectColor(Color.GREEN, Rect(0, 0, 64, 64), 20)) }
+                try {
+                    assertNotNull(detector.detectColor(Color.GREEN, Rect(0, 0, 64, 64), 20))
+                    assertTrue(detector.detectColor(Color.GREEN, Rect(0, 0, 64, 64), 20, true).isDetected)
+                }
                 finally { detector.releaseScreenBitmap(bitmap) }
             }
         } finally { detector.close(); bitmap.recycle() }

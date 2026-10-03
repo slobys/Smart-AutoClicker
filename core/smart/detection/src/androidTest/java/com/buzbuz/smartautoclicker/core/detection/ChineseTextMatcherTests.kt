@@ -13,6 +13,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.buzbuz.smartautoclicker.core.detection.utils.extractTestOcrModels
 import org.junit.After
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -89,7 +90,53 @@ class ChineseTextMatcherTests {
         }
     }
 
-    private fun chineseFrame(text: String?, frame: Int, ghost: Boolean = false): Bitmap =
+    @Test fun dimChineseOtherTargetsOnChangingBackground() {
+        listOf("任务", "背包", "采集").forEach { word ->
+            repeat(6) { frame ->
+                withFrame(chineseFrame(word, frame, dim = true)) { bitmap ->
+                    assertTrue("dim $word frame $frame",
+                        detector!!.detectText(word, MODEL, area(bitmap), 0).isDetected)
+                    assertFalse("invented word on dim frame",
+                        detector!!.detectText("购买", MODEL, area(bitmap), 0).isDetected)
+                }
+            }
+        }
+    }
+
+    @Test fun mixedChineseAndNumbersUseSameDigitModelAsNumberOnly() {
+        val (path, models) = InstrumentationRegistry.getInstrumentation().targetContext.extractTestOcrModels()
+        val latinPath = models.values.first()
+        val single = NativeDetector.newInstance()!!
+        single.init()
+        try {
+            assertTrue(single.loadTextDetectionModels(path, mapOf("LATIN" to latinPath)))
+            assertTrue(detector!!.loadTextDetectionModels(path,
+                mapOf("LATIN" to latinPath, MODEL to File(fixtures, "chinese_simplified").absolutePath)))
+            listOf("124", "16.5", "-23.5", "18", "0.25").forEach { value ->
+                withFrame(Bitmap.createBitmap(220, 64, Bitmap.Config.ARGB_8888).apply {
+                    eraseColor(Color.rgb(30, 45, 55))
+                    Canvas(this).drawText(value, 8f, 48f, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        textSize = 40f; color = Color.YELLOW; typeface = android.graphics.Typeface.DEFAULT_BOLD
+                    })
+                }) { bitmap ->
+                    single.setScreenBitmap(bitmap, "")
+                    val expected = single.detectNumber(area(bitmap), 20, NumberFormatType.DOT_DECIMAL)
+                    val actual = detector!!.detectNumber(area(bitmap), 20, NumberFormatType.DOT_DECIMAL)
+                    assertTrue("single Latin missing $value: $expected", expected.isDetected)
+                    assertEquals(value.toDouble(), actual.numberDetected!!, 0.00001)
+                    assertEquals(expected.confidenceRate, actual.confidenceRate, 0.000001)
+                }
+            }
+            // Reloading without Latin must not retain the old model id or choose Chinese silently.
+            assertTrue(detector!!.loadTextDetectionModels(path, mapOf(MODEL to File(fixtures, "chinese_simplified").absolutePath)))
+            withFrame(chineseFrame("师门", 0)) {
+                assertFalse(detector!!.detectNumber(area(it), 100).isDetected)
+                assertTrue(detector!!.detectText("师门", MODEL, area(it), 20).isDetected)
+            }
+        } finally { single.close() }
+    }
+
+    private fun chineseFrame(text: String?, frame: Int, ghost: Boolean = false, dim: Boolean = false): Bitmap =
         Bitmap.createBitmap(110, 260, Bitmap.Config.ARGB_8888).apply {
             val pixels = IntArray(width * height) { index ->
                 val wave = (42 * sin((index % width + frame * 17) / 19.0) +
@@ -111,6 +158,8 @@ class ChineseTextMatcherTests {
                 paint.style = Paint.Style.FILL
                 paint.color = listOf(Color.YELLOW, Color.rgb(100, 255, 150), Color.CYAN,
                     Color.MAGENTA, Color.rgb(255, 80, 80), Color.rgb(60, 100, 255))[frame % 6]
+                if (dim) paint.color = Color.rgb(Color.red(paint.color) * 2 / 3,
+                    Color.green(paint.color) * 2 / 3, Color.blue(paint.color) * 2 / 3)
                 canvas.drawText(text, 7f + frame % 3, 48f, paint)
             }
             paint.color = Color.WHITE

@@ -158,7 +158,8 @@ extern "C" {
             jint y,
             jint width,
             jint height,
-            jint threshold
+            jint threshold,
+            jboolean findInArea
     ) {
         auto detector = getDetectorFromJavaRef(env, self);
         if (!detector) return nullptr;
@@ -167,7 +168,7 @@ extern "C" {
             return toJniResult(env, detector->detectColor(
                     conditionColor,
                     cv::Rect(x, y, width, height),
-                    threshold));
+                    threshold, findInArea));
         } catch (...) {
             throwRuntimeException(env, "Invalid detection arguments for color detection");
             return nullptr;

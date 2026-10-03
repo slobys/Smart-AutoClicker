@@ -90,9 +90,12 @@ namespace {
 }
 
 bool TextMatcher::init(const std::string& detectionModelPath, const std::map<std::string, std::string>& recognitionModels) {
-    if (!recognitionModels.empty()) {
-        defaultRecognitionModelId = recognitionModels.begin()->first;
-    }
+    // Number conditions require the Latin digit model, independently of any text conditions.
+    // std::map order previously selected CHINESE_* (or ARABIC) before LATIN in mixed scripts.
+    // Keep the lowercase identifier used by existing native clients/tests; never pick another
+    // alphabet silently, and clear the old identifier when models are reloaded.
+    defaultRecognitionModelId = recognitionModels.count("LATIN") ? "LATIN" :
+            recognitionModels.count("latin") ? "latin" : "";
     return textLocator->init(detectionModelPath) && textRecognizer->init(recognitionModels);
 }
 
@@ -439,6 +442,23 @@ bool TextMatcher::matchChromaticText(
         const std::string& conditionText, const cv::Rect& detectionArea, int threshold,
         std::vector<cv::Rect>& confidentNonTargetAreas
 ) {
+    return recognizeChromaticText(rgbCrop, recognitionModelId, [&](const auto& results) {
+        if (updateTextMatchingResult(results, conditionText, detectionArea, threshold,
+                                     MIN_CHROMATIC_TEXT_CONFIDENCE, "chromatic")) return true;
+        const float requiredSimilarity = std::clamp(1.f - threshold / 100.f, 0.f, 1.f);
+        for (const auto& result : results) {
+            if (result.confidence >= 0.90f &&
+                bestSubstringMatch(result.text, conditionText, requiredSimilarity).similarity < requiredSimilarity)
+                confidentNonTargetAreas.push_back(result.boundingBox);
+        }
+        return false;
+    });
+}
+
+bool TextMatcher::recognizeChromaticText(
+        const cv::Mat& rgbCrop, const std::string& recognitionModelId,
+        const std::function<bool(const std::vector<TextRecognizerResult>&)>& acceptPass
+) {
     if (rgbCrop.empty() || rgbCrop.total() > MAX_FOREGROUND_OCR_PIXELS ||
         std::min(rgbCrop.cols, rgbCrop.rows) < MIN_DIRECT_TEXT_SIDE) return false;
 
@@ -448,19 +468,42 @@ bool TextMatcher::matchChromaticText(
     cv::Mat hsv;
     cv::cvtColor(rgbCrop, hsv, cv::COLOR_RGB2HSV);
     std::array<int, 18> histogram{};
+    std::array<int, 18> brightHistogram{};
+    std::array<std::array<int, 256>, 18> brightness{};
     for (int y = 0; y < hsv.rows; ++y) {
         const auto* row = hsv.ptr<cv::Vec3b>(y);
         for (int x = 0; x < hsv.cols; ++x) {
-            if (row[x][1] >= MIN_CHROMATIC_SATURATION && row[x][2] >= MIN_CHROMATIC_BRIGHTNESS)
+            if (row[x][1] >= MIN_CHROMATIC_SATURATION && row[x][2] >= 80) {
                 ++histogram[row[x][0] / 10];
+                ++brightness[row[x][0] / 10][row[x][2]];
+                if (row[x][2] >= MIN_CHROMATIC_BRIGHTNESS) ++brightHistogram[row[x][0] / 10];
+            }
         }
     }
     for (int pass = 0; pass < MAX_CHROMATIC_PASSES; ++pass) {
-        const auto peak = std::max_element(histogram.begin(), histogram.end());
+        // Preserve bright-label priority: a large dim background must not consume all hue slots.
+        const auto brightPeak = std::max_element(brightHistogram.begin(), brightHistogram.end());
+        const bool brightPass = *brightPeak >= 16;
+        const auto peak = brightPass ? brightPeak : std::max_element(histogram.begin(), histogram.end());
         if (*peak < 16) break;
-        const int bin = static_cast<int>(std::distance(histogram.begin(), peak));
+        const int bin = static_cast<int>(std::distance(brightPass ? brightHistogram.begin() : histogram.begin(), peak));
         const int hue = bin * 10 + 5;
-        for (int offset = -2; offset <= 2; ++offset) histogram[(bin + offset + 18) % 18] = 0;
+        // Use the bright end of this hue's observed population, not a fixed brightness of 192.
+        // This retains dim coloured labels while still excluding same-hue dark outlines/ghosts.
+        // A percentile (rather than max) prevents one spark/noise pixel from hiding the whole word.
+        const int support = histogram[bin];
+        int count = 0;
+        int bright = 255;
+        for (; bright > 80; --bright) {
+            count += brightness[bin][bright];
+            if (count >= std::max(8, support / 20)) break;
+        }
+        const int minimumBrightness = brightPass ? MIN_CHROMATIC_BRIGHTNESS :
+                std::clamp(bright * 4 / 5, 80, MIN_CHROMATIC_BRIGHTNESS);
+        for (int offset = -2; offset <= 2; ++offset) {
+            histogram[(bin + offset + 18) % 18] = 0;
+            brightHistogram[(bin + offset + 18) % 18] = 0;
+        }
 
         cv::Mat ink(hsv.size(), CV_8UC1, cv::Scalar(255));
         for (int y = 0; y < hsv.rows; ++y) {
@@ -469,22 +512,14 @@ bool TextMatcher::matchChromaticText(
             for (int x = 0; x < hsv.cols; ++x) {
                 const int difference = std::abs(static_cast<int>(source[x][0]) - hue);
                 if (std::min(difference, 180 - difference) <= 12 &&
-                    source[x][1] >= MIN_CHROMATIC_SATURATION && source[x][2] >= MIN_CHROMATIC_BRIGHTNESS) {
+                    source[x][1] >= MIN_CHROMATIC_SATURATION && source[x][2] >= minimumBrightness) {
                     target[x] = 0;
                 }
             }
         }
         // Bright ink excludes darker, same-hue outlines/old lettering visible behind a translucent
-        // HUD. Dim/neutral text still has the existing original, contrast and residual passes.
-        auto results = textRecognizer->recognizeText(recognitionModelId, chromaticLines(ink));
-        if (updateTextMatchingResult(results, conditionText, detectionArea, threshold,
-                                     MIN_CHROMATIC_TEXT_CONFIDENCE, "chromatic")) return true;
-        const float requiredSimilarity = std::clamp(1.f - threshold / 100.f, 0.f, 1.f);
-        for (const auto& result : results) {
-            if (result.confidence >= 0.90f &&
-                bestSubstringMatch(result.text, conditionText, requiredSimilarity).similarity < requiredSimilarity)
-                confidentNonTargetAreas.push_back(result.boundingBox);
-        }
+        // HUD. Neutral text still has the original, contrast and residual passes.
+        if (acceptPass(textRecognizer->recognizeText(recognitionModelId, chromaticLines(ink)))) return true;
     }
     return false;
 }
@@ -752,6 +787,12 @@ std::vector<TextRecognizerResult> TextMatcher::recognizeNumber(
 
     // Keep coloured digits when animation makes them nearly equal to the background in grayscale.
     if (isCompactDirectArea) {
+        if (recognizeChromaticText(rgbScreenCrop, recognitionModelId, [&](const auto& pass) {
+            for (const auto& result : pass) {
+                if (result.confidence >= MIN_CHROMATIC_TEXT_CONFIDENCE) results.push_back(result);
+            }
+            return hasConfidentNumericConsensus(results);
+        })) return results;
         for (bool darkText : {false, true}) {
             auto foregroundResults = recognizeForegroundText(rgbScreenCrop, recognitionModelId, darkText);
             results.insert(results.end(), foregroundResults.begin(), foregroundResults.end());

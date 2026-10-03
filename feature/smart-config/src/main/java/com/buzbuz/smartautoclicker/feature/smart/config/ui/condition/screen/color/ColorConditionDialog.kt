@@ -140,6 +140,15 @@ class ColorConditionDialog(
                 setSliderRange(0f, MAX_THRESHOLD)
                 setOnValueChangedFromUserListener { value -> viewModel.setThreshold(value.roundToInt()) }
             }
+            fieldFindInArea.apply {
+                setTitle(context.getString(R.string.color_find_in_area_title))
+                setupDescriptions(listOf(
+                    context.getString(R.string.color_find_in_area_off),
+                    context.getString(R.string.color_find_in_area_on),
+                    context.getString(R.string.color_find_in_area_too_small),
+                ))
+                setOnClickListener { viewModel.toggleFindInArea() }
+            }
         }
 
         return viewBinding.root
@@ -228,6 +237,13 @@ class ColorConditionDialog(
             fieldShouldAppear.setDescription(if (uiState.shouldBeDetectedChecked) 1 else 0)
 
             fieldSliderThreshold.setSliderValue(uiState.detectionThreshold.toFloat())
+            fieldFindInArea.setChecked(uiState.findInArea)
+            fieldFindInArea.setDescription(when {
+                !uiState.findInArea -> 0
+                uiState.detectionArea.isEmpty ||
+                    uiState.detectionArea.width().toLong() * uiState.detectionArea.height() < 9 -> 2
+                else -> 1
+            })
         }
     }
 

@@ -19,6 +19,7 @@
 
 #include <opencv2/core/types.hpp>
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <net.h>
 #include <limits>
@@ -66,7 +67,7 @@ namespace smartautoclicker {
         /** Stores the result of the most recent match operation. */
         TextMatchingResult currentMatchingResult;
 
-        /** Identifier of the first loaded recognition model, used for generic matching (like numbers). */
+        /** Explicit Latin model for numbers; empty when that model is unavailable. */
         std::string defaultRecognitionModelId;
 
         /**
@@ -120,6 +121,11 @@ namespace smartautoclicker {
                 const cv::Mat& rgbCrop, const std::string& recognitionModelId,
                 const std::string& conditionText, const cv::Rect& detectionArea, int threshold,
                 std::vector<cv::Rect>& confidentNonTargetAreas);
+
+        /** Shared bounded colour segmentation; stop immediately when the consumer accepts a pass. */
+        bool recognizeChromaticText(
+                const cv::Mat& rgbCrop, const std::string& recognitionModelId,
+                const std::function<bool(const std::vector<TextRecognizerResult>&)>& acceptPass);
 
         /** Scores one OCR pass and keeps the best result found across all passes. */
         bool updateTextMatchingResult(

@@ -33,4 +33,5 @@ data class ColorConditionUiState(
     val blueValue: Int,
     val shouldBeDetectedChecked: Boolean,
     val detectionThreshold: Int,
+    val findInArea: Boolean = false,
 )

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="color_find_in_area_title">区域内找色</string>
+    <string name="color_find_in_area_off" formatted="false">关闭：选区至少 75% 的像素符合目标色，保持原有色块判断。</string>
+    <string name="color_find_in_area_on">开启：查找至少 9 个相邻匹配像素组成的色块，点击使用实际匹配位置。多点校验可用 AND 组合多个颜色条件。</string>
+    <string name="color_find_in_area_too_small">选区太小，不能进行区域找色。请重新框选至少包含 9 个像素的检测区域后再保存；只判断一个像素时请关闭此开关。</string>
+</resources>

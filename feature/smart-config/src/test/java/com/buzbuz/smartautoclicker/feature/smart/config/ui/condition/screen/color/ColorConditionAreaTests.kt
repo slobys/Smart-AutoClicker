@@ -72,4 +72,25 @@ class ColorConditionAreaTests {
         viewModel.setPosition(PointF(123f, 456f))
         verify { repository.updateEditedCondition(condition.copy(detectionArea = Rect(123, 456, 124, 457))) }
     }
+
+    @Test fun areaSearchIsExplicitAndPreservesThresholdColorAndRegion() {
+        viewModel.toggleFindInArea()
+        verify { repository.updateEditedCondition(condition.copy(findInArea = true)) }
+        every { state.getEditedCondition<ScreenCondition.Color>() } returns condition.copy(findInArea = true)
+        viewModel.toggleFindInArea()
+        verify { repository.updateEditedCondition(condition) }
+    }
+
+    @Test fun pointSamplingCannotLeaveImpossiblePatchSearchEnabled() {
+        every { state.getEditedCondition<ScreenCondition.Color>() } returns condition.copy(findInArea = true)
+        viewModel.setPosition(PointF(123f, 456f))
+        verify { repository.updateEditedCondition(condition.copy(detectionArea = Rect(123, 456, 124, 457))) }
+    }
+
+    @Test fun searchRequiresEnoughPixelsButLegacySinglePixelStaysValid() {
+        assertTrue(condition.isComplete())
+        assertFalse(condition.copy(findInArea = true).isComplete())
+        assertFalse(condition.copy(findInArea = true, detectionArea = Rect(0, 0, 2, 4)).isComplete())
+        assertTrue(condition.copy(findInArea = true, detectionArea = Rect(0, 0, 3, 3)).isComplete())
+    }
 }

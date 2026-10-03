@@ -164,12 +164,11 @@
                         android:layout_marginHorizontal="@dimen/margin_horizontal_default"
                         android:layout_marginVertical="@dimen/margin_vertical_default" />
 
-                    <TextView
-                        style="@style/AppTheme.TextAppearance.FieldSubText"
+                    <include layout="@layout/include_field_switch"
+                        android:id="@+id/field_find_in_area"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginHorizontal="@dimen/margin_horizontal_default"
-                        android:text="@string/color_detection_area_hint" />
+                        android:layout_marginHorizontal="@dimen/margin_horizontal_default" />
 
                     <include layout="@layout/include_field_slider"
                         android:id="@+id/field_slider_threshold"
