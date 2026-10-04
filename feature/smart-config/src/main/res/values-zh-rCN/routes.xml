@@ -105,6 +105,16 @@
     <string name="route_message_reading">正在读取坐标／核对地图</string>
     <string name="route_message_recording">正在录制，请正常走路</string>
     <string name="route_message_replaying">正在沿路线移动</string>
+    <string name="route_message_waiting_movement">手势已完成，等待坐标变化确认</string>
+    <string name="route_message_adjusting_step">坐标未前进，尝试同方向较近落脚点</string>
+    <string name="route_current_target">当前目标：%1$s</string>
+    <string name="route_target_distance">距目标：%1$.1f 个定位单位</string>
+    <string name="route_screen_target">屏幕落点：%1$s</string>
+    <string name="route_step_attempt">无位移尝试：%1$d / 3</string>
+    <string name="route_movement_help">不自动绕墙，不跳过拐点</string>
+    <string name="route_paused_help">已暂停；可沿原路小步调整，再点继续复查</string>
+    <string name="route_stuck_help">已停止点击。落点可能在人物／建筑上，或路段受阻；手动沿原道路走一小步再继续，必要时检查脚下锚点和校准。</string>
+    <string name="route_gesture_help">未确认手势完成，不自动重发；请检查悬浮条遮挡或无障碍服务。</string>
     <string name="route_message_approaching_start">正在自动接近起点</string>
     <string name="route_message_approaching_end">正在接入已录道路，准备返程</string>
     <string name="route_message_returning">正在沿原路返回起点</string>
@@ -123,7 +133,7 @@
     <string name="route_return_distance">相距 %1$.1f，允许 ≤ %2$.1f</string>
     <string name="route_return_help">手动回到该位置并站稳，点“复查继续”</string>
     <string name="route_endpoints">录制起点：%1$s → 终点：%2$s\n起点与终点不必相同。起点附近回放；终点附近或已录道路途中可原路返回。</string>
-    <string name="route_message_stuck">已暂停：15 秒没有接近目标</string>
+    <string name="route_message_stuck">已暂停：未能继续接近目标</string>
     <string name="route_message_timeout">已暂停：到达路径点超时</string>
     <string name="route_message_lost_position">定位未通过，已停止移动；录制保留草稿。</string>
     <string name="route_read_ready">定位通过，请核对读数与游戏一致</string>

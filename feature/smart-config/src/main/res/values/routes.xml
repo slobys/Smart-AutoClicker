@@ -104,6 +104,16 @@
     <string name="route_message_reading">Reading coordinates / checking map</string>
     <string name="route_message_recording">Recording — walk normally</string>
     <string name="route_message_replaying">Following route</string>
+    <string name="route_message_waiting_movement">Tap completed; waiting for coordinate movement</string>
+    <string name="route_message_adjusting_step">No progress; trying a nearer point in the same direction</string>
+    <string name="route_current_target">Current target: %1$s</string>
+    <string name="route_target_distance">Distance to target: %1$.1f localization units</string>
+    <string name="route_screen_target">Screen tap: %1$s</string>
+    <string name="route_step_attempt">No-movement attempt: %1$d / 3</string>
+    <string name="route_movement_help">No wall avoidance or corner skipping</string>
+    <string name="route_paused_help">Paused. Adjust slightly along the recorded road, then resume to recheck.</string>
+    <string name="route_stuck_help">Taps stopped. A character/building may cover the tap, or the segment may be blocked. Move a little along the recorded road before resuming; check the foot anchor and calibration if needed.</string>
+    <string name="route_gesture_help">Gesture completion was not confirmed; no automatic retry. Check overlay obstruction and accessibility service.</string>
     <string name="route_message_approaching_start">Approaching the recorded start</string>
     <string name="route_message_approaching_end">Joining the recorded road before returning</string>
     <string name="route_message_returning">Returning along the saved route</string>
@@ -117,7 +127,7 @@
     <string name="route_message_complete">Route completed</string>
     <string name="route_message_saved_draft">Draft saved; record again before replay</string>
     <string name="route_message_wrong_start">Not moving: too far from the recorded start</string>
-    <string name="route_message_stuck">Paused: no progress for 15 seconds</string>
+    <string name="route_message_stuck">Paused: unable to continue approaching the target</string>
     <string name="route_message_timeout">Paused: waypoint timed out</string>
     <string name="route_message_lost_position">Position not confirmed; movement stopped, recording draft kept.</string>
     <string name="route_message_bad_calibration">Direction calibration failed: stall, detour or similar directions; retry on nearby clear ground</string>

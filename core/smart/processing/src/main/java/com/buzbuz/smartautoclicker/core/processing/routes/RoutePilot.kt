@@ -6,14 +6,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 
 enum class RouteMessage {
-    PREPARING, READING, RECORDING, APPROACHING_START, REPLAYING, PAUSED, COMPLETE, SAVED_DRAFT, DONE,
+    PREPARING, READING, RECORDING, APPROACHING_START, REPLAYING, WAITING_MOVEMENT, ADJUSTING_STEP, PAUSED, COMPLETE, SAVED_DRAFT, DONE,
     WRONG_START, POSITION_JUMP, STUCK, TIMEOUT, LOST_POSITION, BAD_CALIBRATION, RESOLUTION_CHANGED,
     SERVICE_STOPPED, MODELS_MISSING, GESTURE_FAILED, LIMIT_REACHED, FAILED, LOCALIZATION_PASSED, LOCALIZATION_WEAK,
 }
 data class RouteProgress(val message: RouteMessage, val position: RoutePoint? = null, val count: Int = 0,
     val confidence: Double? = null, val trace: List<RoutePoint> = emptyList(), val observations: Int? = null,
     val expectedPosition: RoutePoint? = null, val allowedDistance: Double? = null, val returning: Boolean = false,
-    val diagnostics: RouteReadDiagnostics? = null)
+    val diagnostics: RouteReadDiagnostics? = null, val screenTarget: RoutePoint? = null, val stepAttempt: Int? = null)
 
 class RouteRunControl {
     @Volatile var stopped = false
@@ -175,18 +175,26 @@ internal class RoutePilot(
         var lastMove = port.now() - 2_000
         var wasPaused = false
         var observationEpoch = port.epoch
+        val groundStep = RouteGroundStepGuard()
+        var lastTarget: RoutePoint? = null
+        var lastScreenTarget: RoutePoint? = null
+        var lastStepAttempt: Int? = null
         while (!control.stopped) {
             tick()
             if (control.paused) { wasPaused = true; continue }
             if (wasPaused) {
                 follower?.resume(port.now()); previous = null; lastGood = port.now(); wasPaused = false
                 port.resetObservation()
+                groundStep.reset()
+                lastScreenTarget = null; lastStepAttempt = null
             }
             val position = port.read()
             if (observationEpoch != port.epoch) {
                 observationEpoch = port.epoch
                 follower?.resume(port.now()); previous = null; lastGood = port.now()
                 port.resetObservation()
+                groundStep.reset()
+                lastScreenTarget = null; lastStepAttempt = null
                 continue // Discard the observation spanning a debugger pause.
             }
             if (position == null) {
@@ -217,19 +225,37 @@ internal class RoutePilot(
             if (decision is RouteFollower.Decision.Pause) {
                 val wrongStart = decision.reason == RouteFollower.Reason.WRONG_START
                 pause(RouteMessage.valueOf(decision.reason.name), activeFollower.index, position,
-                    if (wrongStart) points.first() else null,
+                    if (wrongStart) points.first() else lastTarget,
                     if (wrongStart) activeFollower.startTolerance else null)
                 continue
             }
             lastKnown = position
             val approaching = activeFollower.index == 0
-            report(RouteProgress(if (approaching) RouteMessage.APPROACHING_START else RouteMessage.REPLAYING,
-                position, activeFollower.index, expectedPosition = if (approaching) points.first() else null))
+            val baseMessage = if (approaching) RouteMessage.APPROACHING_START else RouteMessage.REPLAYING
+            val move = decision as? RouteFollower.Decision.Move
+            if (move != null && move.target != lastTarget) {
+                lastTarget = move.target; lastScreenTarget = null; lastStepAttempt = null
+            }
+            val step = if (move != null && route.control == RouteControl.GROUND_TAP)
+                groundStep.observe(move.target, position, port.now()) else null
+            if (step == RouteGroundStepGuard.Decision.Blocked) {
+                pause(RouteMessage.STUCK, activeFollower.index, position, move?.target)
+                continue
+            }
+            val movementMessage = when {
+                step == RouteGroundStepGuard.Decision.Wait -> RouteMessage.WAITING_MOVEMENT
+                step is RouteGroundStepGuard.Decision.Tap && step.attempt > 1 -> RouteMessage.ADJUSTING_STEP
+                else -> baseMessage
+            }
+            report(RouteProgress(movementMessage, position, activeFollower.index,
+                expectedPosition = if (approaching) points.first() else lastTarget,
+                screenTarget = lastScreenTarget, stepAttempt = lastStepAttempt))
             when (decision) {
                 RouteFollower.Decision.Complete -> { report(RouteProgress(RouteMessage.COMPLETE, position, activeFollower.index)); return }
                 RouteFollower.Decision.Wait -> Unit
                 is RouteFollower.Decision.Pause -> Unit // Handled above, before updating the resume anchor.
                 is RouteFollower.Decision.Move -> {
+                    if (step == RouteGroundStepGuard.Decision.Wait) { previous = position; continue }
                     // Wait for two settled observations; do not replace a movement still in progress.
                     // A completed gesture plus two new settled observations is enough; a fixed
                     // 1.5 s penalty on every tiny sample made dense recordings crawl.
@@ -237,7 +263,21 @@ internal class RoutePilot(
                     if (previous?.distance(position)?.let { it <= .5 } == true && port.now() - lastMove >= minimumInterval) {
                         currentCoroutineContext().ensureActive()
                         if (!control.paused && !control.stopped) {
-                            if (!port.move(routeMotion(route, decision.target - position))) pause(RouteMessage.GESTURE_FAILED, activeFollower.index, position)
+                            val tap = step as? RouteGroundStepGuard.Decision.Tap
+                            val originalMotion = routeMotion(route, decision.target - position)
+                            val motion = originalMotion.copy(offset = originalMotion.offset * (tap?.scale ?: 1.0))
+                            report(RouteProgress(if (tap != null && tap.attempt > 1) RouteMessage.ADJUSTING_STEP else baseMessage,
+                                position, activeFollower.index, expectedPosition = decision.target,
+                                screenTarget = route.anchor + motion.offset, stepAttempt = tap?.attempt))
+                            // The progress callback may synchronously pause/stop the route.
+                            if (control.paused || control.stopped) { previous = null; continue }
+                            if (!port.move(motion)) pause(RouteMessage.GESTURE_FAILED, activeFollower.index, position, decision.target)
+                            else if (tap != null) {
+                                groundStep.dispatched(position, port.now())
+                                lastScreenTarget = route.anchor + motion.offset; lastStepAttempt = tap.attempt
+                                report(RouteProgress(RouteMessage.WAITING_MOVEMENT, position, activeFollower.index,
+                                    expectedPosition = decision.target, screenTarget = lastScreenTarget, stepAttempt = lastStepAttempt))
+                            }
                             lastMove = port.now()
                             previous = null
                             continue

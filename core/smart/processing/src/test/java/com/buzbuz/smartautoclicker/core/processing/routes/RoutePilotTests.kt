@@ -12,6 +12,96 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class RoutePilotTests {
+    @Test fun slowStartingMovementIsNotRetappedBeforeObservationGrace() = runTest {
+        var position = RoutePoint(10.0, 10.0)
+        var target = position
+        var sentAt: Long? = null
+        var taps = 0
+        val port = object : RoutePort {
+            override fun now() = testScheduler.currentTime
+            override suspend fun read(): RoutePoint {
+                if (sentAt?.let { now() - it >= 2_400 } == true) { position = target; sentAt = null }
+                return position
+            }
+            override suspend fun move(offset: RoutePoint): Boolean {
+                assertNull("Do not replace a delayed but pending movement", sentAt)
+                taps++; target = position + offset * .1; sentAt = now()
+                return true
+            }
+        }
+        withTimeout(15_000) { RoutePilot(port, RouteRunControl()) {}.replay(exampleRoute()) }
+        assertEquals(2, taps)
+        assertEquals(exampleRoute().points.last(), position)
+    }
+
+    @Test fun positionLossAfterACompletedTapNeverUsesFallbackPoints() = runTest {
+        val port = FakePort { testScheduler.currentTime }.apply { applyMovements = false }
+        port.afterRead = { if (port.movements > 0) port.position = null }
+        val control = RouteRunControl()
+        withTimeout(10_000) {
+            RoutePilot(port, control) { if (it.message == RouteMessage.LOST_POSITION) control.stopped = true }
+                .replay(exampleRoute())
+        }
+        assertEquals(1, port.movements)
+        assertTrue(control.paused)
+    }
+
+    @Test fun ignoredGroundTapUsesNearerCollinearPointWithoutSkippingTurn() = runTest {
+        var position = RoutePoint(10.0, 10.0)
+        val taps = mutableListOf<RoutePoint>()
+        val route = exampleRoute()
+        val original = route.points.toList()
+        val updates = mutableListOf<RouteProgress>()
+        val port = object : RoutePort {
+            override fun now() = testScheduler.currentTime
+            override suspend fun read() = position
+            override suspend fun move(offset: RoutePoint): Boolean {
+                taps.add(offset)
+                if (taps.size != 1) position += offset * .1 // First screen point hits a decoration.
+                return true
+            }
+        }
+        withTimeout(15_000) { RoutePilot(port, RouteRunControl(), updates::add).replay(route) }
+        assertEquals(RoutePoint(100.0, 0.0), taps[0])
+        assertEquals(RoutePoint(70.0, 0.0), taps[1])
+        assertEquals(RoutePoint(30.0, 0.0), taps[2])
+        assertEquals(RoutePoint(0.0, 100.0), taps[3])
+        assertEquals(original, route.points)
+        assertEquals(route.points.last(), position)
+        assertTrue(updates.any { it.message == RouteMessage.ADJUSTING_STEP && it.stepAttempt == 2 })
+        assertTrue(updates.any { it.message == RouteMessage.WAITING_MOVEMENT })
+    }
+
+    @Test fun completedGroundGesturesWithoutMovementPauseAfterThreeAttempts() = runTest {
+        val port = FakePort { testScheduler.currentTime }.apply { applyMovements = false }
+        val control = RouteRunControl()
+        var paused: RouteProgress? = null
+        withTimeout(15_000) {
+            RoutePilot(port, control) { if (it.message == RouteMessage.STUCK) { paused = it; control.stopped = true } }
+                .replay(exampleRoute())
+        }
+        assertEquals(3, port.movements)
+        assertTrue(control.paused)
+        assertEquals(exampleRoute().points[1], paused?.expectedPosition)
+        assertEquals(RoutePoint(10.0, 10.0), paused?.position)
+    }
+
+    @Test fun pausingBeforeNearerTapSuppressesDispatchAndCanResumeSafely() = runTest {
+        val port = FakePort { testScheduler.currentTime }.apply { applyMovements = false }
+        val control = RouteRunControl()
+        val job = launch {
+            RoutePilot(port, control) { if (it.message == RouteMessage.ADJUSTING_STEP) control.paused = true }
+                .replay(exampleRoute())
+        }
+        advanceTimeBy(8_000); runCurrent()
+        assertTrue(control.paused)
+        assertEquals(1, port.movements)
+        port.applyMovements = true; control.paused = false
+        advanceUntilIdle(); job.join()
+        assertEquals(exampleRoute().points.last(), port.position)
+        assertEquals(3, port.movements)
+    }
+
     @Test fun returnAtOriginCompletesWithoutSendingAMovement() = runTest {
         val port = FakePort { testScheduler.currentTime }
         val updates = mutableListOf<RouteProgress>()

@@ -22,6 +22,8 @@ public class RouteMapActivity extends Activity {
         boolean occluded = false;
         final boolean joystick = getIntent().getBooleanExtra("joystick", false);
         final boolean corridor = getIntent().getBooleanExtra("corridor", false);
+        final boolean decorated = getIntent().getBooleanExtra("decorated", false);
+        final boolean allTapsBlocked = getIntent().getBooleanExtra("allTapsBlocked", false);
         final int[][] curve = {{100,100},{112,100},{112,102},{114,102},{114,116},{126,116},{126,128}};
         int destinationX = x, destinationY = y;
         boolean walking;
@@ -97,6 +99,12 @@ public class RouteMapActivity extends Activity {
                     getHeight()/2f+(curve[i][1]-y)*10,paint);
                 paint.setStrokeWidth(1);
             }
+            if(decorated) {
+                // A screen decoration over a walkable coordinate consumes the tap, not a wall.
+                // Its screen position shifts with the camera. A nearer same-segment tap is usable.
+                float cx=getWidth()/2f+(110-x)*10, cy=getHeight()/2f+(100-y)*10;
+                paint.setColor(Color.rgb(140,80,40)); canvas.drawRect(cx-15,cy-60,cx+15,cy+15,paint);
+            }
             paint.setColor(Color.CYAN); canvas.drawCircle(getWidth() / 2f, getHeight() / 2f, 16, paint);
             paint.setColor(Color.DKGRAY); canvas.drawLine(getWidth()/2f - 150, getHeight()/2f, getWidth()/2f+150, getHeight()/2f, paint);
             label(canvas, corridor ? "Narrow curved road: no corner shortcuts" : joystick ? "Fixed joystick (hold)" : "Ground taps", getWidth()/2-460, getHeight()/2+180);
@@ -116,7 +124,10 @@ public class RouteMapActivity extends Activity {
                         double travel=(event.getEventTime()-downAt)/50.0;
                         x+=Math.round(dx/radius*travel); y+=Math.round(dy/radius*travel);
                     } else if (!joystick) {
-                        if(corridor) walkTo(x+Math.round(dx/10),y+Math.round(dy/10));
+                        int tx=x+Math.round(dx/10),ty=y+Math.round(dy/10);
+                        if(allTapsBlocked || (decorated && Math.hypot(tx-110,ty-100)<=1.5))
+                            android.util.Log.i("RouteTestMap","ignored ground target="+tx+","+ty+" reason="+(allTapsBlocked?"all-blocked":"decoration"));
+                        else if(corridor) walkTo(tx,ty);
                         else { x += Math.round(dx/10); y += Math.round(dy/10); }
                     }
                     x=Math.max(31,Math.min(349,x)); y=Math.max(31,Math.min(349,y));

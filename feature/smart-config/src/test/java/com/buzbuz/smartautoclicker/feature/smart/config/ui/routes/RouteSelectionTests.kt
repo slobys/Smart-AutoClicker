@@ -14,6 +14,22 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [29], qualifiers = "zh-rCN")
 class RouteSelectionTests {
+    @Test fun movementFeedbackShowsGoalWithoutClaimingGestureEqualsWalking() {
+        val context = RuntimeEnvironment.getApplication()
+        val value = RouteProgress(RouteMessage.WAITING_MOVEMENT, RoutePoint(31.0, 165.0),
+            expectedPosition = RoutePoint(36.0, 165.0), screenTarget = RoutePoint(850.0, 650.0), stepAttempt = 1)
+        val text = value.statusText(context)
+        assertTrue(text.contains("等待坐标变化确认"))
+        assertTrue(text.contains("当前目标：36, 165"))
+        assertTrue(text.contains("5.0"))
+        assertTrue(text.contains("屏幕落点：850, 650"))
+        assertFalse(text.contains("需返回"))
+        assertFalse(text.contains("手动回到"))
+        val blocked = value.copy(message = RouteMessage.STUCK).statusText(context)
+        assertTrue(blocked.contains("已停止点击"))
+        assertTrue(blocked.contains("人物／建筑"))
+    }
+
     private fun route() = RouteViewModel(mock(), mock()).apply { newRoute(1920, 1080, "Test") }.route!!
 
     @Test fun wrongMapPreviewShowsDigitsWithoutClaimingAValidPosition() {

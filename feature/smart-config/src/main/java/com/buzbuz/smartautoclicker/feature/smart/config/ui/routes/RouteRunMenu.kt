@@ -134,17 +134,32 @@ internal fun RouteProgress.statusText(context: android.content.Context): String 
         }),
         currentPosition?.coordinateText() ?: context.getString(if (diagnostics == null)
             R.string.route_no_coordinate else R.string.route_unconfirmed_coordinate), observations ?: count))
-    expectedPosition?.let { expected ->
-        append("\n").append(context.getString(if (message == RouteMessage.APPROACHING_START)
-            R.string.route_approach_position else R.string.route_return_position, expected.coordinateText()))
+    expectedPosition?.takeIf { message !in setOf(RouteMessage.COMPLETE, RouteMessage.DONE) }?.let { expected ->
+        val moving = message in setOf(RouteMessage.APPROACHING_START, RouteMessage.REPLAYING,
+            RouteMessage.WAITING_MOVEMENT, RouteMessage.ADJUSTING_STEP, RouteMessage.STUCK, RouteMessage.GESTURE_FAILED,
+            RouteMessage.PAUSED, RouteMessage.TIMEOUT)
+        append("\n").append(context.getString(when {
+            message == RouteMessage.APPROACHING_START -> R.string.route_approach_position
+            moving -> R.string.route_current_target
+            else -> R.string.route_return_position
+        }, expected.coordinateText()))
+        if (moving && currentPosition != null)
+            append("\n").append(context.getString(R.string.route_target_distance, currentPosition.distance(expected)))
         if (currentPosition != null && allowedDistance != null)
             append("\n").append(context.getString(R.string.route_return_distance, currentPosition.distance(expected), allowedDistance))
         append("\n").append(context.getString(when (message) {
             RouteMessage.APPROACHING_START -> R.string.route_approach_help
             RouteMessage.WRONG_START -> if (returning) R.string.route_wrong_end_help else R.string.route_wrong_start_help
+            RouteMessage.STUCK -> R.string.route_stuck_help
+            RouteMessage.GESTURE_FAILED -> R.string.route_gesture_help
+            RouteMessage.PAUSED -> R.string.route_paused_help
+            RouteMessage.TIMEOUT -> R.string.route_stuck_help
+            RouteMessage.REPLAYING, RouteMessage.WAITING_MOVEMENT, RouteMessage.ADJUSTING_STEP -> R.string.route_movement_help
             else -> R.string.route_return_help
         }))
     }
+    screenTarget?.let { append("\n").append(context.getString(R.string.route_screen_target, it.coordinateText())) }
+    stepAttempt?.let { append("\n").append(context.getString(R.string.route_step_attempt, it)) }
     confidence?.let { append("\n").append(context.getString(R.string.route_localization_confidence, (it * 100).toInt())) }
     if (message == RouteMessage.READING || message == RouteMessage.LOST_POSITION)
         diagnostics?.let { append("\n").append(it.statusText(context)) }
@@ -188,6 +203,8 @@ internal fun RouteMessage.stringId(): Int = when (this) {
     RouteMessage.RECORDING -> R.string.route_message_recording
     RouteMessage.APPROACHING_START -> R.string.route_message_approaching_start
     RouteMessage.REPLAYING -> R.string.route_message_replaying
+    RouteMessage.WAITING_MOVEMENT -> R.string.route_message_waiting_movement
+    RouteMessage.ADJUSTING_STEP -> R.string.route_message_adjusting_step
     RouteMessage.PAUSED -> R.string.route_message_paused
     RouteMessage.COMPLETE -> R.string.route_message_complete
     RouteMessage.DONE -> R.string.route_message_done
