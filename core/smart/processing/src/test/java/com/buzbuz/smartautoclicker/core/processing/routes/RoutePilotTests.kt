@@ -12,6 +12,64 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class RoutePilotTests {
+    @Test fun returnAtOriginCompletesWithoutSendingAMovement() = runTest {
+        val port = FakePort { testScheduler.currentTime }
+        val updates = mutableListOf<RouteProgress>()
+        withTimeout(5_000) { RoutePilot(port, RouteRunControl(), updates::add).replay(exampleRoute(), returning = true) }
+        assertEquals(0, port.movements)
+        assertEquals(RouteMessage.COMPLETE, updates.last().message)
+        assertTrue(port.reads >= 4)
+    }
+
+    @Test fun calibrationDoesNotAcceptAStationaryCharacterOrRepeatedNulls() = runTest {
+        for (unreadable in listOf(false, true)) {
+            val port = FakePort { testScheduler.currentTime }.apply { applyMovements = false }
+            port.afterRead = { if (unreadable && port.movements > 0) port.position = null }
+            try { RoutePilot(port, RouteRunControl()) {}.calibrate(RoutePoint(100.0, 0.0)); fail("Invalid calibration") }
+            catch (failure: RouteFailure) {
+                assertEquals(if (unreadable) RouteMessage.LOST_POSITION else RouteMessage.BAD_CALIBRATION, failure.reason)
+            }
+            assertEquals(1, port.movements)
+        }
+    }
+
+    @Test fun recordingKeepsSmallTurnsAndNeverUsesCalibrationTargets() = runTest {
+        val path = listOf(RoutePoint(10.0, 10.0), RoutePoint(12.0, 10.0),
+            RoutePoint(12.0, 12.0), RoutePoint(14.0, 12.0), RoutePoint(14.0, 14.0))
+        val port = FakePort { testScheduler.currentTime }
+        val control = RouteRunControl()
+        port.afterRead = {
+            port.position = path[port.reads - 1]
+            if (port.reads == path.size) control.stopped = true
+        }
+        val result = RoutePilot(port, control) {}.record(exampleRoute().copy(calibration = null)) {}
+        assertEquals(path, result.points)
+        assertTrue(result.recordingComplete)
+        assertEquals(0, port.movements)
+    }
+
+    @Test fun returnCanJoinTheMiddleAndKeepsEarlierCorners() = runTest {
+        val route = exampleRoute()
+        val port = FakePort { testScheduler.currentTime }.apply { position = RoutePoint(20.0, 15.0) }
+        val updates = mutableListOf<RouteProgress>()
+        withTimeout(10_000) { RoutePilot(port, RouteRunControl(), updates::add).replay(route, returning = true) }
+        assertEquals(listOf(route.points[1], route.points[0]), port.visited)
+        assertEquals(RouteMessage.COMPLETE, updates.last().message)
+        assertEquals(exampleRoute(), route)
+    }
+
+    @Test fun obstructedCalibrationRejectsACurvedDetour() = runTest {
+        val path = listOf(RoutePoint(10.0, 10.0), RoutePoint(10.0, 16.0),
+            RoutePoint(15.0, 16.0), RoutePoint(20.0, 16.0), RoutePoint(20.0, 10.0))
+        val port = FakePort { testScheduler.currentTime }.apply { applyMovements = false }
+        port.afterRead = { if (port.movements > 0) port.position = path[(port.reads - 4).coerceIn(0, path.lastIndex)] }
+        try {
+            RoutePilot(port, RouteRunControl()) {}.calibrate(RoutePoint(100.0, 0.0))
+            fail("Detoured calibration must not become a direction basis")
+        } catch (failure: RouteFailure) { assertEquals(RouteMessage.BAD_CALIBRATION, failure.reason) }
+        assertEquals(1, port.movements)
+    }
+
     @Test fun denseStraightRecordingDoesNotStopAtEverySample() = runTest {
         val route = exampleRoute().copy(points = (0..10).map { RoutePoint(10.0 + it * 3, 10.0) })
         val original = route.points.toList()
@@ -143,11 +201,11 @@ class RoutePilotTests {
     @Test fun recordingUsesNoGesturesAndSavesDraftsThenCompletedRoute() = runTest {
         val port = FakePort { testScheduler.currentTime }; val c = RouteRunControl()
         val saved = mutableListOf<RecordedRoute>()
-        port.afterRead = { port.position = port.position!! + RoutePoint(1.0, 0.0); if (port.reads >= 20) c.stopped = true }
+        port.afterRead = { port.position = port.position!! + RoutePoint(1.0, 0.0); if (port.reads >= 30) c.stopped = true }
         val result = RoutePilot(port, c) {}.record(exampleRoute()) { saved += it }
         assertEquals(0, port.movements); assertTrue(result.recordingComplete)
         assertTrue(saved.any { !it.recordingComplete }); assertEquals(result, saved.last())
-        assertTrue(result.points.size < port.reads)
+        assertEquals(port.reads, result.points.size) // One-unit samples are no longer discarded.
     }
     @Test fun interruptionSavesNonReplayableDraft() = runTest {
         val port = FakePort { testScheduler.currentTime }; val c = RouteRunControl()
@@ -200,14 +258,14 @@ class RoutePilotTests {
         assertEquals(saved, route)
     }
 
-    @Test fun reverseChecksEndpointNotOriginalStartAndCannotStartFarAway() = runTest {
+    @Test fun reverseCannotJoinFarAwayFromTheRecordedCorridor() = runTest {
         val route = exampleRoute().copy(points = listOf(RoutePoint(10.0, 10.0), RoutePoint(50.0, 10.0)))
-        val port = FakePort { testScheduler.currentTime }
+        val port = FakePort { testScheduler.currentTime }.apply { position = RoutePoint(30.0, 100.0) }
         val c = RouteRunControl()
         var blocked: RouteProgress? = null
         RoutePilot(port, c) { if (it.message == RouteMessage.WRONG_START) { blocked = it; c.stopped = true } }
             .replay(route, returning = true)
-        assertEquals(route.points.last(), blocked?.expectedPosition)
+        assertEquals(RoutePoint(30.0, 10.0), blocked?.expectedPosition)
         assertEquals(0, port.movements)
     }
 

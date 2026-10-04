@@ -37,6 +37,7 @@ internal class MinimapLocalizer(
     config: RouteMinimap,
     private val allowLearning: Boolean,
     initialPosition: RoutePoint? = null,
+    private val allowGlobalStart: Boolean = false,
     private val match: (ByteArray, ByteArray, Int) -> MinimapMatcher.Match?,
 ) {
     private val initial = config
@@ -45,6 +46,7 @@ internal class MinimapLocalizer(
     // Returning begins at the recorded endpoint, which can be many landmarks from the start.
     private var index = initialPosition?.let { p -> frames.indices.minByOrNull { frames[it].position.distance(p) } } ?: 0
     private var previous: RoutePoint? = null
+    private var needsRelocalization = allowGlobalStart
     var quality: Double = 0.0
         private set
     var inliers: Int = 0
@@ -52,9 +54,13 @@ internal class MinimapLocalizer(
 
     fun snapshot() = initial.copy(keyframes = frames.toList())
 
+    /** Drop the continuity guard after an explicit pause, never change saved landmark coordinates. */
+    fun reset() { previous = null; quality = 0.0; inliers = 0; needsRelocalization = allowGlobalStart }
+
     fun locate(frame: ByteArray): RoutePoint? {
         quality = 0.0; inliers = 0
-        val candidates = (maxOf(0, index - 1)..minOf(frames.lastIndex, index + 2)).mapNotNull { i ->
+        val search = if (needsRelocalization) frames.indices else maxOf(0, index - 1)..minOf(frames.lastIndex, index + 2)
+        val candidates = search.mapNotNull { i ->
             match(pixels[i], frame, initial.markerRadius)?.let { result ->
                 Triple(i, frames[i].position - RoutePoint(result.dx, result.dy), result)
             }
@@ -65,6 +71,7 @@ internal class MinimapLocalizer(
         if (previous?.distance(best.second)?.let { it > 20.0 } == true) return null
         index = best.first
         previous = best.second
+        needsRelocalization = false
         quality = best.third.confidence; inliers = best.third.inliers
         if (allowLearning && frames.last().position.distance(best.second) >= 24.0) {
             if (frames.size >= MAX_ROUTE_KEYFRAMES) throw RouteFailure(RouteMessage.LIMIT_REACHED)

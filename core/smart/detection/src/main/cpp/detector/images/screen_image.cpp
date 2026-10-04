@@ -17,13 +17,14 @@
 
 #include <opencv2/imgproc/imgproc.hpp>
 #include "screen_image.hpp"
-#include "../../utils/correction.hpp"
 
 using namespace smartautoclicker;
 
 
 void ScreenImage::processNewData(std::unique_ptr<cv::Mat> newData, const char* metricsTag) {
-    if (!newData || newData->empty() || requiresCorrection(metricsTag)) return;
+    // Metadata is diagnostic only. Route sessions use route IDs instead of a package name;
+    // it must never silently disable fresh frames after a process-wide time limit.
+    if (!newData || newData->empty()) return;
 
     this->colorMat = std::move(*newData);
     grayValid = false;

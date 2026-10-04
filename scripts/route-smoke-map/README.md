@@ -38,6 +38,10 @@ $routeAdb = "$env:LOCALAPPDATA/Android/Sdk/platform-tools/adb.exe"
 
 固定摇杆测试：先仅停止 `org.klickr.routetest`，再用 `am start -n org.klickr.routetest/.RouteMapActivity --ez joystick true` 启动。在中心外有效半径内按住，位移按持续时间计算（500 毫秒约移动 10 单位）；此时重新复制视觉夹具，其移动方式会变为固定摇杆。
 
+窄路转弯测试：先仅停止 `org.klickr.routetest`，再用 `am start -n org.klickr.routetest/.RouteMapActivity --ez corridor true` 启动。道路为 `(100,100) → (112,100) → (112,102) → (114,102) → (114,116) → (126,116) → (126,128)`，包含两个相隔仅 2 单位的小转弯。角色每 180 毫秒走一步，镜头随角色滚动；离开道路会停止并输出 `blocked`，不允许穿墙切角。将 `files/route-curved.json` 复制到 debug 路线目录，文件名为 `dddddddd-dddd-dddd-dddd-dddddddddddd.json`。此夹具仅使用数字坐标，不宣称小地图模式已通过同一窄路测试。
+
+可加 `--ei startX 114 --ei startY 110` 从道路中间初始化，验证中途返程。只重启测试地图，不停止 Klick'r，不修改已录路线。`corridor` 与 `joystick` 分开测试，不同时启用。
+
 ## 验收
 
 1. 正常回放：从 `(100,100)` 回放夹具，应依次到达两个拐点/终点，Moves 为 2，显示到达终点，之后不再点击。
@@ -52,6 +56,9 @@ $routeAdb = "$env:LOCALAPPDATA/Android/Sdk/platform-tools/adb.exe"
 10. 原路返回：站在 `(117,110)`，点“沿原路返回起点”并确认；依次到 `(110,110)`、`(110,100)`、`(100,100)`。到达后不自动重新回放，原路线 ID 和路径点保持不变。取消确认应不发送移动。
 11. 密集采样：`files/route-dense.json`（ID `cccccccc-cccc-cccc-cccc-cccccccccccc`）包含每隔 3 单位的 21 个采样点。按上面的专用 debug 夹具方式载入，从 `(100,100)` 回放；应经 `(130,100)` 到 `(130,130)`，共 8 次移动，不在 20 个中间目标逐个点击。返程也应经过原拐点，原 21 个采样点保持不变。实际耗时包含 OCR，不能用瞬时移动测试地图的速度推断游戏回放速度。
 12. 小选框：将 X 选区缩小至一小段数字，检查 1dp 细边线和框外手柄；拖动期间数字不被大号中心提示遮住。分别拖左右边和框内，确认缩放、移动和保存重开仍正确。
+13. 窄路拐弯：开启 `corridor`，载入 7 点弯路夹具；正向及反向都应逐个经过小拐弯，日志无 `blocked`，分别确认终点和起点。宽松“接近拐点”不能替代站稳确认。
+14. 中途返程：以 `--ez corridor true --ei startX 114 --ei startY 110` 重启测试地图，选原 7 点路线返回；应经 `(114,102) → (112,102) → (112,100) → (100,100)`，不能先前往终点或穿墙切角。
+15. 实际转弯录制：在窄路起点开始新录制，沿每段道路手动走，在小拐点停稳后再转向。结束后检查新路线包含所有拐点且已完成，原夹具保持不变；重置后回放这条新路线，日志不得出现 `blocked`。采样总点数随识别耗时变化，不要求恰好 39 点。
 
 配置窗口打开时会拦截底层触摸。需要重置底层测试地图时，可关闭窗口后点底部左侧，或者仅重启 `org.klickr.routetest`，不要停止 Klick'r。
 验证悬浮条时不要用 `uiautomator dump`：某些模拟器会暂时解绑其他无障碍服务，从而关闭 Klick'r 的悬浮窗。使用截图与日志：

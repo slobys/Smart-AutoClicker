@@ -110,12 +110,13 @@ class RouteSelectionTests {
         assertTrue(text.contains("小步移动"))
         assertFalse(text.contains("复查继续"))
     }
-    @Test fun returnStatusNamesEndpointAndCompletionNamesStart() {
+    @Test fun returnStatusNamesTheRecordedCorridorAndCompletionNamesStart() {
         val context = RuntimeEnvironment.getApplication()
         val blocked = RouteProgress(RouteMessage.WRONG_START, RoutePoint(200.0, 200.0),
             expectedPosition = RoutePoint(110.0, 110.0), allowedDistance = 10.0, returning = true).statusText(context)
-        assertTrue(blocked.contains("距离录制终点过远"))
-        assertTrue(blocked.contains("终点允许范围"))
+        assertTrue(blocked.contains("靠近已录道路或终点"))
+        assertTrue(blocked.contains("不用先走到终点"))
+        assertTrue(blocked.contains("110, 110"))
         assertFalse(blocked.contains("距离录制起点"))
         assertTrue(RouteProgress(RouteMessage.APPROACHING_START, returning = true).statusText(context).contains("准备返程"))
         assertTrue(RouteProgress(RouteMessage.REPLAYING, returning = true).statusText(context).contains("沿原路返回"))

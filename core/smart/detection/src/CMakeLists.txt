@@ -72,7 +72,6 @@ add_library( # Sets the name of the library.
         main/cpp/jni/jni_detector.cpp
         main/cpp/logs/log.cpp
         main/cpp/logs/log.h
-        main/cpp/utils/correction.hpp
         main/cpp/utils/roi.h)
 
 # Searches for a specified prebuilt library and stores the path as a

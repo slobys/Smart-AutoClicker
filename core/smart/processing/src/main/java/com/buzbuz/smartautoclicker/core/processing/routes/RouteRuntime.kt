@@ -146,6 +146,7 @@ class RouteRuntime @Inject internal constructor(
                             if (operation != RouteOperation.PREVIEW && !it.tested) throw RouteFailure(RouteMessage.LOCALIZATION_WEAK)
                             MinimapLocalizer(it, operation == RouteOperation.RECORD || operation == RouteOperation.PREVIEW,
                                 initialPosition = if (operation == RouteOperation.RETURN) route.points.lastOrNull() else route.points.firstOrNull(),
+                                allowGlobalStart = operation == RouteOperation.RETURN,
                                 match = MinimapMatcher()::match)
                         }
                         val bytes = Base64.decode(route.mapPng, Base64.NO_WRAP)

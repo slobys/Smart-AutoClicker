@@ -97,7 +97,7 @@ data class RecordedRoute(
 const val MAX_ROUTE_POINTS = 2_000
 internal val ROUTE_ID = Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 
-/** Only a nearby, calibrated approach is allowed; waypoint arrival precision stays unchanged. */
+/** Only a nearby, calibrated approach is allowed; never used as waypoint arrival precision. */
 fun RecordedRoute.entryRadius(): Double {
     val minimum = maxOf(5.0, tolerance * 2)
     val c = calibration ?: return minimum
@@ -147,6 +147,7 @@ class RouteFollower(private val points: List<RoutePoint>, private val tolerance:
     private var started = false
     val hasStarted: Boolean get() = started
     private var hits = 0
+    private var previousObservation: RoutePoint? = null
     private var segmentStarted = 0L
     private var progressAt = 0L
     private var bestDistance = Double.POSITIVE_INFINITY
@@ -168,8 +169,16 @@ class RouteFollower(private val points: List<RoutePoint>, private val tolerance:
         }
         if (index >= points.size) return Decision.Complete
         val distance = position.distance(points[targetIndex])
-        if (distance <= tolerance) {
-            if (++hits < 2) return Decision.Wait
+        // Reaching the outer edge of a corner's old 2–5 unit circle is not reaching the turn.
+        val arrivalTolerance = if (isCheckpoint(targetIndex)) minOf(tolerance, 1.0) else tolerance
+        val settled = previousObservation?.distance(position)?.let { it <= .5 } == true
+        previousObservation = position
+        if (distance <= arrivalTolerance) {
+            hits = if (settled) hits + 1 else 1
+            if (hits < 2) {
+                if (now - segmentStarted >= 60_000) return Decision.Pause(Reason.TIMEOUT)
+                return Decision.Wait
+            }
             index = targetIndex + 1
             targetIndex = nextTargetIndex()
             resetTimers(now)
@@ -185,8 +194,16 @@ class RouteFollower(private val points: List<RoutePoint>, private val tolerance:
         return Decision.Move(points[targetIndex])
     }
 
+    private fun isCheckpoint(i: Int): Boolean {
+        if (i == 0 || i == points.lastIndex) return true
+        val incoming = points[i] - points[i - 1]
+        val outgoing = points[i + 1] - points[i]
+        val length = incoming.distance(RoutePoint(0.0, 0.0)) * outgoing.distance(RoutePoint(0.0, 0.0))
+        return length < .001 || (incoming.x * outgoing.x + incoming.y * outgoing.y) / length < .995
+    }
+
     /** Coalesce only nearby samples on the same straight corridor. Start, corners, reversals
-     * and end remain checkpoints; this is not arbitrary mid-route joining or obstacle avoidance.
+     * and end remain checkpoints; this is not obstacle avoidance.
      * Progress advances only after two observations at the chosen target, not when it is planned.
      */
     private fun nextTargetIndex(): Int {
@@ -214,12 +231,45 @@ class RouteFollower(private val points: List<RoutePoint>, private val tolerance:
     }
 
     /** A pause cannot supply the second arrival confirmation or consume a timeout. */
-    fun resume(now: Long) { hits = 0; resetTimers(now) }
-    fun breakConfirmation() { hits = 0 }
+    fun resume(now: Long) { previousObservation = null; resetTimers(now) }
+    fun breakConfirmation() { hits = 0; previousObservation = null }
     private fun resetTimers(now: Long) {
         hits = 0
         segmentStarted = now
         progressAt = now
         bestDistance = Double.POSITIVE_INFINITY
     }
+}
+
+/** Join only the already recorded corridor. No map pathfinding and no shortcuts across corners. */
+internal data class RouteReturnEntry(val points: List<RoutePoint>?, val target: RoutePoint, val allowedDistance: Double)
+internal fun RecordedRoute.returnEntry(position: RoutePoint): RouteReturnEntry {
+    require(points.size >= 2 && position.valid())
+    data class Candidate(val segment: Int, val point: RoutePoint, val distance: Double)
+    val candidates = (1..points.lastIndex).map { i ->
+        val a = points[i - 1]; val delta = points[i] - a
+        val lengthSquared = delta.x * delta.x + delta.y * delta.y
+        val offset = position - a
+        val fraction = if (lengthSquared < .001) 0.0 else
+            ((offset.x * delta.x + offset.y * delta.y) / lengthSquared).coerceIn(0.0, 1.0)
+        val projection = a + delta * fraction
+        Candidate(i, projection, position.distance(projection))
+    }
+    // Prefer the later occurrence at a closed loop's shared start/end, preserving its return path.
+    val best = candidates.minWith(compareBy<Candidate> { it.distance }.thenByDescending { it.segment })
+    val corridor = minOf(tolerance, 1.5)
+    val ambiguous = candidates.any { it.distance <= corridor && abs(it.distance - best.distance) < .5 &&
+        abs(it.segment - best.segment) > 1 && it.point.distance(best.point) > 1.5 }
+    if (best.distance <= corridor && !ambiguous) {
+        val path = (listOf(best.point) + points.take(best.segment).asReversed()).fold(mutableListOf<RoutePoint>()) { result, p ->
+            if (result.lastOrNull()?.distance(p)?.let { it < .001 } != true) result.add(p)
+            result
+        }
+        if (path.size == 1) path.add(path.first()) // Already at origin: still require fresh arrival confirmation.
+        return RouteReturnEntry(path, best.point, corridor)
+    }
+    // Preserve the bounded endpoint approach, but do not use its broad radius to join mid-route.
+    if (!ambiguous && position.distance(points.last()) <= entryRadius())
+        return RouteReturnEntry(points.reversed(), points.last(), entryRadius())
+    return RouteReturnEntry(null, best.point, corridor)
 }

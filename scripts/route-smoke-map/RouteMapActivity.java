@@ -17,14 +17,44 @@ public class RouteMapActivity extends Activity {
         setContentView(new MapView());
     }
     final class MapView extends View {
-        int x = 100, y = 100, moves = 0;
+        int x = getIntent().getIntExtra("startX",100), y = getIntent().getIntExtra("startY",100), moves = 0;
         boolean wrongMap = false;
         boolean occluded = false;
         final boolean joystick = getIntent().getBooleanExtra("joystick", false);
+        final boolean corridor = getIntent().getBooleanExtra("corridor", false);
+        final int[][] curve = {{100,100},{112,100},{112,102},{114,102},{114,116},{126,116},{126,128}};
+        int destinationX = x, destinationY = y;
+        boolean walking;
         final Bitmap terrain = createTerrain();
         long downAt;
         final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         MapView() { super(RouteMapActivity.this); }
+        boolean onRoad(double px, double py) {
+            for(int i=1;i<curve.length;i++) {
+                double ax=curve[i-1][0], ay=curve[i-1][1], dx=curve[i][0]-ax, dy=curve[i][1]-ay;
+                double t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy)));
+                if(Math.hypot(px-ax-t*dx,py-ay-t*dy)<=.75) return true;
+            }
+            return false;
+        }
+        void walkTo(int tx,int ty) {
+            destinationX=tx; destinationY=ty;
+            if(walking) return;
+            walking=true;
+            postDelayed(new Runnable() { public void run() {
+                double dx=destinationX-x,dy=destinationY-y,distance=Math.hypot(dx,dy);
+                if(distance<.01) { walking=false; return; }
+                int nx=x+(int)Math.round(dx/Math.max(1,distance)), ny=y+(int)Math.round(dy/Math.max(1,distance));
+                if(!onRoad((x+nx)/2.0,(y+ny)/2.0)||!onRoad(nx,ny)) {
+                    destinationX=x; destinationY=y; walking=false;
+                    android.util.Log.i("RouteTestMap","blocked position="+x+","+y+" target="+tx+","+ty);
+                    return;
+                }
+                x=nx; y=ny; invalidate();
+                android.util.Log.i("RouteTestMap","walking position="+x+","+y);
+                postDelayed(this,180);
+            } },180);
+        }
         Bitmap createTerrain() {
             Bitmap b = Bitmap.createBitmap(512, 512, Bitmap.Config.ARGB_8888);
             Canvas c = new Canvas(b); c.drawColor(Color.rgb(20,20,20));
@@ -60,16 +90,23 @@ public class RouteMapActivity extends Activity {
                 canvas.drawCircle(596,126,7,paint);
             }
             label(canvas, "Tap ground to move. Bottom-left: reset. Bottom-right: change map.", 50, getHeight() - 45);
+            if(corridor) {
+                paint.setColor(Color.GRAY); paint.setStrokeWidth(15);
+                for(int i=1;i<curve.length;i++) canvas.drawLine(getWidth()/2f+(curve[i-1][0]-x)*10,
+                    getHeight()/2f+(curve[i-1][1]-y)*10,getWidth()/2f+(curve[i][0]-x)*10,
+                    getHeight()/2f+(curve[i][1]-y)*10,paint);
+                paint.setStrokeWidth(1);
+            }
             paint.setColor(Color.CYAN); canvas.drawCircle(getWidth() / 2f, getHeight() / 2f, 16, paint);
             paint.setColor(Color.DKGRAY); canvas.drawLine(getWidth()/2f - 150, getHeight()/2f, getWidth()/2f+150, getHeight()/2f, paint);
-            label(canvas, joystick ? "Fixed joystick (hold)" : "Ground taps", getWidth()/2-260, getHeight()/2+180);
+            label(canvas, corridor ? "Narrow curved road: no corner shortcuts" : joystick ? "Fixed joystick (hold)" : "Ground taps", getWidth()/2-460, getHeight()/2+180);
             postInvalidateDelayed(300); // Animated minimap marker supplies genuinely fresh projection frames.
         }
         @Override public boolean onTouchEvent(MotionEvent event) {
             if (event.getAction() == MotionEvent.ACTION_DOWN) downAt = event.getEventTime();
             if (event.getAction() == MotionEvent.ACTION_UP) {
                 if (event.getY() > getHeight() - 100) {
-                    if (event.getX() < getWidth()/3f) { x=100; y=100; moves=0; wrongMap=false; occluded=false; }
+                    if (event.getX() < getWidth()/3f) { x=100; y=100; destinationX=x; destinationY=y; moves=0; wrongMap=false; occluded=false; }
                     else if (event.getX() < getWidth()*2/3f) occluded = !occluded;
                     else wrongMap = !wrongMap;
                 } else {
@@ -78,7 +115,10 @@ public class RouteMapActivity extends Activity {
                     if (joystick && radius>=50 && radius<=150) {
                         double travel=(event.getEventTime()-downAt)/50.0;
                         x+=Math.round(dx/radius*travel); y+=Math.round(dy/radius*travel);
-                    } else if (!joystick) { x += Math.round(dx/10); y += Math.round(dy/10); }
+                    } else if (!joystick) {
+                        if(corridor) walkTo(x+Math.round(dx/10),y+Math.round(dy/10));
+                        else { x += Math.round(dx/10); y += Math.round(dy/10); }
+                    }
                     x=Math.max(31,Math.min(349,x)); y=Math.max(31,Math.min(349,y));
                     moves++;
                 }
@@ -111,6 +151,11 @@ public class RouteMapActivity extends Activity {
                 for (int i = 1; i <= 10; i++) densePoints.put(new JSONArray().put(130).put(100 + i * 3));
                 dense.put("id","cccccccc-cccc-cccc-cccc-cccccccccccc").put("name","Dense L route (21 samples)").put("points",densePoints);
                 try (FileOutputStream out = openFileOutput("route-dense.json",MODE_PRIVATE)) { out.write(dense.toString().getBytes("UTF-8")); }
+                JSONObject curved = new JSONObject(route.toString());
+                JSONArray curvePoints = new JSONArray();
+                for(int[] p:curve) curvePoints.put(new JSONArray().put(p[0]).put(p[1]));
+                curved.put("id","dddddddd-dddd-dddd-dddd-dddddddddddd").put("name","Narrow curved road").put("points",curvePoints);
+                try(FileOutputStream out=openFileOutput("route-curved.json",MODE_PRIVATE)) { out.write(curved.toString().getBytes("UTF-8")); }
                 Bitmap mini = minimapFrame(100,100);
                 int[] colors = new int[192*192]; byte[] gray = new byte[colors.length];
                 mini.getPixels(colors,0,192,0,0,192,192); mini.recycle();

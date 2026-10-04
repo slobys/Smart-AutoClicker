@@ -387,9 +387,15 @@ class RouteDialog : OverlayDialog(R.style.ScenarioConfigTheme) {
     }
 
     private fun updateReadiness() {
-        if (::calibrationView.isInitialized) calibrationView.text = if (model.route?.calibration != null)
-            context.getString(R.string.route_calibrated) else context.getString(R.string.route_calibration_pending) +
-                "  A:${if (model.sampleA != null) "✓" else "—"} B:${if (model.sampleB != null) "✓" else "—"}"
+        if (::calibrationView.isInitialized) calibrationView.text = buildString {
+            append(if (model.route?.calibration != null) context.getString(R.string.route_calibrated)
+                else context.getString(R.string.route_calibration_pending) +
+                    "  A:${if (model.sampleA != null) "✓" else "—"} B:${if (model.sampleB != null) "✓" else "—"}")
+            listOf("A" to model.sampleA, "B" to model.sampleB).forEach { (name, sample) ->
+                if (sample != null) append("\n").append(context.getString(R.string.route_calibration_sample,
+                    name, sample.screenDelta.x, sample.screenDelta.y, sample.mapDelta.x, sample.mapDelta.y))
+            }
+        }
         if (!::readinessView.isInitialized || !::replayButton.isInitialized) return
         val issues = model.operationIssues(RouteOperation.REPLAY)
         readinessView.text = if (issues.isEmpty()) context.getString(R.string.route_ready_help) + "\n" +

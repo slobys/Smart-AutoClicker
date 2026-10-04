@@ -16,6 +16,43 @@ internal fun exampleCalibration() = RouteCalibration(
 )
 
 class RouteTests {
+    @Test fun returnEntryProjectsOnlyOntoTheRecordedPrefix() {
+        val route = exampleRoute()
+        val entry = route.returnEntry(RoutePoint(21.0, 15.0))
+        assertEquals(RoutePoint(20.0, 15.0), entry.target)
+        assertEquals(listOf(entry.target, route.points[1], route.points[0]), entry.points)
+        assertEquals(1.5, entry.allowedDistance, .001)
+        assertNull(route.returnEntry(RoutePoint(10.0, 28.0)).points)
+    }
+
+    @Test fun returnEntryDoesNotChooseBetweenAmbiguousParallelRoads() {
+        val route = exampleRoute().copy(points = listOf(RoutePoint(10.0, 10.0), RoutePoint(30.0, 10.0),
+            RoutePoint(30.0, 12.0), RoutePoint(10.0, 12.0)))
+        assertNull(route.returnEntry(RoutePoint(20.0, 11.0)).points)
+        assertNotNull(route.returnEntry(RoutePoint(20.0, 10.0)).points)
+    }
+
+    @Test fun closedRouteReturnRetainsItsCornersAndDoesNotMutatePoints() {
+        val route = exampleRoute().copy(points = exampleRoute().points + RoutePoint(10.0, 20.0) + RoutePoint(10.0, 10.0))
+        val original = route.points.toList()
+        assertEquals(original.reversed(), route.returnEntry(original.last()).points)
+        assertEquals(original, route.points)
+    }
+
+    @Test fun cornerCannotAdvanceTwoUnitsEarlyOrWhileStillMoving() {
+        val points = listOf(RoutePoint(10.0, 10.0), RoutePoint(20.0, 10.0), RoutePoint(20.0, 20.0))
+        val follower = RouteFollower(points, 2.0, 10.0, 12.0)
+        follower.observe(points[0], 0); follower.observe(points[0], 400)
+        assertEquals(RouteFollower.Decision.Move(points[1]), follower.observe(RoutePoint(18.0, 10.0), 800))
+        follower.observe(RoutePoint(18.0, 10.0), 1200)
+        assertEquals(1, follower.index)
+        follower.observe(RoutePoint(19.0, 10.0), 1600)
+        follower.observe(RoutePoint(20.0, 10.0), 2000)
+        assertEquals(1, follower.index) // Two near hits, but one unit travelled: do not turn yet.
+        follower.observe(RoutePoint(20.0, 10.0), 2400)
+        assertEquals(2, follower.index)
+    }
+
     @Test fun straightLookAheadStillConfirmsStartAndAdvancesOnlyAfterArrival() {
         val points = (0..6).map { RoutePoint(it * 3.0, 0.0) }
         val f = RouteFollower(points, 2.0, 5.0, 10.0)

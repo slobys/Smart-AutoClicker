@@ -42,6 +42,7 @@ internal class RoutePositionReader(
 
     fun reset() {
         filter.reset()
+        minimap?.reset()
         hasAcceptedPosition = false
         diagnostics = RouteReadDiagnostics(RouteReadIssue.NO_FRAME)
     }

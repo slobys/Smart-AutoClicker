@@ -14,6 +14,23 @@ import org.json.JSONObject
 @Config(sdk = [29])
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class MinimapRouteTests {
+    @Test fun returnRelocalizesAtMidRouteAndResetDoesNotRebaseOrigin() {
+        val frames = (0..8).map { i -> RouteKeyframe(RoutePoint(50_000.0 + i * 24, 50_000.0),
+            MinimapFrames.encode(ByteArray(192 * 192) { i.toByte() })) }
+        val c = config().copy(keyframes = frames)
+        var currentX = 50_024.0
+        val locator = MinimapLocalizer(c, false, frames.last().position, allowGlobalStart = true) { reference, _, _ ->
+            val dx = 50_000.0 + reference[0] * 24 - currentX
+            if (kotlin.math.abs(dx) <= 12) MinimapMatcher.Match(dx, 0.0, .9, 8) else null
+        }
+        assertEquals(RoutePoint(currentX, 50_000.0), locator.locate(bytes))
+        currentX = 50_192.0
+        assertNull(locator.locate(bytes)) // No unexplained jump while running.
+        locator.reset()
+        assertEquals(RoutePoint(currentX, 50_000.0), locator.locate(bytes))
+        assertEquals(c, locator.snapshot())
+    }
+
     private val bytes = ByteArray(192 * 192)
     private fun config() = RouteMinimap(RouteArea(100, 100, 292, 292), keyframes = listOf(
         RouteKeyframe(RoutePoint(50_000.0, 50_000.0), MinimapFrames.encode(bytes))), tested = true)
