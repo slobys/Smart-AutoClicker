@@ -593,6 +593,24 @@ class ScalingManagerTests {
     }
 
 
+    @Test
+    fun `image search bounds refresh from portrait to landscape without transposing target coordinates`() {
+        val condition = createTestCondition(1L, 1L, Rect(100, 200, 148, 248), WHOLE_SCREEN)
+        val event = createTestEvent(1L, listOf(condition))
+        mockDisplayConfigManager.mockDisplayConfig(Point(1080, 2400))
+        val portrait = scalingManager.startScaling(400.0, listOf(event))
+        Assert.assertEquals(Point(720, 1600), portrait)
+        Assert.assertEquals(Rect(0, 0, 720, 1600),
+            scalingManager.getScreenConditionScalingInfo(condition)!!.detectionArea)
+
+        mockDisplayConfigManager.mockDisplayConfig(Point(2400, 1080))
+        val landscape = scalingManager.refreshScaling()
+        Assert.assertEquals(Point(1600, 720), landscape)
+        Assert.assertEquals(Rect(0, 0, 1600, 720),
+            scalingManager.getScreenConditionScalingInfo(condition)!!.detectionArea)
+        Assert.assertEquals(Point(300, 600), scalingManager.scaleUpDetectionResult(Point(200, 400)))
+    }
+
     private fun DisplayConfigManager.mockDisplayConfig(screenSize: Point) {
         mockWhen(displayConfig)
             .thenReturn(

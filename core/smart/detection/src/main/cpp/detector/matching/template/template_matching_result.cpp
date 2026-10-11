@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <algorithm>
 #include <opencv2/imgproc/imgproc_c.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include "template_matching_result.hpp"
@@ -46,11 +47,13 @@ void TemplateMatchingResult::setDetectedResult(const cv::Rect& resultArea, doubl
 }
 
 void TemplateMatchingResult::invalidateCurrentResult(const cv::Mat& condition, cv::Mat& matchingResults) const {
-    cv::rectangle(
-            matchingResults,
-            cv::Rect(maxLoc.x, maxLoc.y,  condition.cols,condition.rows),
-            cv::Scalar(0),
-            CV_FILLED);
+    // Suppress duplicate peaks on both sides, not a whole template-sized rectangle down/right.
+    // That asymmetric rectangle used to hide separate neighbouring targets after a colour reject.
+    const int radius = std::max(1, std::min(condition.cols, condition.rows) / 4);
+    const cv::Rect excluded = cv::Rect(maxLoc.x - radius, maxLoc.y - radius,
+                                      2 * radius + 1, 2 * radius + 1) &
+                             cv::Rect(0, 0, matchingResults.cols, matchingResults.rows);
+    matchingResults(excluded).setTo(-1);
 }
 
 void TemplateMatchingResult::reset() {

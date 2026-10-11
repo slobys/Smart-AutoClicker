@@ -25,6 +25,7 @@ import android.media.ImageReader
 import android.util.Log
 import android.view.Surface
 import com.buzbuz.smartautoclicker.core.bitmaps.BitmapRepository
+import java.nio.ByteOrder
 import javax.inject.Inject
 
 
@@ -99,7 +100,7 @@ internal class ImageReaderProxy @Inject constructor(
         val bitmap = bitmapRepository.getDisplayRecorderBitmap(width, height)
 
         // If the image provided by the device doesn't have padding, use direct pixels copy
-        if (!haveRowPadding() && haveSameSize(bitmap)) {
+        if (planes[0].pixelStride == 4 && !haveRowPadding() && haveSameSize(bitmap)) {
             if (directPixelsCopyTo(bitmap)) return bitmap
         }
 
@@ -126,17 +127,34 @@ internal class ImageReaderProxy @Inject constructor(
 
     private fun Image.pixelsCopyTo(bitmap: Bitmap) {
         val imageRow = copyImageRow ?: return
-        val srcByteBuffer = planes[0].buffer.asIntBuffer()
+        val plane = planes[0]
+        val source = plane.buffer.asReadOnlyBuffer().apply { rewind() }
+        // RGBA is a byte layout, not an IntBuffer byte-order guarantee. A padded portrait row
+        // often takes this path while landscape takes copyPixelsFromBuffer. Reading a default
+        // BIG_ENDIAN buffer as ABGR used to shift channels (including alpha), corrupting all four
+        // detectors before matching. Explicit little endian makes RGBA bytes into ABGR integers.
+        val sourceInts = if (plane.pixelStride == 4)
+            source.order(ByteOrder.LITTLE_ENDIAN).asIntBuffer() else null
 
         for (y in 0 until height) {
-            srcByteBuffer.position((y * planes[0].rowStride) / 4)
-            srcByteBuffer.get(imageRow)
-
-            // ABGR -> ARGB (swap R & B)
-            for (i in imageRow.indices) {
-                imageRow[i] = (imageRow[i] and 0xFF00FF00.toInt()) or
-                        ((imageRow[i] and 0x00FF0000) ushr 16) or
-                        ((imageRow[i] and 0x000000FF) shl 16)
+            if (sourceInts != null && plane.rowStride % 4 == 0) {
+                sourceInts.position(y * plane.rowStride / 4)
+                sourceInts.get(imageRow)
+                // ABGR -> ARGB (swap R & B).
+                for (i in imageRow.indices) {
+                    imageRow[i] = (imageRow[i] and 0xFF00FF00.toInt()) or
+                            ((imageRow[i] and 0x00FF0000) ushr 16) or
+                            ((imageRow[i] and 0x000000FF) shl 16)
+                }
+            } else {
+                // Honour pixel padding too; never treat the padding as another visible pixel.
+                for (x in imageRow.indices) {
+                    val offset = y * plane.rowStride + x * plane.pixelStride
+                    imageRow[x] = ((source.get(offset + 3).toInt() and 0xff) shl 24) or
+                            ((source.get(offset).toInt() and 0xff) shl 16) or
+                            ((source.get(offset + 1).toInt() and 0xff) shl 8) or
+                            (source.get(offset + 2).toInt() and 0xff)
+                }
             }
             bitmap.setPixels(imageRow, 0, width, 0, y, width, 1)
         }

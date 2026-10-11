@@ -17,6 +17,7 @@
 package com.buzbuz.smartautoclicker.core.display.recorder
 
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.Point
 import android.media.Image
 import android.media.ImageReader
@@ -46,6 +47,7 @@ import org.mockito.MockitoAnnotations
 import org.robolectric.annotation.Config
 
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 /** Test the [ImageReaderProxy] class. */
 @RunWith(AndroidJUnit4::class)
@@ -233,6 +235,62 @@ class ImageReaderProxyTests {
     }
 
     // ---- helpers ----
+
+    @Test
+    fun paddedPortraitAndLandscapeFrames_keepRgbaPixelsRegardlessOfBufferOrder() {
+        for (size in listOf(Point(3, 7), Point(7, 3))) {
+            for (order in listOf(ByteOrder.BIG_ENDIAN, ByteOrder.LITTLE_ENDIAN)) {
+                assertPaddedPixels(size, order, pixelStride = 4)
+            }
+        }
+    }
+
+    @Test
+    fun paddedPlaneWithLargerPixelStride_doesNotCopyPaddingAsPixels() {
+        assertPaddedPixels(Point(3, 7), ByteOrder.BIG_ENDIAN, pixelStride = 8)
+        assertPaddedPixels(Point(7, 3), ByteOrder.LITTLE_ENDIAN, pixelStride = 8, rowPadding = 0)
+        assertPaddedPixels(Point(3, 7), ByteOrder.BIG_ENDIAN, pixelStride = 5)
+    }
+
+    private fun assertPaddedPixels(size: Point, order: ByteOrder, pixelStride: Int, rowPadding: Int = 12) {
+        val rowStride = size.x * pixelStride + rowPadding
+        // The last row need not have trailing padding in Image.Plane's buffer.
+        val buffer = ByteBuffer.allocate(rowStride * (size.y - 1) + (size.x - 1) * pixelStride + 4)
+        val expected = IntArray(size.x * size.y) { index ->
+            Color.rgb(20 + index * 3, 70 + index * 2, 150 - index)
+        }
+        expected.forEachIndexed { index, color ->
+            val offset = index / size.x * rowStride + index % size.x * pixelStride
+            buffer.put(offset, Color.red(color).toByte())
+            buffer.put(offset + 1, Color.green(color).toByte())
+            buffer.put(offset + 2, Color.blue(color).toByte())
+            buffer.put(offset + 3, 0xff.toByte())
+        }
+        buffer.order(order)
+        val image = mock(Image::class.java)
+        val plane = mock(Image.Plane::class.java)
+        mockWhen(image.width).thenReturn(size.x)
+        mockWhen(image.height).thenReturn(size.y)
+        mockWhen(plane.rowStride).thenReturn(rowStride)
+        mockWhen(plane.pixelStride).thenReturn(pixelStride)
+        mockWhen(plane.buffer).thenReturn(buffer)
+        mockWhen(image.planes).thenReturn(arrayOf(plane))
+        val bitmap = Bitmap.createBitmap(size.x, size.y, Bitmap.Config.ARGB_8888)
+        mockWhen(mockBitmapRepository.getDisplayRecorderBitmap(size.x, size.y)).thenReturn(bitmap)
+        mockWhen(mockImageReader.acquireLatestImage()).thenReturn(image)
+        imageReaderProxy.resize(size)
+        try {
+            val result = imageReaderProxy.acquireLatestFrame()!!
+            expected.forEachIndexed { index, color ->
+                assertEquals("size=$size, order=$order, stride=$pixelStride, pixel=$index",
+                    color, result.getPixel(index % size.x, index / size.x))
+            }
+            assertEquals("reader buffer must not be consumed", 0, buffer.position())
+            verify(image).close()
+        } finally {
+            bitmap.recycle()
+        }
+    }
 
     /**
      * Sets up a mock [Image] with the minimal plane/buffer structure needed for [ImageReaderProxy.getLastFrame]

@@ -30,7 +30,7 @@ using namespace smartautoclicker;
 
 namespace {
     constexpr int MAX_CANDIDATE_COUNT = 5;
-    constexpr double MIN_TEMPLATE_STDDEV = 5.0;
+    constexpr double MIN_TEMPLATE_STDDEV = 1.0;
     constexpr double MIN_COLOR_DIFFERENCE = 5.0;
     constexpr double MAX_COLOR_DIFFERENCE = 30.0;
     constexpr double SHAPE_SCORE_WEIGHT = 0.55;
@@ -38,6 +38,32 @@ namespace {
     constexpr double COLOR_SCORE_WEIGHT = 0.15;
     constexpr int MIN_MOTION_TEMPLATE_SIDE = 12;
     constexpr double MOTION_FALLBACK_SCORE_MARGIN = 0.30;
+    constexpr int FALLBACK_TILE_SIDE = 1024;
+    constexpr int MAX_FALLBACK_TILES = 64;
+
+    // Overlap by templateSize - 1 so every possible top-left position is searched, including
+    // targets straddling a tile seam. Working buffers stay bounded, even on full-resolution phones.
+    template<typename Search>
+    bool searchTiles(const cv::Rect& area, const cv::Size& size, Search search,
+                     const cv::Size& overlapSize = {}, int maxTiles = MAX_FALLBACK_TILES) {
+        const cv::Size overlap = overlapSize.empty() ? size : overlapSize;
+        if (size.width <= 0 || size.height <= 0 ||
+            size.width > area.width || size.height > area.height ||
+            overlap.width > FALLBACK_TILE_SIDE || overlap.height > FALLBACK_TILE_SIDE) return false;
+        const int stepX = FALLBACK_TILE_SIDE - overlap.width + 1;
+        const int stepY = FALLBACK_TILE_SIDE - overlap.height + 1;
+        const int columns = (area.width - size.width) / stepX + 1;
+        const int rows = (area.height - size.height) / stepY + 1;
+        if (columns <= 0 || rows <= 0 || columns > maxTiles / rows) return false;
+        for (int y = area.y; y <= area.br().y - size.height; y += stepY) {
+            for (int x = area.x; x <= area.br().x - size.width; x += stepX) {
+                const cv::Rect tile(x, y, std::min(FALLBACK_TILE_SIDE, area.br().x - x),
+                                    std::min(FALLBACK_TILE_SIDE, area.br().y - y));
+                if (search(tile)) return true;
+            }
+        }
+        return false;
+    }
 
     struct ScoredCandidate {
         bool valid = false;
@@ -93,12 +119,13 @@ void TemplateMatcher::matchTemplate(
         return;
     }
 
-    if (!isTemplateInformative(condition.getGrayMat())) {
+    if (!isTemplateInformative(condition.getColorMat())) {
         LOGW("TemplateMatcher", "Image condition does not contain enough visual information.");
         return;
     }
 
-    if (runMatchingPass(
+    const bool grayInformative = isTemplateInformative(condition.getGrayMat());
+    if (grayInformative && runMatchingPass(
             screenImage,
             screenCroppedGrayMat,
             condition.getGrayMat(),
@@ -107,6 +134,11 @@ void TemplateMatcher::matchTemplate(
             threshold)) {
         return;
     }
+    const auto sharpResult = currentMatchingResult;
+
+    // Grey conversion can erase an entire coloured shape, or rank many wrong-colour icons above
+    // the true target. Search channel-wise structure only after the inexpensive grey pass fails.
+    if (matchColorStructure(screenImage, condition, detectionArea, threshold)) return;
 
     // Transparent HUDs keep their foreground but not the scenery underneath. A local high-pass
     // fallback removes broad background/lighting changes. It still checks spatial foreground RGB
@@ -126,7 +158,7 @@ void TemplateMatcher::matchTemplate(
     // additional full-screen searches unless the sharp pass was at least reasonably close to the
     // requested score, which is the typical signature of directional motion blur.
     const double minimumRequiredConfidence = (100.0 - threshold) / 100.0;
-    if (currentMatchingResult.getResultConfidence() <
+    if (!grayInformative || sharpResult.getResultConfidence() <
         std::max(0.0, minimumRequiredConfidence - MOTION_FALLBACK_SCORE_MARGIN)) {
         return;
     }
@@ -160,6 +192,21 @@ void TemplateMatcher::matchTemplate(
             return;
         }
     }
+    // Preserve the best sharp evidence for diagnostics instead of the last weak fallback peak.
+    currentMatchingResult = sharpResult;
+}
+
+bool TemplateMatcher::matchColorStructure(
+        const ScreenImage& screenImage, const ConditionImage& condition,
+        const cv::Rect& detectionArea, int threshold
+) {
+    const auto original = currentMatchingResult;
+    const bool found = searchTiles(detectionArea, condition.getColorMat().size(), [&](const cv::Rect& tile) {
+        return runMatchingPass(screenImage, screenImage.cropGray(tile), condition.getGrayMat(),
+                               condition.getColorMat(), tile, threshold, true);
+    });
+    if (!found) currentMatchingResult = original;
+    return found;
 }
 
 bool TemplateMatcher::matchForeground(
@@ -168,8 +215,14 @@ bool TemplateMatcher::matchForeground(
 ) {
     const cv::Mat& templateGray = condition.getGrayMat();
     // Bound additional CPU/memory on missing-target frames. Prefer a tight detection region.
-    if (templateGray.total() > 256 * 256 || detectionArea.area() > 1024 * 1024 ||
+    if (templateGray.total() > 256 * 256 ||
         std::min(templateGray.cols, templateGray.rows) < 16) return false;
+
+    if (detectionArea.width > FALLBACK_TILE_SIDE || detectionArea.height > FALLBACK_TILE_SIDE) {
+        return searchTiles(detectionArea, templateGray.size(), [&](const cv::Rect& tile) {
+            return matchForeground(screenImage, condition, tile, threshold);
+        });
+    }
 
     auto highPass = [](const cv::Mat& source) {
         cv::Mat floating, background, detail;
@@ -225,11 +278,20 @@ bool TemplateMatcher::matchScaled(
         const cv::Rect& detectionArea, int threshold
 ) {
     const auto& source = condition.getColorMat();
-    // Four nearby sizes only, after exact matching failed. Do not multiply full-screen searches
-    // or turn a few pixels into an arbitrary shape. Retain the user's stricter setting, with an
+    // Four nearby sizes only, after exact matching failed. Bound extra searches; do not turn a
+    // few pixels into an arbitrary shape. Retain the user's stricter setting, with an
     // additional 90% floor, and the same spatial RGB validation as the original matcher.
-    if (source.total() > 256 * 256 || std::min(source.cols, source.rows) < 24 ||
-        detectionArea.area() > 1024 * 1024) return false;
+    if (source.total() > 256 * 256 || std::min(source.cols, source.rows) < 24) return false;
+    if (detectionArea.width > FALLBACK_TILE_SIDE || detectionArea.height > FALLBACK_TILE_SIDE) {
+        // Overlap for the largest variant, not only the unscaled template. Keep at most twelve
+        // tiles here (each has four variants), sufficient for normal tall phones but CPU bounded.
+        const cv::Size largest(cvCeil(source.cols * 1.2), cvCeil(source.rows * 1.2));
+        const cv::Size smallest(cvRound(source.cols * 0.8), cvRound(source.rows * 0.8));
+        // Include any final strip that can fit the smallest variant, while using larger overlap.
+        return searchTiles(detectionArea, smallest, [&](const cv::Rect& tile) {
+            return matchScaled(screenImage, condition, tile, threshold);
+        }, largest, 12);
+    }
     const auto original = currentMatchingResult;
     auto best = original;
     bool found = false;
@@ -240,8 +302,10 @@ bool TemplateMatcher::matchScaled(
         resized.processNewData(std::make_unique<cv::Mat>(source), size.width, size.height);
         currentMatchingResult.reset();
         const int strictThreshold = std::min(threshold, 10);
-        const bool matched = runMatchingPass(screenImage, screenImage.cropGray(detectionArea),
-                resized.getGrayMat(), resized.getColorMat(), detectionArea, strictThreshold) ||
+        const bool matched = (isTemplateInformative(resized.getGrayMat()) &&
+                runMatchingPass(screenImage, screenImage.cropGray(detectionArea),
+                resized.getGrayMat(), resized.getColorMat(), detectionArea, strictThreshold)) ||
+                matchColorStructure(screenImage, resized, detectionArea, strictThreshold) ||
                 matchForeground(screenImage, resized, detectionArea, strictThreshold);
         if (matched && (!found || currentMatchingResult.getResultConfidence() > best.getResultConfidence())) {
             best = currentMatchingResult;
@@ -258,8 +322,14 @@ bool TemplateMatcher::runMatchingPass(
         const cv::Mat& conditionGray,
         const cv::Mat& conditionColor,
         const cv::Rect& detectionArea,
-        int threshold
+        int threshold,
+        bool matchColor
 ) {
+    // Each pass owns its candidates. Do not erase a previous pass's location from a new score map.
+    currentMatchingResult.reset();
+    // Resizing or blurring can flatten an originally informative template. Constant-template
+    // normalized correlation is degenerate; validate every variant before OpenCV, not only input.
+    if (!isTemplateInformative(matchColor ? conditionColor : conditionGray)) return false;
     cv::Mat newResultsMat = cv::Mat(
             std::max(screenCroppedGray.rows - conditionGray.rows + 1, 0),
             std::max(screenCroppedGray.cols - conditionGray.cols + 1, 0),
@@ -267,9 +337,15 @@ bool TemplateMatcher::runMatchingPass(
 
     try {
         // Run OpenCv template matching
+        cv::Mat screenRgb, conditionRgb;
+        if (matchColor) {
+            // Alpha is capture/storage metadata, not visual evidence.
+            cv::cvtColor(screenImage.cropColor(detectionArea), screenRgb, cv::COLOR_RGBA2RGB);
+            cv::cvtColor(conditionColor, conditionRgb, cv::COLOR_RGBA2RGB);
+        }
         cv::matchTemplate(
-                screenCroppedGray,
-                conditionGray,
+                matchColor ? screenRgb : screenCroppedGray,
+                matchColor ? conditionRgb : conditionGray,
                 newResultsMat,
                 cv::TM_CCOEFF_NORMED);
     } catch (const cv::Exception& e) {
@@ -304,6 +380,8 @@ void TemplateMatcher::parseMatchingResult(
 ) {
 
     ScoredCandidate bestCandidate;
+    TemplateMatchingResult strongestResult;
+    strongestResult.reset();
     const double maxColorDifference = getMaxColorDifference(threshold);
     const cv::Mat normalizedConditionEdges = getNormalizedEdgeMagnitude(conditionGray);
 
@@ -321,6 +399,7 @@ void TemplateMatcher::parseMatchingResult(
                 detectionArea,
                 conditionGray,
                 matchingResult);
+        if (candidateIndex == 0) strongestResult = currentMatchingResult;
 
         // Check if the highest result is above threshold. If not, we will never find.
         const double shapeConfidence = currentMatchingResult.getResultConfidence();
@@ -356,11 +435,13 @@ void TemplateMatcher::parseMatchingResult(
 
     if (bestCandidate.valid) {
         currentMatchingResult.setDetectedResult(bestCandidate.area, bestCandidate.shapeConfidence);
+    } else {
+        currentMatchingResult = strongestResult;
     }
 }
 
 bool TemplateMatcher::isShapeConfidenceValid(double confidence, int threshold) {
-    return confidence >= ((100.0 - threshold) / 100.0);
+    return std::isfinite(confidence) && confidence >= ((100.0 - threshold) / 100.0);
 }
 
 double TemplateMatcher::getMaxColorDifference(int threshold) {
@@ -425,5 +506,8 @@ bool TemplateMatcher::isTemplateInformative(const cv::Mat& condition) {
     cv::Scalar mean;
     cv::Scalar standardDeviation;
     cv::meanStdDev(condition, mean, standardDeviation);
-    return standardDeviation.val[0] >= MIN_TEMPLATE_STDDEV;
+    for (int channel = 0; channel < std::min(3, condition.channels()); ++channel) {
+        if (standardDeviation.val[channel] >= MIN_TEMPLATE_STDDEV) return true;
+    }
+    return false;
 }
