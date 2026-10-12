@@ -48,6 +48,7 @@ import com.buzbuz.smartautoclicker.core.ui.views.viewcomponents.base.ZoomCapture
 
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 /**
  * Displays a rectangle selector and handles moving/resizing on it.
@@ -193,7 +194,13 @@ internal class SelectorComponent(
 
             intersect(maxArea)
 
-            toRect()
+            // Quantize position and size separately. Truncating both floating edges
+            // made the same 50 px box alternate between 49 and 51 px after a move.
+            val pixelLeft = left.roundToInt()
+            val pixelTop = top.roundToInt()
+            Rect(pixelLeft, pixelTop, pixelLeft + width().roundToInt(), pixelTop + height().roundToInt()).apply {
+                intersect(maxArea.toRect())
+            }
         }
     }
 

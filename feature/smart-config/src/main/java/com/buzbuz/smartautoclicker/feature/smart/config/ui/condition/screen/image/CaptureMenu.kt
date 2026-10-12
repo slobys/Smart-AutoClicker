@@ -85,6 +85,8 @@ class CaptureMenu(
             when (value) {
                 SELECTION -> {
                     viewBinding.btnConfirm.setImageResource(R.drawable.ic_capture)
+                    setMenuItemViewEnabled(viewBinding.btnConfirm, true)
+                    setMenuItemViewEnabled(viewBinding.btnCancel, true)
                     setMenuVisibility(View.VISIBLE)
                     setMenuItemsVisibility(
                         mapOf(
@@ -102,6 +104,10 @@ class CaptureMenu(
                 }
                 ADJUST -> {
                     viewBinding.btnConfirm.setImageResource(R.drawable.ic_confirm)
+                    setMenuItemViewEnabled(viewBinding.btnConfirm, selectorView.isSelectionValid)
+                    setMenuItemViewEnabled(viewBinding.btnCancel, true)
+                    setMenuItemViewEnabled(viewBinding.btnHelp, true)
+                    setMenuItemViewEnabled(viewBinding.btnHideOverlay, true)
                     setMenuVisibility(View.VISIBLE)
                     setMenuItemsVisibility(
                         mapOf(
@@ -151,7 +157,9 @@ class CaptureMenu(
      * @param isValid validity of the selector.
      */
     private fun onSelectorValidityChanged(isValid: Boolean) {
-        setMenuItemViewEnabled(viewBinding.btnConfirm, isValid, isValid)
+        // Reset/layout callbacks must not disable the screenshot button or
+        // re-enable confirmation while the crop is already being saved.
+        if (state == ADJUST) setMenuItemViewEnabled(viewBinding.btnConfirm, isValid, isValid)
     }
 
     /**

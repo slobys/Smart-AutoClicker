@@ -31,7 +31,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 
 import com.buzbuz.smartautoclicker.core.ui.bindings.lists.updateState
 import com.buzbuz.smartautoclicker.feature.smart.config.R
-import com.buzbuz.smartautoclicker.feature.smart.config.databinding.DialogBaseListBinding
+import com.buzbuz.smartautoclicker.feature.smart.config.databinding.DialogAlphabetSelectionBinding
+import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.formatters.getDisplayNameResId
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.condition.screen.text.alphabet.AlphabetDownloadUiState
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.condition.screen.text.alphabet.AlphabetModelItemAdapter
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.condition.screen.text.alphabet.AlphabetSelectionItem
@@ -53,12 +54,12 @@ class AlphabetSelectionFragment : BottomSheetDialogFragment() {
     private val viewModel: AlphabetSelectionViewModel by viewModels()
     private val alphabetAdapter: AlphabetModelItemAdapter = AlphabetModelItemAdapter(::onItemClicked)
 
-    private lateinit var viewBinding: DialogBaseListBinding
+    private lateinit var viewBinding: DialogAlphabetSelectionBinding
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        viewBinding = DialogBaseListBinding.inflate(inflater, container, false).apply {
+        viewBinding = DialogAlphabetSelectionBinding.inflate(inflater, container, false).apply {
             layoutTopBar.apply {
-                dialogTitle.setText(R.string.dialog_title_condition_selection)
+                dialogTitle.setText(R.string.dialog_title_alphabet_selection)
                 buttonSave.visibility = View.GONE
                 buttonDelete.visibility = View.GONE
                 buttonDismiss.setOnClickListener { dismiss() }
@@ -66,6 +67,11 @@ class AlphabetSelectionFragment : BottomSheetDialogFragment() {
             layoutLoadableList.apply {
                 list.adapter = alphabetAdapter
                 list.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false)
+            }
+            buttonConfirmAlphabet.setOnClickListener {
+                viewLifecycleOwner.lifecycleScope.launch {
+                    if (viewModel.confirmSelection()) dismiss()
+                }
             }
         }
         return viewBinding.root
@@ -79,15 +85,16 @@ class AlphabetSelectionFragment : BottomSheetDialogFragment() {
             isDraggable = false
         }
 
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.CREATED) {
                 launch { viewModel.isEditingCondition.collect(::onConditionEditingStateChanged) }
             }
         }
 
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.items.collect(::onItemsUpdated) }
+                launch { viewModel.confirmationState.collect(::onConfirmationUpdated) }
             }
         }
     }
@@ -111,6 +118,15 @@ class AlphabetSelectionFragment : BottomSheetDialogFragment() {
     private fun onItemsUpdated(items: List<AlphabetSelectionItem>) {
         viewBinding.layoutLoadableList.updateState(items)
         alphabetAdapter.submitList(items)
+    }
+
+    private fun onConfirmationUpdated(state: AlphabetConfirmationUiState) {
+        viewBinding.buttonConfirmAlphabet.isEnabled = state.canConfirm
+        val name = state.alphabet?.let { getString(it.getDisplayNameResId()) }.orEmpty()
+        viewBinding.textSelectedAlphabet.text = getString(
+            if (state.canConfirm) R.string.alphabet_selection_ready else R.string.alphabet_selection_not_ready,
+            name,
+        )
     }
 
     private fun onConditionEditingStateChanged(isEditing: Boolean) {

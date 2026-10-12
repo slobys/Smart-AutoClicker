@@ -180,7 +180,7 @@ class EditedItemsBuilder internal constructor(
             priority = 0,
             text = "",
             detectionArea = Rect(),
-            alphabet = OCRAlphabet.LATIN,
+            alphabet = OCRAlphabet.CHINESE_SIMPLIFIED,
         )
     }
 

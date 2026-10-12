@@ -37,6 +37,7 @@ import com.buzbuz.smartautoclicker.core.ui.views.viewcomponents.base.ComponentsV
 import com.buzbuz.smartautoclicker.core.ui.views.viewcomponents.base.ViewComponent
 import com.buzbuz.smartautoclicker.core.ui.views.viewcomponents.hints.HintsComponent
 import androidx.core.graphics.drawable.toDrawable
+import kotlin.math.roundToInt
 
 /**
  * Overlay view used as screenOverlayView showing the area to capture the content as an event condition.
@@ -67,6 +68,7 @@ class ImageSelectorView(
     private var haveTouchEventIgnored = false
     /** Tells if the selector is at a valid position relatively to the capture position. */
     private var isSelectorValid = false
+    val isSelectionValid: Boolean get() = isSelectorValid
     /** Used during selector validation. kept here to avoid instantiation at each touch event. */
     private val selectorValidityTempValue = RectF()
 
@@ -132,11 +134,17 @@ class ImageSelectorView(
         selectorValidityTempValue.set(RectF(selector.selectedArea))
 
         val isSelectorOverCapture = selectorValidityTempValue.intersect(capture.captureArea)
-        val isBiggerThanMinimumSize = selectorValidityTempValue.width() >= SELECTOR_MINIMUM_CONTENT_SIZE
-                && selectorValidityTempValue.height() >= SELECTOR_MINIMUM_CONTENT_SIZE
+        // Use the same pixel rounding as the crop, not a raw Float comparison:
+        // resizing/moving can represent an exact 50 px minimum as 49.999985.
+        val isBiggerThanMinimumSize = selectorValidityTempValue.width().roundToInt() >= SELECTOR_MINIMUM_CONTENT_SIZE
+                && selectorValidityTempValue.height().roundToInt() >= SELECTOR_MINIMUM_CONTENT_SIZE
+        val cropArea = selector.getSelectionArea(capture.captureArea, capture.zoomLevel)
+        val bitmap = capture.screenCapture?.bitmap
+        val hasCrop = bitmap != null && cropArea.intersect(0, 0, bitmap.width, bitmap.height) && !cropArea.isEmpty
 
-        if ((isSelectorOverCapture && isBiggerThanMinimumSize) != isSelectorValid) {
-            isSelectorValid = !isSelectorValid
+        val valid = isSelectorOverCapture && isBiggerThanMinimumSize && hasCrop
+        if (valid != isSelectorValid) {
+            isSelectorValid = valid
             onSelectorValidityChanged(isSelectorValid)
         }
     }
@@ -148,6 +156,7 @@ class ImageSelectorView(
      */
     fun showCapture(bitmap: Bitmap) {
         capture.screenCapture = bitmap.toDrawable(resources)
+        verifySelectorValidity()
         hintsIcons.showAll()
         animations.startShowSelectorAnimation(
             onAnimationCompleted = {

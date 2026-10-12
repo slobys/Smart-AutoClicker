@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<resources>
+    <string name="dialog_title_alphabet_selection">识别语言</string>
+    <string name="item_alphabet_selection_confirm_header">选择已安装的语言，再点击下方“确定”。尚未安装的语言请先点击下载图标。直接关闭或返回不会保存本次选择。</string>
+    <string name="alphabet_selection_ready">已选择：%1$s。点击“确定”后生效。</string>
+    <string name="alphabet_selection_not_ready">已选择：%1$s。请先下载或等待模型就绪，再点击“确定”。</string>
+</resources>

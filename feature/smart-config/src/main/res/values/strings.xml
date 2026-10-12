@@ -286,6 +286,10 @@
 
 
     <!-- Dialog Alphabet selection ================================================================================= -->
+    <string name="dialog_title_alphabet_selection" tools:ignore="MissingTranslation">Recognition language</string>
+    <string name="item_alphabet_selection_confirm_header" tools:ignore="MissingTranslation">Select an installed language, then tap OK below. If its model is missing, download it first. Closing this page without confirming keeps your previous choice.</string>
+    <string name="alphabet_selection_ready" tools:ignore="MissingTranslation">Selected: %1$s. Tap OK to apply.</string>
+    <string name="alphabet_selection_not_ready" tools:ignore="MissingTranslation">Selected: %1$s. Please wait for the model to be ready before confirming.</string>
 
     <string name="item_alphabet_selection_header">In order to use text detection in your scenario, you need to download the relevant alphabet model.\n\nEach model can take up to 5MB.</string>
     <string name="item_alphabet_required_header">In order to run this scenario, you need to download the following alphabet models.\n\nEach model can take up to 5MB.</string>

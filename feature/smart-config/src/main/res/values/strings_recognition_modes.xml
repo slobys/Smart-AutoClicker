@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="color_find_in_area_title">Find colour within area</string>
-    <string name="color_find_in_area_off" formatted="false">Off: at least 75% of the selected area must match (original behaviour).</string>
-    <string name="color_find_in_area_on">On: find a connected patch of at least 9 matching pixels; clicks use a matching point. Combine colour conditions with AND to check multiple points.</string>
-    <string name="color_find_in_area_too_small">The selection is too small to find a colour patch. Select a detection area containing at least 9 pixels before saving, or turn this off for single-pixel matching.</string>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- These newer controls currently ship in English and Chinese; other locales use English fallback. -->
+    <string name="color_find_in_area_title" tools:ignore="MissingTranslation">Find colour within area</string>
+    <string name="color_find_in_area_off" formatted="false" tools:ignore="MissingTranslation">Off: at least 75% of the selected area must match (original behaviour).</string>
+    <string name="color_find_in_area_on" tools:ignore="MissingTranslation">On: find a connected patch of at least 9 matching pixels; clicks use a matching point. Combine colour conditions with AND to check multiple points.</string>
+    <string name="color_find_in_area_too_small" tools:ignore="MissingTranslation">The selection is too small to find a colour patch. Select a detection area containing at least 9 pixels before saving, or turn this off for single-pixel matching.</string>
 </resources>
