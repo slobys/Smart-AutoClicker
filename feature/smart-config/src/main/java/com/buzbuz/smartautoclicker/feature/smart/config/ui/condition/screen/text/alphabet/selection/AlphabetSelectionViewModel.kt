@@ -16,6 +16,8 @@
  */
 package com.buzbuz.smartautoclicker.feature.smart.config.ui.condition.screen.text.alphabet.selection
 
+import android.util.Log
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 
@@ -31,6 +33,7 @@ import com.buzbuz.smartautoclicker.feature.smart.config.ui.condition.screen.text
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.condition.screen.text.alphabet.toUiState
 
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,6 +54,7 @@ class AlphabetSelectionViewModel @Inject constructor (
 
     private val pendingSelection = MutableStateFlow<AlphabetChoice?>(null)
     private val confirming = MutableStateFlow(false)
+    private val confirmationError = MutableStateFlow<Int?>(null)
     private val models = ocrModelsRepository.recognitionModels
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
 
@@ -63,10 +67,14 @@ class AlphabetSelectionViewModel @Inject constructor (
             }
         }
 
-    val confirmationState: Flow<AlphabetConfirmationUiState> = combine(selectedChoice, models, confirming) { choice, available, busy ->
+    val confirmationState: Flow<AlphabetConfirmationUiState> = combine(
+        selectedChoice, models, confirming, confirmationError,
+    ) { choice, available, busy, error ->
         AlphabetConfirmationUiState(
             alphabet = choice?.alphabet,
             canConfirm = !busy && available.any { it.alphabet == choice?.alphabet && it.state is OCRModelState.Installed },
+            isConfirming = busy,
+            errorMessage = error,
         )
     }
 
@@ -92,26 +100,44 @@ class AlphabetSelectionViewModel @Inject constructor (
     fun selectModel(alphabet: OCRAlphabet) {
         if (confirming.value || models.value.none { it.alphabet == alphabet && it.state is OCRModelState.Installed }) return
         getEditedTextCondition()?.let { condition ->
+            confirmationError.value = null
             pendingSelection.value = AlphabetChoice(condition.id, alphabet)
         }
     }
 
     suspend fun confirmSelection(): Boolean {
         if (confirming.value) return false
-        val original = getEditedTextCondition() ?: return false
+        val original = getEditedTextCondition() ?: return confirmationFailed(R.string.alphabet_selection_condition_changed)
         val choice = pendingSelection.value?.takeIf { it.conditionId == original.id }
             ?: AlphabetChoice(original.id, original.alphabet)
+        confirmationError.value = null
         confirming.value = true
         try {
             // Recheck readiness rather than trusting a stale radio/download row.
-            if (ocrModelsRepository.getRecognitionModel(choice.alphabet)?.state !is OCRModelState.Installed) return false
-            val current = getEditedTextCondition() ?: return false
-            if (current.id != choice.conditionId) return false
+            if (ocrModelsRepository.getRecognitionModel(choice.alphabet)?.state !is OCRModelState.Installed)
+                return confirmationFailed(R.string.alphabet_selection_model_unavailable)
+            val current = getEditedTextCondition()
+                ?: return confirmationFailed(R.string.alphabet_selection_condition_changed)
+            if (current.id != choice.conditionId) return confirmationFailed(R.string.alphabet_selection_condition_changed)
             editionRepository.updateEditedCondition(current.copy(alphabet = choice.alphabet))
+            // Do not report success if the editor stopped accepting changes in the meantime.
+            val applied = getEditedTextCondition()
+            if (applied?.id != choice.conditionId || applied.alphabet != choice.alphabet)
+                return confirmationFailed(R.string.alphabet_selection_apply_failed)
             return true
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            Log.e("AlphabetSelection", "Could not apply recognition language", error)
+            return confirmationFailed(R.string.alphabet_selection_apply_failed)
         } finally {
             confirming.value = false
         }
+    }
+
+    private fun confirmationFailed(@StringRes message: Int): Boolean {
+        confirmationError.value = message
+        return false
     }
 
     fun downloadModel(alphabet: OCRAlphabet) {
@@ -126,7 +152,12 @@ class AlphabetSelectionViewModel @Inject constructor (
 
 private data class AlphabetChoice(val conditionId: Identifier, val alphabet: OCRAlphabet)
 
-data class AlphabetConfirmationUiState(val alphabet: OCRAlphabet?, val canConfirm: Boolean)
+data class AlphabetConfirmationUiState(
+    val alphabet: OCRAlphabet?,
+    val canConfirm: Boolean,
+    val isConfirming: Boolean = false,
+    @get:StringRes val errorMessage: Int? = null,
+)
 
 private fun List<AlphabetSelectionItem.Alphabet>.sortedByState() =
     sortedWith(

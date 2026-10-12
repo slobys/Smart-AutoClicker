@@ -5,4 +5,11 @@
     <string name="item_alphabet_selection_confirm_header">选择已安装的语言，再点击下方“确定”。尚未安装的语言请先点击下载图标。直接关闭或返回不会保存本次选择。</string>
     <string name="alphabet_selection_ready">已选择：%1$s。点击“确定”后生效。</string>
     <string name="alphabet_selection_not_ready">已选择：%1$s。请先下载或等待模型就绪，再点击“确定”。</string>
+    <string name="alphabet_selection_confirm">确定并返回</string>
+    <string name="alphabet_selection_applying">正在应用…</string>
+    <string name="alphabet_selection_applying_language">正在应用：%1$s…</string>
+    <string name="alphabet_selection_applied">识别语言已应用</string>
+    <string name="alphabet_selection_model_unavailable">语言模型尚未就绪，请先下载或等待下载完成，再重试。</string>
+    <string name="alphabet_selection_condition_changed">当前编辑的条件已变化，请关闭本页后重新选择识别语言。</string>
+    <string name="alphabet_selection_apply_failed">识别语言应用失败，本次选择未确认，请重试。</string>
 </resources>

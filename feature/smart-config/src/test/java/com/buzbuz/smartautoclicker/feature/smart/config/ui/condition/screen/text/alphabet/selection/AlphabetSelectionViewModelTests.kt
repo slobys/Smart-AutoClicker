@@ -9,12 +9,14 @@ import com.buzbuz.smartautoclicker.code.smart.detectionmodels.text.domain.OCRMod
 import com.buzbuz.smartautoclicker.code.smart.detectionmodels.text.domain.OCRModelState
 import com.buzbuz.smartautoclicker.core.base.identifier.Identifier
 import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
+import com.buzbuz.smartautoclicker.feature.smart.config.R
 import com.buzbuz.smartautoclicker.feature.smart.config.domain.EditionRepository
 import com.buzbuz.smartautoclicker.feature.smart.config.domain.model.EditedElementState
 import com.buzbuz.smartautoclicker.feature.smart.config.domain.model.IEditionState
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.condition.screen.text.alphabet.AlphabetSelectionItem
 import io.mockk.*
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -28,6 +30,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -100,6 +103,7 @@ class AlphabetSelectionViewModelTests {
         assertEquals(OCRAlphabet.CHINESE_SIMPLIFIED, viewModel.confirmationState.first().alphabet)
         assertFalse(viewModel.confirmationState.first().canConfirm)
         assertFalse(viewModel.confirmSelection())
+        assertEquals(R.string.alphabet_selection_model_unavailable, viewModel.confirmationState.first().errorMessage)
         verify(exactly = 0) { edition.updateEditedCondition(any()) }
     }
 
@@ -138,6 +142,7 @@ class AlphabetSelectionViewModelTests {
         edited.value = EditedElementState(text().copy(id = Identifier(databaseId = 9)), false, true)
         ready.complete(model(OCRAlphabet.CHINESE_SIMPLIFIED))
         assertFalse(result.await())
+        assertEquals(R.string.alphabet_selection_condition_changed, viewModel.confirmationState.first().errorMessage)
         verify(exactly = 0) { edition.updateEditedCondition(any()) }
         assertEquals(OCRAlphabet.LATIN, viewModel.confirmationState.first().alphabet)
     }
@@ -147,9 +152,11 @@ class AlphabetSelectionViewModelTests {
         coEvery { repository.getRecognitionModel(any()) } coAnswers { ready.await() }
         val first = async { viewModel.confirmSelection() }
         assertFalse(viewModel.confirmationState.first().canConfirm)
+        assertTrue(viewModel.confirmationState.first().isConfirming)
         assertFalse(viewModel.confirmSelection())
         ready.complete(model(OCRAlphabet.LATIN))
         assertTrue(first.await())
+        assertFalse(viewModel.confirmationState.first().isConfirming)
         verify(exactly = 1) { edition.updateEditedCondition(any()) }
     }
 
@@ -161,6 +168,59 @@ class AlphabetSelectionViewModelTests {
             name = "Color", threshold = 0, shouldBeDetected = true, priority = 0,
             detectionArea = Rect(0, 0, 1, 1), color = android.graphics.Color.RED), false, true)
         assertFalse(viewModel.confirmSelection())
+        verify(exactly = 0) { edition.updateEditedCondition(any()) }
+    }
+
+    @Test fun modelCheckFailureShowsErrorAndRetryCanSucceedWithoutChangingOriginal() = runTest(dispatcher) {
+        viewModel.selectModel(OCRAlphabet.CHINESE_SIMPLIFIED)
+        coEvery { repository.getRecognitionModel(any()) } throws IOException("Model read failed")
+        assertFalse(viewModel.confirmSelection())
+        assertEquals(R.string.alphabet_selection_apply_failed, viewModel.confirmationState.first().errorMessage)
+        assertFalse(viewModel.confirmationState.first().isConfirming)
+        assertTrue(viewModel.confirmationState.first().canConfirm)
+        assertEquals(OCRAlphabet.LATIN, (edited.value.value as ScreenCondition.Text).alphabet)
+        verify(exactly = 0) { edition.updateEditedCondition(any()) }
+        coEvery { repository.getRecognitionModel(any()) } returns model(OCRAlphabet.CHINESE_SIMPLIFIED)
+        assertTrue(viewModel.confirmSelection())
+        assertNull(viewModel.confirmationState.first().errorMessage)
+        assertEquals(OCRAlphabet.CHINESE_SIMPLIFIED, (edited.value.value as ScreenCondition.Text).alphabet)
+    }
+
+    @Test fun selectingAnotherInstalledLanguageClearsPreviousError() = runTest(dispatcher) {
+        coEvery { repository.getRecognitionModel(any()) } returns null
+        assertFalse(viewModel.confirmSelection())
+        assertNotNull(viewModel.confirmationState.first().errorMessage)
+        viewModel.selectModel(OCRAlphabet.CHINESE_SIMPLIFIED)
+        assertNull(viewModel.confirmationState.first().errorMessage)
+    }
+
+    @Test fun editorThatIgnoresUpdateCannotReportSuccess() = runTest(dispatcher) {
+        viewModel.selectModel(OCRAlphabet.CHINESE_SIMPLIFIED)
+        every { edition.updateEditedCondition(any()) } returns Unit
+        assertFalse(viewModel.confirmSelection())
+        assertEquals(R.string.alphabet_selection_apply_failed, viewModel.confirmationState.first().errorMessage)
+        assertEquals(OCRAlphabet.LATIN, (edited.value.value as ScreenCondition.Text).alphabet)
+    }
+
+    @Test fun editorFailureShowsErrorAndRestoresControls() = runTest(dispatcher) {
+        every { edition.updateEditedCondition(any()) } throws IllegalStateException("Editor closed")
+        assertFalse(viewModel.confirmSelection())
+        assertEquals(R.string.alphabet_selection_apply_failed, viewModel.confirmationState.first().errorMessage)
+        assertFalse(viewModel.confirmationState.first().isConfirming)
+        assertTrue(viewModel.confirmationState.first().canConfirm)
+    }
+
+    @Test fun coroutineCancellationIsNotConvertedToFailureOrSaved() = runTest(dispatcher) {
+        val cancelled = CancellationException("Page closed")
+        coEvery { repository.getRecognitionModel(any()) } throws cancelled
+        try {
+            viewModel.confirmSelection()
+            fail("Cancellation must propagate")
+        } catch (error: CancellationException) {
+            assertSame(cancelled, error)
+        }
+        assertNull(viewModel.confirmationState.first().errorMessage)
+        assertFalse(viewModel.confirmationState.first().isConfirming)
         verify(exactly = 0) { edition.updateEditedCondition(any()) }
     }
 

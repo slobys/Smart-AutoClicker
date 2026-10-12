@@ -22,6 +22,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -32,7 +33,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.buzbuz.smartautoclicker.core.ui.bindings.lists.updateState
 import com.buzbuz.smartautoclicker.feature.smart.config.R
 import com.buzbuz.smartautoclicker.feature.smart.config.databinding.DialogAlphabetSelectionBinding
-import com.buzbuz.smartautoclicker.feature.smart.config.ui.common.formatters.getDisplayNameResId
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.condition.screen.text.alphabet.AlphabetDownloadUiState
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.condition.screen.text.alphabet.AlphabetModelItemAdapter
 import com.buzbuz.smartautoclicker.feature.smart.config.ui.condition.screen.text.alphabet.AlphabetSelectionItem
@@ -69,8 +69,14 @@ class AlphabetSelectionFragment : BottomSheetDialogFragment() {
                 list.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false)
             }
             buttonConfirmAlphabet.setOnClickListener {
+                // Give immediate feedback, including before a suspended model check resumes.
+                buttonConfirmAlphabet.isEnabled = false
+                buttonConfirmAlphabet.setText(R.string.alphabet_selection_applying)
                 viewLifecycleOwner.lifecycleScope.launch {
-                    if (viewModel.confirmSelection()) dismiss()
+                    if (viewModel.confirmSelection()) {
+                        Toast.makeText(requireContext().applicationContext, R.string.alphabet_selection_applied, Toast.LENGTH_SHORT).show()
+                        dismiss()
+                    }
                 }
             }
         }
@@ -121,12 +127,8 @@ class AlphabetSelectionFragment : BottomSheetDialogFragment() {
     }
 
     private fun onConfirmationUpdated(state: AlphabetConfirmationUiState) {
-        viewBinding.buttonConfirmAlphabet.isEnabled = state.canConfirm
-        val name = state.alphabet?.let { getString(it.getDisplayNameResId()) }.orEmpty()
-        viewBinding.textSelectedAlphabet.text = getString(
-            if (state.canConfirm) R.string.alphabet_selection_ready else R.string.alphabet_selection_not_ready,
-            name,
-        )
+        viewBinding.updateConfirmationState(state)
+        isCancelable = !state.isConfirming
     }
 
     private fun onConditionEditingStateChanged(isEditing: Boolean) {
