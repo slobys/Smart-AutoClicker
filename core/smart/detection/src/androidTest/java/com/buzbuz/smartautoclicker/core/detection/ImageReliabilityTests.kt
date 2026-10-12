@@ -137,6 +137,29 @@ class ImageReliabilityTests {
         }
     }
 
+    @Test fun scaledTemplateAfterExactTemplate_doesNotOverwriteCachedBitmap() {
+        withTemplate(pattern(equalLuminance = false)) { template ->
+            withTemplate(pattern(equalLuminance = false, swapped = true)) { otherTemplate ->
+                withTemplate(Bitmap.createScaledBitmap(otherTemplate, 64, 64, false)) { largerTemplate ->
+                    val originalPixels = IntArray(template.width * template.height)
+                    template.getPixels(originalPixels, 0, template.width, 0, 0, template.width, template.height)
+                    withScreen(screen(160, 100).apply { Canvas(this).drawBitmap(template, 70f, 40f, null) }) { frame ->
+                        repeat(8) { call ->
+                            assertTrue("cached target lost on call $call", detect(template, frame).isDetected)
+                            // A decoded template can be larger than its requested dimensions. Its resize
+                            // must not write into the pixels borrowed from the previous exact-size call.
+                            detector.detectImage(largerTemplate, 32, 32, Rect(0, 0, 160, 100), 4)
+                            val currentPixels = IntArray(originalPixels.size)
+                            template.getPixels(currentPixels, 0, template.width, 0, 0, template.width, template.height)
+                            assertArrayEquals("native resize modified a cached template on call $call",
+                                originalPixels, currentPixels)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private fun detect(template: Bitmap, frame: Bitmap,
                        roi: Rect = Rect(0, 0, frame.width, frame.height), threshold: Int = 4): DetectionResult {
         val start = SystemClock.elapsedRealtime()

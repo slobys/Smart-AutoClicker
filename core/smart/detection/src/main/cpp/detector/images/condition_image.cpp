@@ -24,7 +24,10 @@ void ConditionImage::processNewData(std::unique_ptr<cv::Mat> newData, int target
     if (!newData || newData->empty()) return;
 
     if (newData->cols == targetWidth && newData->rows == targetHeight) {
-        this->colorMat = std::move(*newData);
+        // JNI only locks the Java bitmap for the duration of this detection call. Retaining
+        // its non-owning Mat also lets a subsequent resize reuse those pixels as output,
+        // silently modifying a cached template. Keep an owned, reusable destination instead.
+        newData->copyTo(this->colorMat);
     } else {
         const int interpolation =
                 targetWidth < newData->cols || targetHeight < newData->rows
