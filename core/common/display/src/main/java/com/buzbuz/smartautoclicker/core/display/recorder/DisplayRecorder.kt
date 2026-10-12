@@ -28,6 +28,7 @@ import android.media.projection.MediaProjectionManager
 import android.util.Log
 import androidx.annotation.MainThread
 import androidx.annotation.WorkerThread
+import com.buzbuz.smartautoclicker.core.display.config.DisplayConfigManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 
@@ -57,6 +58,7 @@ class DisplayRecorder @Inject internal constructor(
     @param:ApplicationContext private val context: Context,
     private val mediaProjectionProxy: MediaProjectionProxy,
     private val imageReaderProxy: ImageReaderProxy,
+    private val displayConfigManager: DisplayConfigManager,
 ) {
 
     /** Synchronization mutex. */
@@ -64,6 +66,9 @@ class DisplayRecorder @Inject internal constructor(
 
     /** Virtual display capturing the content of the screen. */
     private var virtualDisplay: VirtualDisplay? = null
+    /** Always mirror physical pixels; some drivers crop instead of scaling a smaller display. */
+    private var captureSize: Point? = null
+    private val frameScaler = DetectionFrameScaler()
     /** Listener to notify upon projection ends. */
     private var stopListener: (() -> Unit)? = null
 
@@ -116,6 +121,8 @@ class DisplayRecorder @Inject internal constructor(
         Log.i(TAG, "Start screen record with display size $displaySize")
 
         imageReaderProxy.resize(displaySize)
+        captureSize = Point(displaySize)
+        frameScaler.resize(displaySize)
         virtualDisplay = mediaProjectionProxy.createVirtualDisplay(
             displaySize = displaySize,
             densityDpi = context.resources.configuration.densityDpi,
@@ -123,18 +130,29 @@ class DisplayRecorder @Inject internal constructor(
         )
     }
 
+    /**
+     * Change the detector's output size without relying on the device to scale its projection.
+     * Physical display changes still rebuild the capture surface. Screenshots remain native-sized.
+     */
     suspend fun resizeDisplay(displaySize: Point): Unit = mutex.withLock {
         val vDisplay = virtualDisplay ?: return
+        val physicalSize = Point(displayConfigManager.displayConfig.sizePx)
+        require(physicalSize.x > 0 && physicalSize.y > 0 && displaySize.x > 0 && displaySize.y > 0)
 
-        Log.i(TAG, "Resizing virtual display to $displaySize")
+        Log.i(TAG, "Capture size $physicalSize; detection frame size $displaySize")
 
-        imageReaderProxy.resize(displaySize)
-        vDisplay.surface = imageReaderProxy.surface
-        vDisplay.resize(
-            displaySize.x,
-            displaySize.y,
-            context.resources.configuration.densityDpi,
-        )
+        // Quality changes must NOT resize the projection. MuMu can return a top-left crop at
+        // the original pixel scale after VirtualDisplay.resize, while condition areas have
+        // already been scaled. Keep capture native-sized and perform deterministic scaling.
+        // Only a physical screen change (e.g. rotation) needs a new surface/display size.
+        if (captureSize != physicalSize) {
+            vDisplay.surface = null
+            imageReaderProxy.resize(physicalSize)
+            vDisplay.resize(physicalSize.x, physicalSize.y, context.resources.configuration.densityDpi)
+            vDisplay.surface = imageReaderProxy.surface
+            captureSize = physicalSize
+        }
+        frameScaler.resize(displaySize)
     }
 
     suspend fun validateScreenCapture(): Boolean {
@@ -155,7 +173,11 @@ class DisplayRecorder @Inject internal constructor(
 
     /** @return the last image of the screen, or null if they have been processed. */
     suspend fun acquireLatestBitmap(): Bitmap? = mutex.withLock {
-        imageReaderProxy.acquireLatestFrame()
+        val source = imageReaderProxy.acquireLatestFrame() ?: return@withLock null
+        val expected = captureSize ?: return@withLock null
+        // A stale producer frame during rotation must never be processed with new coordinates.
+        if (source.width != expected.x || source.height != expected.y) return@withLock null
+        frameScaler.scale(source)
     }
 
     suspend fun takeScreenshot(): Bitmap? {
@@ -180,7 +202,11 @@ class DisplayRecorder @Inject internal constructor(
 
         val display = virtualDisplay.also { virtualDisplay = null }
         try { display?.release() }
-        finally { imageReaderProxy.close() }
+        finally {
+            captureSize = null
+            frameScaler.clear()
+            imageReaderProxy.close()
+        }
     }
 
     /**

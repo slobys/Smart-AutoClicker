@@ -278,7 +278,7 @@ class DetectorEngine @Inject constructor(
             // Clear image cache and compute scaling info for detection
             bitmapRepository.clearCache()
 
-            // Set the display projection to the scaled size
+            // Set detection frame size; capture stays physical-sized to avoid driver cropping.
             displayRecorder.resizeDisplay(
                 displaySize = scalingManager.startScaling(
                     quality = scenario.detectionQuality.toDouble(),

@@ -21,6 +21,8 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Point
+import android.graphics.Bitmap
+import android.graphics.Color
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
 import android.media.Image
@@ -32,6 +34,8 @@ import android.view.Surface
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.buzbuz.smartautoclicker.core.bitmaps.BitmapRepository
+import com.buzbuz.smartautoclicker.core.display.config.DisplayConfig
+import com.buzbuz.smartautoclicker.core.display.config.DisplayConfigManager
 import com.buzbuz.smartautoclicker.core.display.recorder.DisplayRecorder
 import com.buzbuz.smartautoclicker.core.display.recorder.ImageReaderProxy
 import com.buzbuz.smartautoclicker.core.display.recorder.MediaProjectionProxy
@@ -44,6 +48,8 @@ import kotlinx.coroutines.runBlocking
 
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
@@ -60,10 +66,13 @@ import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.doThrow
 
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+import org.mockito.kotlin.any
 
 /** Test the [DisplayRecorder] class. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [Build.VERSION_CODES.Q], shadows = [ ShadowImageReader::class ])
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class DisplayRecorderTests {
 
     private companion object {
@@ -93,6 +102,7 @@ class DisplayRecorderTests {
     @Mock private lateinit var mockVirtualDisplay: VirtualDisplay
     @Mock private lateinit var mockStoppedListener: StoppedListener
     @Mock private lateinit var mockBitmapRepository: BitmapRepository
+    @Mock private lateinit var mockDisplayConfigManager: DisplayConfigManager
 
     /** The object under tests. */
     private lateinit var displayRecorder: DisplayRecorder
@@ -125,7 +135,8 @@ class DisplayRecorderTests {
             null)
         ).thenReturn(mockVirtualDisplay)
 
-        displayRecorder = DisplayRecorder(mockContext, MediaProjectionProxy(), ImageReaderProxy(mockBitmapRepository))
+        setPhysicalSize(TEST_DATA_DISPLAY_SIZE)
+        displayRecorder = DisplayRecorder(mockContext, MediaProjectionProxy(), ImageReaderProxy(mockBitmapRepository), mockDisplayConfigManager)
     }
 
     @After
@@ -168,6 +179,76 @@ class DisplayRecorderTests {
         displayRecorder.startScreenRecord(TEST_DATA_DISPLAY_SIZE)
 
         assertEquals(1, ShadowImageReader.getInstanceCreationCount())
+    }
+
+    @Test
+    fun qualityChangesNeverResizeOrReplacePhysicalCapture() = runBlocking {
+        displayRecorder.startProjection(TEST_DATA_RESULT_CODE, TEST_DATA_PROJECTION_DATA_INTENT, {})
+        displayRecorder.startScreenRecord(TEST_DATA_DISPLAY_SIZE)
+        displayRecorder.resizeDisplay(Point(400, 300))
+        displayRecorder.resizeDisplay(Point(600, 450))
+        displayRecorder.resizeDisplay(TEST_DATA_DISPLAY_SIZE)
+        assertEquals(1, ShadowImageReader.getInstanceCreationCount())
+        verify(mockVirtualDisplay, never()).resize(any(), any(), any())
+        verify(mockImageReader, never()).close()
+    }
+
+    @Test
+    fun rotationResizesCaptureToPhysicalSizeNotDetectionSize() = runBlocking {
+        displayRecorder.startProjection(TEST_DATA_RESULT_CODE, TEST_DATA_PROJECTION_DATA_INTENT, {})
+        displayRecorder.startScreenRecord(TEST_DATA_DISPLAY_SIZE)
+        setPhysicalSize(Point(600, 800))
+        displayRecorder.resizeDisplay(Point(300, 400))
+        assertEquals(2, ShadowImageReader.getInstanceCreationCount())
+        verify(mockVirtualDisplay).resize(600, 800, TEST_DATA_DENSITY_DPI)
+        inOrder(mockVirtualDisplay, mockImageReader).apply {
+            verify(mockVirtualDisplay).surface = null
+            verify(mockImageReader).close()
+            verify(mockVirtualDisplay).resize(600, 800, TEST_DATA_DENSITY_DPI)
+            verify(mockVirtualDisplay).surface = mockSurface
+        }
+        Unit
+    }
+
+    @Test
+    fun detectionScalesCompleteFrameButScreenshotAndFreshnessRemainUnchanged() = runBlocking {
+        // Target in lower right would be missing if the producer were resized/cropped.
+        val source = Bitmap.createBitmap(800, 600, Bitmap.Config.ARGB_8888).apply {
+            eraseColor(Color.RED)
+            for (y in 480 until 560) for (x in 640 until 720) setPixel(x, y, Color.GREEN)
+        }
+        val reader = org.mockito.Mockito.mock(ImageReaderProxy::class.java)
+        mockWhen(reader.surface).thenReturn(mockSurface)
+        mockWhen(reader.acquireLatestFrame()).thenReturn(source, null)
+        mockWhen(reader.getLastFrame()).thenReturn(source)
+        displayRecorder = DisplayRecorder(mockContext, MediaProjectionProxy(), reader, mockDisplayConfigManager)
+        displayRecorder.startProjection(TEST_DATA_RESULT_CODE, TEST_DATA_PROJECTION_DATA_INTENT, {})
+        displayRecorder.startScreenRecord(TEST_DATA_DISPLAY_SIZE)
+        displayRecorder.resizeDisplay(Point(400, 300))
+        val scaled = displayRecorder.acquireLatestBitmap()!!
+        assertEquals(400, scaled.width)
+        assertEquals(300, scaled.height)
+        assertEquals(Color.GREEN, scaled.getPixel(340, 260))
+        assertNull(displayRecorder.acquireLatestBitmap())
+        assertSame(source, displayRecorder.takeScreenshot())
+        verify(reader, times(1)).resize(TEST_DATA_DISPLAY_SIZE)
+    }
+
+    @Test
+    fun staleFrameWithWrongPhysicalDimensionsIsNotProcessed() = runBlocking {
+        val reader = org.mockito.Mockito.mock(ImageReaderProxy::class.java)
+        mockWhen(reader.surface).thenReturn(mockSurface)
+        mockWhen(reader.acquireLatestFrame()).thenReturn(Bitmap.createBitmap(600, 800, Bitmap.Config.ARGB_8888))
+        displayRecorder = DisplayRecorder(mockContext, MediaProjectionProxy(), reader, mockDisplayConfigManager)
+        displayRecorder.startProjection(TEST_DATA_RESULT_CODE, TEST_DATA_PROJECTION_DATA_INTENT, {})
+        displayRecorder.startScreenRecord(TEST_DATA_DISPLAY_SIZE)
+        assertNull(displayRecorder.acquireLatestBitmap())
+    }
+
+    private fun setPhysicalSize(size: Point) {
+        mockWhen(mockDisplayConfigManager.displayConfig).thenReturn(
+            DisplayConfig(size, Configuration.ORIENTATION_LANDSCAPE, 0, emptyMap()),
+        )
     }
 
     @Test
