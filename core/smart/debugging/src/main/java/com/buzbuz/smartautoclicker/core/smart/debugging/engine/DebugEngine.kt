@@ -17,7 +17,7 @@
 package com.buzbuz.smartautoclicker.core.smart.debugging.engine
 
 import android.graphics.Rect
-import android.util.Size
+import android.graphics.Point
 
 import com.buzbuz.smartautoclicker.core.base.di.Dispatcher
 import com.buzbuz.smartautoclicker.core.base.di.HiltCoroutineDispatchers.IO
@@ -265,6 +265,9 @@ internal class DebugEngine @Inject constructor(
                     detectionArea = result.getDetectionArea(),
                     numberDetected = result.numberDetected,
                     numberComparisonFulfilled = result.numberComparisonFulfilled,
+                    detectedPoint = result.position?.takeIf { result.haveBeenDetected }?.let(::Point),
+                    colorPreview = result.colorPreview,
+                    errorReason = result.errorReason,
                 )
             },
         )
@@ -316,27 +319,15 @@ internal class DebugEngine @Inject constructor(
     }
 }
 
-private fun ProcessedConditionResult.Screen.getDetectionArea(): Rect? {
+internal fun ProcessedConditionResult.Screen.getDetectionArea(): Rect? {
+    // A color result is a point, not the configured search rectangle recentered on the hit.
+    if (condition is ScreenCondition.Color) return null
     val pos = position ?: return null
     val size = size ?: return null
-
-    val halfSize = when (val cond = condition) {
-        is ScreenCondition.Color ->
-            Size(cond.detectionArea.width() / 2, cond.detectionArea.height() / 2)
-
-        is ScreenCondition.Image,
-        is ScreenCondition.Text,
-        is ScreenCondition.Number ->
-            Size(size.x / 2,  size.y / 2)
-    }
-
-    return if (pos.x == 0 && pos.y == 0) Rect()
-    else Rect(
-        pos.x - halfSize.width,
-        pos.y - halfSize.height,
-        pos.x + halfSize.width,
-        pos.y + halfSize.height,
-    )
+    if (size.x <= 0 || size.y <= 0 || (pos.x == 0 && pos.y == 0 && !haveBeenDetected)) return null
+    val left = pos.x - size.x / 2
+    val top = pos.y - size.y / 2
+    return Rect(left, top, left + size.x, top + size.y)
 }
 
 private const val MAX_EVENT_DETAILS = 512

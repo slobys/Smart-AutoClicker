@@ -17,6 +17,8 @@
 package com.buzbuz.smartautoclicker.feature.smart.debugging.ui.dialog.live.uistate
 
 import android.graphics.Rect
+import android.graphics.Point
+import com.buzbuz.smartautoclicker.core.processing.domain.model.ColorSamplePreview
 
 data class ScreenConditionResultUiState(
     val positive: Boolean,
@@ -24,4 +26,9 @@ data class ScreenConditionResultUiState(
     val confidenceRate: Double,
     val resultText: String? = null,
     val conditionFulfilledWithoutThreshold: Boolean? = null,
+    val isDetected: Boolean = positive,
+    val shouldBeDetected: Boolean = true,
+    val samplePoint: Point? = null,
+    val colorPreview: ColorSamplePreview? = null,
+    val isValid: Boolean = true,
 )

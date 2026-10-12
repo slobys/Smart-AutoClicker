@@ -239,6 +239,7 @@ class DetectorEngine @Inject constructor(
         liveDebugging: Boolean,
         generateReport: Boolean,
         imageDetectorFactory: () -> ImageDetector? = NativeDetector::newInstance,
+        colorPreviewEnabled: Boolean = false,
     ) {
         if (routeSessionActive || _state.value != DetectorState.RECORDING) {
             Log.w(TAG, "startDetection: Screen record is not started.")
@@ -320,6 +321,7 @@ class DetectorEngine @Inject constructor(
                 unblockWorkaroundEnabled = settingsRepository.isInputBlockWorkaroundEnabled(),
                 onStopRequested = { stopDetection(RuntimeStopReason.SCENARIO_REQUEST) },
                 progressListener  = if (liveDebugging || generateReport) debuggingListener else null,
+                colorPreviewEnabled = colorPreviewEnabled,
                 screenEventConfirmationHits = SCREEN_EVENT_CONFIRMATION_HITS,
                 screenEventConfirmationWindow = SCREEN_EVENT_CONFIRMATION_WINDOW,
                 singleFrameConfidenceMargin = SINGLE_FRAME_CONFIDENCE_MARGIN,

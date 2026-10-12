@@ -32,6 +32,7 @@ import com.buzbuz.smartautoclicker.feature.smart.debugging.ui.dialog.live.uistat
 import com.buzbuz.smartautoclicker.feature.smart.debugging.ui.dialog.live.uistate.mapping.toConditionUiState
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,6 +55,7 @@ class TryImageConditionViewModel @Inject constructor(
         .distinctUntilChanged()
 
     private val userThreshold: MutableStateFlow<Int> = MutableStateFlow(0)
+    private var startJob: Job? = null
 
     private val detectionResult: Flow<ScreenConditionResultUiState?> = detectionResultUseCase(filterNotFulfilled = false)
         .combine(isPlaying) { results, playing -> if (playing) results else null }
@@ -64,13 +66,7 @@ class TryImageConditionViewModel @Inject constructor(
 
     val displayResults: Flow<ScreenConditionResultUiState?> =
         combine(userThreshold, detectionResult) { userThreshold, result ->
-            result?.copy(
-                positive = isTryConditionPositive(
-                    threshold = userThreshold,
-                    confidenceRate = result.confidenceRate,
-                    conditionFulfilledWithoutThreshold = result.conditionFulfilledWithoutThreshold,
-                )
-            )
+            result?.withTryThreshold(userThreshold)
         }
 
     val thresholdText: Flow<String> =
@@ -84,8 +80,9 @@ class TryImageConditionViewModel @Inject constructor(
     }
 
     fun startTry(context: Context, scenario: Scenario, screenCondition: ScreenCondition) {
-        viewModelScope.launch {
-            userThreshold.value = screenCondition.threshold
+        startJob?.cancel()
+        userThreshold.value = screenCondition.threshold
+        startJob = viewModelScope.launch {
 
             delay(500.milliseconds)
             smartProcessingRepository.tryScreenCondition(context, scenario, screenCondition)
@@ -93,6 +90,8 @@ class TryImageConditionViewModel @Inject constructor(
     }
 
     fun stopTry() {
+        startJob?.cancel()
+        startJob = null
         viewModelScope.launch {
             smartProcessingRepository.stopDetection()
         }
@@ -105,6 +104,12 @@ class TryImageConditionViewModel @Inject constructor(
 internal const val MIN_THRESHOLD = 0f
 /** The maximum threshold value selectable by the user. */
 internal const val MAX_THRESHOLD = 20f
+
+internal fun ScreenConditionResultUiState.withTryThreshold(threshold: Int): ScreenConditionResultUiState = copy(
+    positive = isValid && isTryConditionPositive(threshold, confidenceRate, conditionFulfilledWithoutThreshold)
+        .let { if (shouldBeDetected || conditionFulfilledWithoutThreshold != null) it else !it },
+    isDetected = isValid && confidenceRate >= 1.0 - threshold / 100.0,
+)
 
 internal fun isTryConditionPositive(
     threshold: Int,

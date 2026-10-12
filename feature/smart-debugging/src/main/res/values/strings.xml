@@ -15,7 +15,7 @@
 * You should have received a copy of the GNU General Public License
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Debug Report root dialog ================================================================================== -->
 
@@ -84,6 +84,17 @@
 
     <string name="overlay_title_results">Results</string>
     <string name="overlay_title_threshold">Threshold</string>
+    <!-- Chinese is provided; other locales use English until these new debug labels are localized. -->
+    <string name="overlay_target_found" tools:ignore="MissingTranslation">✓ Target found</string>
+    <string name="overlay_target_not_found" tools:ignore="MissingTranslation">× Not found</string>
+    <string name="overlay_waiting_frame" tools:ignore="MissingTranslation">Waiting for frame</string>
+    <string name="overlay_condition_fulfilled" tools:ignore="MissingTranslation">Condition met</string>
+    <string name="overlay_condition_not_fulfilled" tools:ignore="MissingTranslation">Condition not met</string>
+    <string name="overlay_range_legend" tools:ignore="MissingTranslation">White: search range</string>
+    <string name="overlay_color_preview" tools:ignore="MissingTranslation">Pixel preview</string>
+    <string name="overlay_color_values" tools:ignore="MissingTranslation">Target %1$s\nSample %2$s</string>
+    <string name="overlay_sample_hit" tools:ignore="MissingTranslation">Hit (%1$d, %2$d)</string>
+    <string name="overlay_sample_center" tools:ignore="MissingTranslation">Range centre (%1$d, %2$d)</string>
 
     <!-- Not translatable =========================================================================================
       - The following strings should be kept the same in all languages. No need to copy them in other language files.

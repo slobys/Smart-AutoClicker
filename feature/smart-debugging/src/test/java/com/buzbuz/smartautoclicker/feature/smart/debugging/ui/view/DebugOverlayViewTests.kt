@@ -5,6 +5,12 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Rect
+import android.graphics.Point
+import com.buzbuz.smartautoclicker.core.base.identifier.Identifier
+import com.buzbuz.smartautoclicker.core.domain.model.EXACT
+import com.buzbuz.smartautoclicker.core.domain.model.IN_AREA
+import com.buzbuz.smartautoclicker.core.domain.model.WHOLE_SCREEN
+import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
 import com.buzbuz.smartautoclicker.feature.smart.debugging.ui.dialog.live.uistate.ScreenConditionResultUiState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -21,6 +27,120 @@ import org.robolectric.annotation.GraphicsMode
 @Config(sdk = [29], qualifiers = "mdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class DebugOverlayViewTests {
+
+    @Test fun fixedRangeRemainsVisibleBeforeFirstResultAndAfterMissAndClear() {
+        val area = Rect(30, 40, 130, 120)
+        val view = view().apply { setConditions(listOf(image(area))) }
+        val initial = draw(view)
+        assertTrue(initial.sameAs(draw(view)))
+        assertTrue(hasColor(initial, Color.WHITE))
+        assertTrue(hasColor(initial, Color.BLACK))
+        assertInteriorTransparent(initial, area)
+        view.setResults(listOf(result(Rect(), false)))
+        assertTrue(initial.sameAs(draw(view)))
+        view.clear()
+        assertTrue(initial.sameAs(draw(view)))
+        view.setConditions(emptyList())
+        assertTrue(paintedBounds(draw(view)).isEmpty)
+    }
+
+    @Test fun movingHitDoesNotMoveTheConfiguredSearchRange() {
+        val area = Rect(20, 20, 150, 150)
+        val view = view().apply { setConditions(listOf(image(area))) }
+        val baseline = draw(view)
+        listOf(Rect(40, 40, 50, 50), Rect(90, 95, 100, 105)).forEach { hit ->
+            view.setResults(listOf(result(hit)))
+            val rendered = draw(view)
+            assertEquals(baseline.getPixel(19, 40), rendered.getPixel(19, 40))
+            assertEquals(Color.GREEN, rendered.getPixel(hit.left - 1, hit.top))
+            assertInteriorTransparent(rendered, hit)
+        }
+    }
+
+    @Test fun onePixelColorUsesVisibleRingWithTransparentSamplingPixel() {
+        val point = Point(70, 80)
+        val area = Rect(70, 80, 71, 81)
+        val view = view().apply { setConditions(listOf(color(area))) }
+        val initial = draw(view)
+        assertTrue(paintedBounds(initial).width() >= 16)
+        assertTrue(hasColor(initial, Color.WHITE))
+        assertInteriorTransparent(initial, area)
+        view.setResults(listOf(result(Rect()).copy(samplePoint = point)))
+        val matched = draw(view)
+        assertTrue(hasColor(matched, Color.GREEN))
+        assertInteriorTransparent(matched, area)
+        assertInteriorTransparent(initial, Rect(67, 77, 74, 84))
+        assertInteriorTransparent(matched, Rect(67, 77, 74, 84))
+    }
+
+    @Test fun areaColorDoesNotDrawItsOwnRingIntoPixelsBeingRecognized() {
+        val area = Rect(30, 30, 130, 130)
+        val view = view().apply {
+            setConditions(listOf(color(area).copy(findInArea = true)))
+            setResults(listOf(result(Rect()).copy(samplePoint = Point(80, 80))))
+        }
+        assertInteriorTransparent(draw(view), area)
+        assertTrue(hasColor(draw(view), Color.WHITE))
+    }
+
+    @Test fun overlappingConfiguredRangesNeverPaintInsideEachOther() {
+        val first = Rect(30, 30, 100, 100)
+        val second = Rect(60, 60, 140, 140)
+        val view = view().apply { setConditions(listOf(color(first), color(second))) }
+        listOf(first, second).forEach { assertInteriorTransparent(draw(view), it) }
+    }
+
+    @Test fun anotherConditionHitCannotPaintIntoColorArea() {
+        val area = Rect(30, 30, 130, 130)
+        val view = view().apply {
+            setConditions(listOf(color(area)))
+            setResults(listOf(result(Rect(70, 70, 80, 80))))
+        }
+        assertInteriorTransparent(draw(view), area)
+    }
+
+    @Test fun matchColorIsIndependentFromAnInvertedConditionBeingFulfilled() {
+        val area = Rect(30, 30, 60, 60)
+        assertBorder(render(listOf(result(area).copy(positive = false, isDetected = true))), area, Color.GREEN)
+        assertBorder(render(listOf(result(area).copy(positive = true, isDetected = false))), area, Color.RED)
+    }
+
+    @Test fun imageSearchModesDoNotConfuseTemplatePositionAndSearchRange() {
+        val template = Rect(20, 20, 40, 40)
+        val search = Rect(50, 50, 150, 150)
+        assertEquals(template, image(template).toDetectionRange().area)
+        assertEquals(search, image(template).copy(detectionType = IN_AREA, detectionArea = search).toDetectionRange().area)
+        assertEquals(null, image(template).copy(detectionType = WHOLE_SCREEN).toDetectionRange().area)
+        val original = Rect(template)
+        val range = image(template).toDetectionRange()
+        range.area!!.inset(10, 10)
+        assertEquals(original, template)
+    }
+
+    @Test fun wholeScreenSearchBoundarySurvivesRotationAndHasNoInteriorFill() {
+        val view = view().apply { setConditions(listOf(image(Rect(20, 20, 40, 40)).copy(detectionType = WHOLE_SCREEN))) }
+        listOf(180 to 320, 320 to 180).forEach { (w, h) ->
+            view.layout(0, 0, w, h)
+            val bitmap = draw(view, w, h)
+            assertFalse(paintedBounds(bitmap).isEmpty)
+            assertInteriorTransparent(bitmap, Rect(4, 4, w - 4, h - 4))
+        }
+    }
+
+    private fun image(area: Rect) = ScreenCondition.Image(Identifier(databaseId = 1), Identifier(databaseId = 1),
+        "Image", 20, true, 0, "template", area, EXACT)
+
+    private fun color(area: Rect) = ScreenCondition.Color(Identifier(databaseId = 1), Identifier(databaseId = 1),
+        "Color", 20, true, 0, Color.BLUE, area)
+
+    private fun hasColor(bitmap: Bitmap, color: Int): Boolean =
+        (0 until bitmap.height).any { y -> (0 until bitmap.width).any { x -> bitmap.getPixel(x, y) == color } }
+
+    private fun assertInteriorTransparent(bitmap: Bitmap, area: Rect) {
+        for (y in area.top until area.bottom) for (x in area.left until area.right) {
+            assertEquals("Range content at $x,$y", Color.TRANSPARENT, bitmap.getPixel(x, y))
+        }
+    }
 
     @Test fun positiveResultHasTwoPixelOutsideBorderWithoutTwentyPixelMargin() {
         val area = Rect(50, 60, 90, 80)

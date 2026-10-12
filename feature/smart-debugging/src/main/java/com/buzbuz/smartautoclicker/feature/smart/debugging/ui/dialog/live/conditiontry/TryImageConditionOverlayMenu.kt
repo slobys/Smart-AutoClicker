@@ -20,6 +20,9 @@ import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
+import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -68,13 +71,24 @@ class TryImageConditionOverlayMenu(
             }
         }
 
+        val color = imageCondition as? ScreenCondition.Color
+        viewBinding.colorPreviewPanel.isVisible = color != null
+        if (color != null) {
+            viewBinding.targetColor.background = swatch(color.color)
+            viewBinding.colorValues.text = context.getString(R.string.overlay_color_values,
+                color.color.toHexColor(), "—")
+        }
+
         return viewBinding.root
     }
 
-    override fun onCreateOverlayView(): View = DebugOverlayView(context)
+    override fun onCreateOverlayView(): View = DebugOverlayView(context).apply {
+        setConditions(listOf(imageCondition))
+    }
 
     override fun onStart() {
         super.onStart()
+        (screenOverlayView as? DebugOverlayView)?.setConditions(listOf(imageCondition))
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.displayResults.collect(::updateDetectionResults) }
@@ -86,6 +100,8 @@ class TryImageConditionOverlayMenu(
     }
 
     override fun onStop() {
+        viewBinding.colorPreview.setPreview(null)
+        (screenOverlayView as? DebugOverlayView)?.apply { clear(); setConditions(emptyList()) }
         viewModel.stopTry()
         onNewThresholdSelected(viewModel.getSelectedThreshold())
     }
@@ -112,6 +128,35 @@ class TryImageConditionOverlayMenu(
 
     private fun updateDetectionResults(results: ScreenConditionResultUiState?) {
         (screenOverlayView as? DebugOverlayView)?.setResults(results?.let { listOf(it) } ?: emptyList())
-        viewBinding.valueResult.text = results?.resultText
+        viewBinding.valueResult.text = results?.resultText ?: "—"
+        viewBinding.detectionStatus.setText(when (results?.isDetected) {
+            true -> R.string.overlay_target_found
+            false -> R.string.overlay_target_not_found
+            null -> R.string.overlay_waiting_frame
+        })
+        viewBinding.conditionStatus.setText(when (results?.positive) {
+            true -> R.string.overlay_condition_fulfilled
+            false -> R.string.overlay_condition_not_fulfilled
+            null -> R.string.overlay_range_legend
+        })
+        val color = imageCondition as? ScreenCondition.Color ?: return
+        val preview = results?.colorPreview
+        viewBinding.colorPreview.setPreview(preview)
+        viewBinding.currentColor.background = swatch(preview?.color ?: Color.TRANSPARENT)
+        viewBinding.colorValues.text = context.getString(R.string.overlay_color_values,
+            color.color.toHexColor(), preview?.color?.toHexColor() ?: "—")
+        viewBinding.samplePosition.text = preview?.let {
+            context.getString(if (color.findInArea && results?.isDetected == true && results.samplePoint != null)
+                R.string.overlay_sample_hit else R.string.overlay_sample_center,
+                it.point.x, it.point.y)
+        } ?: context.getString(R.string.overlay_waiting_frame)
+    }
+
+    private fun swatch(color: Int) = GradientDrawable().apply {
+        setColor(color)
+        setStroke(context.resources.displayMetrics.density.toInt().coerceAtLeast(1), Color.WHITE)
+        cornerRadius = 3 * context.resources.displayMetrics.density
     }
 }
+
+private fun Int.toHexColor(): String = String.format(java.util.Locale.ROOT, "#%06X", this and 0xFFFFFF)

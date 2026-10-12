@@ -285,6 +285,7 @@ internal class SmartProcessingRepositoryImpl @Inject constructor(
             counters = elementTry.counters,
             liveDebugging = true,
             generateReport = false,
+            colorPreviewEnabled = elementTry is ScreenConditionTry && elementTry.condition is ScreenCondition.Color,
         )
     }
 

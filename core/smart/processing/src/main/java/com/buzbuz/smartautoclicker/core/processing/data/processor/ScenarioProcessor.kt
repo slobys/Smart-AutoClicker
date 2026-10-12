@@ -66,6 +66,7 @@ internal class ScenarioProcessor(
     unblockWorkaroundEnabled: Boolean = false,
     private val onStopRequested: () -> Unit,
     private val progressListener: SmartProcessingListener?,
+    colorPreviewEnabled: Boolean = false,
     screenEventConfirmationHits: Int = 1,
     screenEventConfirmationWindow: Int = 3,
     private val singleFrameConfidenceMargin: Double = 0.005,
@@ -107,6 +108,7 @@ internal class ScenarioProcessor(
         scalingManager = scalingManager,
         bitmapSupplier = bitmapSupplier,
         progressListener = progressListener,
+        colorPreviewFrame = { if (colorPreviewEnabled) activeScreenFrame else null },
     )
     /** Execute the detected event actions. */
     private val actionExecutor = ActionExecutor(

@@ -17,6 +17,8 @@
 package com.buzbuz.smartautoclicker.feature.smart.debugging.ui.dialog.live.uistate.mapping
 
 import android.graphics.Rect
+import android.graphics.Point
+import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
 import com.buzbuz.smartautoclicker.core.smart.debugging.domain.model.live.DebugLiveEventConditionResult
 import com.buzbuz.smartautoclicker.core.smart.debugging.domain.model.live.DebugLiveEventOccurrence
 import com.buzbuz.smartautoclicker.core.smart.debugging.utils.formatDebugConfidenceRate
@@ -33,4 +35,9 @@ internal fun DebugLiveEventConditionResult.Screen.toConditionUiState(): ScreenCo
         confidenceRate = confidenceRate,
         resultText = confidenceRate.formatDebugConfidenceRate(),
         conditionFulfilledWithoutThreshold = numberComparisonFulfilled,
+        isDetected = isDetected,
+        shouldBeDetected = condition.shouldBeDetected,
+        samplePoint = if (condition is ScreenCondition.Color) detectedPoint?.let(::Point) else null,
+        colorPreview = colorPreview,
+        isValid = errorReason == null,
     )

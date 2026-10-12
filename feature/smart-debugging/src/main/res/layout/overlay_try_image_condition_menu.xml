@@ -63,10 +63,11 @@
 
             </LinearLayout>
 
-            <androidx.constraintlayout.widget.ConstraintLayout
+            <LinearLayout
                 android:id="@+id/layout_result"
                 android:layout_width="275dp"
-                android:layout_height="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
                 android:layout_marginStart="@dimen/margin_horizontal_small"
                 android:layout_marginEnd="@dimen/margin_horizontal_mini"
                 android:layout_marginTop="@dimen/margin_vertical_large"
@@ -76,83 +77,77 @@
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent">
 
-                <TextView
-                    android:id="@+id/title_result"
-                    style="@style/AppTheme.TextAppearance.Overlay.Default"
-                    android:layout_width="0dp"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="@dimen/margin_horizontal_mini"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toStartOf="@id/divider"
-                    app:layout_constraintTop_toTopOf="parent"
-                    android:maxLines="1"
-                    android:gravity="center"
-                    android:textColor="@color/textTitle"
-                    android:text="@string/overlay_title_results"/>
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:id="@+id/title_result"
+                            style="@style/AppTheme.TextAppearance.Overlay.Default"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:textColor="@color/textTitle"
+                            android:text="@string/overlay_title_results" />
+                        <TextView
+                            android:id="@+id/value_result"
+                            style="@style/AppTheme.TextAppearance.Overlay.Big"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:maxLines="1"
+                            android:textColor="@color/textTitle"
+                            tools:text="98.01 %" />
+                    </LinearLayout>
+                    <View android:layout_width="1dp" android:layout_height="56dp"
+                        android:background="@color/overlayMenuButtons" />
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:id="@+id/title_threshold"
+                            style="@style/AppTheme.TextAppearance.Overlay.Default"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:textColor="@color/textTitle"
+                            android:text="@string/overlay_title_threshold" />
+                        <TextView
+                            android:id="@+id/value_threshold"
+                            style="@style/AppTheme.TextAppearance.Overlay.Big"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:maxLines="1"
+                            android:textColor="@color/textTitle"
+                            tools:text="80.00 %" />
+                    </LinearLayout>
+                </LinearLayout>
 
-                <TextView
-                    android:id="@+id/value_result"
-                    style="@style/AppTheme.TextAppearance.Overlay.Big"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="@dimen/margin_horizontal_mini"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toStartOf="@id/divider"
-                    app:layout_constraintTop_toBottomOf="@+id/title_result"
-                    app:layout_constraintBottom_toTopOf="@id/slider_threshold"
-                    android:maxLines="1"
-                    android:gravity="center"
-                    android:textColor="@color/textTitle"
-                    tools:text="80.99%"/>
-
-                <com.google.android.material.divider.MaterialDivider
-                    android:id="@+id/divider"
-                    style="@style/AppTheme.Widget.Divider.Vertical"
-                    android:layout_width="1dp"
-                    android:layout_height="0dp"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toTopOf="@id/slider_threshold"/>
-
-                <TextView
-                    android:id="@+id/title_threshold"
-                    style="@style/AppTheme.TextAppearance.Overlay.Default"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="@dimen/margin_horizontal_mini"
-                    app:layout_constraintStart_toEndOf="@id/divider"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    android:maxLines="1"
-                    android:gravity="center"
-                    android:textColor="@color/textTitle"
-                    android:text="@string/overlay_title_threshold"/>
-
-                <TextView
-                    android:id="@+id/value_threshold"
-                    style="@style/AppTheme.TextAppearance.Overlay.Big"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="@dimen/margin_horizontal_mini"
-                    app:layout_constraintStart_toEndOf="@id/divider"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/title_threshold"
-                    app:layout_constraintBottom_toTopOf="@id/slider_threshold"
-                    android:maxLines="1"
-                    android:gravity="center"
-                    android:textColor="@color/textTitle"
-                    tools:text="100%"/>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical">
+                    <TextView android:id="@+id/detection_status"
+                        android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                        android:textColor="@color/textTitle" android:textStyle="bold" android:textSize="14sp"
+                        android:text="@string/overlay_waiting_frame" />
+                    <TextView android:id="@+id/condition_status"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:textColor="@color/textTitle" android:textSize="12sp"
+                        android:text="@string/overlay_range_legend" />
+                </LinearLayout>
 
                 <com.google.android.material.slider.Slider
                     android:id="@+id/slider_threshold"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/margin_vertical_small"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/divider"
-                    app:layout_constraintBottom_toBottomOf="parent"
                     app:thumbHeight="32dp"
                     app:trackHeight="12dp"
                     app:trackColor="@color/overlayMenuButtons"
@@ -162,7 +157,32 @@
                     tools:valueFrom="0"
                     tools:valueTo="20"/>
 
-            </androidx.constraintlayout.widget.ConstraintLayout>
+                <LinearLayout android:id="@+id/color_preview_panel"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical" android:visibility="gone">
+                    <com.buzbuz.smartautoclicker.feature.smart.debugging.ui.view.ColorSamplePreviewView
+                        android:id="@+id/color_preview" android:layout_width="64dp" android:layout_height="64dp"
+                        android:contentDescription="@string/overlay_color_preview" />
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:layout_marginStart="8dp" android:orientation="vertical">
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                            android:orientation="horizontal" android:gravity="center_vertical">
+                            <View android:id="@+id/target_color" android:layout_width="16dp" android:layout_height="16dp" />
+                            <View android:id="@+id/current_color" android:layout_width="16dp" android:layout_height="16dp"
+                                android:layout_marginStart="6dp" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp" android:textSize="12sp" android:textColor="@color/textTitle"
+                                android:text="@string/overlay_color_preview" />
+                        </LinearLayout>
+                        <TextView android:id="@+id/color_values" android:layout_width="match_parent"
+                            android:layout_height="wrap_content" android:textSize="12sp" android:textColor="@color/textTitle" />
+                        <TextView android:id="@+id/sample_position" android:layout_width="match_parent"
+                            android:layout_height="wrap_content" android:maxLines="1" android:ellipsize="end"
+                            android:textSize="12sp" android:textColor="@color/textTitle" />
+                    </LinearLayout>
+                </LinearLayout>
+
+            </LinearLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

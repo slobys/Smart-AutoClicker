@@ -46,7 +46,52 @@ A5C7E766A038A3C0187F8334D9B9B043081702090B267154123C27DDE3587842
 
 本轮没有自动覆盖安装当前模拟器上的应用，没有修改手机或模拟器中的脚本数据，也没有发布新的正式版。
 
-## 修改文件
+## 固定范围与颜色放大预览（2026-10-12，后续优化）
+
+针对细结果框不易看清的问题，单条件测试和屏幕事件测试增加独立的范围层：
+
+- 白色细线、黑色对比描边、加重的四角用于显示**原来配置的选区**，内部不填充。未命中、等待第一帧或结果超时清空时，选区仍然显示。
+- 图片按原位置、指定区域或全屏三种搜索设置显示对应范围，不把模板原位置误当作全屏搜索的范围。全屏边界在屏幕最外侧几个像素内显示，避免完全落在屏幕外；数据中的区域不变。
+- 命中位置与固定范围分开。实际结果矩形仍是外侧 2 物理像素细框，无额外 20 像素留白；红绿表达找到目标与否，面板另用文字显示“已命中／未命中”和“条件满足／条件未满足”。数字读取成功但比较不成立、目标消失条件，不再混为同一种状态。
+- 单像素颜色用中心透明的高对比圆环。区域颜色检测始终保留白色范围框，区域内不绘制取样圆环或其他结果边框，以免标记颜色进入下一帧区域识别；具体采样像素在工具栏放大窗标出。
+- 颜色单条件测试增加最近邻像素放大窗、目标／采样色块、RGB 十六进制值和采样坐标。区域找色成功时显示实际命中像素；未命中及覆盖率模式显示范围中心，明确标注“范围中心”，不伪造命中点。中心像素仅供查看，区域覆盖率判断仍沿用原算法。
+- 预览只在单个颜色条件的测试会话启用，从处理器正在识别的同一帧同步复制最多 25×25 像素。没有额外截图循环，不持有、回收或篡改录屏器的借用 Bitmap。普通脚本、事件测试、图片、文字、数字不生成这份预览。
+- 退出测试清除预览；在 500 毫秒启动等待期间退出，也会取消尚未启动的测试。结果面板仍按工具栏位置向屏幕内展开。
+
+本轮没有新增运行依赖、数据库迁移，没有改保存的条件选区、模板、阈值、路线或四种识别算法。改动包括：
+
+- `feature/smart-debugging/.../ui/view/DebugOverlayView.kt`：固定范围、结果层、颜色空心标记与区域内像素保护。
+- `feature/smart-debugging/.../ui/view/ColorSamplePreviewView.kt`：独立像素放大窗，中心标记不盖采样像素。
+- `feature/smart-debugging/.../conditiontry/TryImageConditionOverlayMenu.kt`、`TryImageConditionViewModel.kt`：状态文案、预览绑定与启动／停止生命周期。
+- `feature/smart-debugging/.../eventtry/TryEventOverlayMenu.kt`：事件测试的固定范围初始化及清理。
+- `feature/smart-debugging/.../uistate/ScreenConditionResultUiState.kt`、`mapping/ImageConditionResultUiStateMapping.kt`：把检测状态、条件状态、采样点和预览分开传递。
+- `feature/smart-debugging/src/main/res/layout/overlay_try_image_condition_menu.xml`、`values/strings.xml`、`values-zh-rCN/strings.xml`：紧凑结果布局及中英文状态。
+- `core/smart/processing/.../domain/model/ColorSamplePreview.kt`、`ProcessedConditionResult.kt`：小块像素副本及可选预览字段。
+- `core/smart/processing/.../data/processor/ConditionsVerifier.kt`、`ScenarioProcessor.kt`、`data/DetectorEngine.kt`、`domain/SmartProcessingRepositoryImpl.kt`：仅在颜色条件测试启用同帧预览。
+- `core/smart/debugging/.../domain/model/live/DebugLiveImageConditionResult.kt`、`engine/DebugEngine.kt`：传递采样点／预览／无效状态，不再把颜色命中点当成整块选区重新居中；修正奇数尺寸结果少一像素的问题。
+- 对应的范围绘制、像素预览、预览链路、结果几何、阈值语义、测试生命周期和面板布局回归测试，以及本文。
+
+悬浮窗仍可能出现在系统录屏里，不能宣称完全排除了悬浮窗影响。工具栏和放大窗请放在检测目标之外；眼睛按钮可隐藏屏幕标记。自动化验证不等于手机或游戏动态场景实测。
+
+本轮新增 32 项回归测试，完整结果为 141 个 JVM 测试套件、1,350 项测试，失败、错误和跳过均为 0。覆盖固定范围在等待／未命中时保留、区域与命中位置分离、单像素圆环中心透明、重叠区域像素保护、三种图片搜索模式、奇数尺寸及原点结果、预览边缘裁切／像素所有权／同帧传递、停止与替换待启动测试，以及带颜色预览的贴边与旋转布局。
+
+最终完整构建通过。应用、smart-debugging、processing、debugging 四个模块 Lint 均为 0 错误，警告数分别为 16、6、1、0；应用及 smart-debugging 没有新增警告。四种架构及通用 Debug APK 构建通过，通用包 v2 签名校验通过。
+
+请使用蓝色图标独立测试包 `Klickr-fixed-range-color-preview-20261012-universal-debug.apk`，包名 `com.buzbuz.smartautoclicker.debug`，版本仍为 `4.0.5.25`（1250000）。不要与同一天的 `thin-result-border` 包混淆。SHA-256：
+
+```text
+E3F335AE163E67DD969D3BD17E30E40D815001144D6C8AAF2B2EF3EA92B0FA38
+```
+
+另外使用 Robolectric 原生绘制加载真实生产布局，填入 `98.01 %`／`80.00 %`、命中状态和 RGB 值，检查文字不被裁切，并目检导出的颜色与非颜色面板。该检查不是手机截图或游戏实测。本轮未自动安装覆盖模拟器应用，也未发布新的正式版。
+
+完整构建与静态检查使用：
+
+```powershell
+.\scripts\build-windows.ps1 -Tasks 'testFDroidDebugUnitTest',':smartautoclicker:assembleFDroidDebug',':smartautoclicker:lintFDroidDebug',':feature:smart-debugging:lintFDroidDebug',':core:smart:processing:lintFDroidDebug',':core:smart:debugging:lintFDroidDebug'
+```
+
+## 早期面板修改文件
 
 - `core/common/overlays/.../menu/OverlayMenu.kt`：窗口尺寸变化后的边界校正、右侧贴边保持、零坐标恢复，以及供子类重测尺寸的入口。
 - `feature/smart-debugging/.../live/SidePanelOverlayMenu.kt`：条件和事件测试共用的左右方向布局。

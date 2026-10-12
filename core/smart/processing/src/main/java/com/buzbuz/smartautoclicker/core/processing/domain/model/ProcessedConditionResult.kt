@@ -47,6 +47,7 @@ sealed class ProcessedConditionResult {
         val numberDetected: Double? = null,
         val numberComparisonFulfilled: Boolean? = null,
         override val errorReason: String? = null,
+        val colorPreview: ColorSamplePreview? = null,
     ) : ProcessedConditionResult()
 
     /**

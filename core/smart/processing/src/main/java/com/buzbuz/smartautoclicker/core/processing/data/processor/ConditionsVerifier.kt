@@ -36,6 +36,7 @@ import com.buzbuz.smartautoclicker.core.processing.data.scaling.ScalingManager
 import com.buzbuz.smartautoclicker.core.processing.data.scaling.ScreenConditionScalingInfo
 import com.buzbuz.smartautoclicker.core.processing.domain.SmartProcessingListener
 import com.buzbuz.smartautoclicker.core.processing.domain.model.ProcessedConditionResult
+import com.buzbuz.smartautoclicker.core.processing.domain.model.copyColorSamplePreview
 
 import kotlinx.coroutines.yield
 
@@ -49,6 +50,7 @@ internal class ConditionsVerifier(
     private val scalingManager: ScalingManager,
     private val bitmapSupplier: suspend (String, Int, Int) -> Bitmap?,
     private val progressListener: SmartProcessingListener? = null,
+    private val colorPreviewFrame: () -> Bitmap? = { null },
 ) {
 
     /** Raw detector results reusable only while processing the current captured frame. */
@@ -200,6 +202,10 @@ internal class ConditionsVerifier(
             confidenceRate = detectionResult.confidenceRate,
             position = scalingManager.scaleUpDetectionResult(detectionResult.position),
             size = scalingManager.scaleUpDetectionResult(detectionResult.size),
+            colorPreview = copyColorSamplePreview(
+                colorPreviewFrame(), conditionScalingInfo.detectionArea,
+                detectionResult.position.takeIf { detectionResult.isDetected },
+            ),
         )
 
         progressListener?.onScreenConditionProcessingCompleted(result)

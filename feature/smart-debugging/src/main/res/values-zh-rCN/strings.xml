@@ -30,6 +30,16 @@
     <string name="item_event_state_header_trigger">触发事件</string>
     <string name="overlay_title_results">结果</string>
     <string name="overlay_title_threshold">阈值</string>
+    <string name="overlay_target_found">✓ 已命中</string>
+    <string name="overlay_target_not_found">× 未命中</string>
+    <string name="overlay_waiting_frame">等待画面</string>
+    <string name="overlay_condition_fulfilled">条件满足</string>
+    <string name="overlay_condition_not_fulfilled">条件未满足</string>
+    <string name="overlay_range_legend">白框：检测范围</string>
+    <string name="overlay_color_preview">像素放大</string>
+    <string name="overlay_color_values">目标 %1$s\n采样 %2$s</string>
+    <string name="overlay_sample_hit">命中点 (%1$d, %2$d)</string>
+    <string name="overlay_sample_center">范围中心 (%1$d, %2$d)</string>
 
     <string name="dialog_overlay_title_timeline_filters">时间轴筛选</string>
     <string name="field_debug_filter_image_events_title">图像事件</string>

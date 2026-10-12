@@ -17,6 +17,8 @@
 package com.buzbuz.smartautoclicker.core.smart.debugging.domain.model.live
 
 import android.graphics.Rect
+import android.graphics.Point
+import com.buzbuz.smartautoclicker.core.processing.domain.model.ColorSamplePreview
 import com.buzbuz.smartautoclicker.core.domain.model.condition.Condition
 import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
 import com.buzbuz.smartautoclicker.core.domain.model.condition.TriggerCondition
@@ -44,6 +46,9 @@ sealed interface DebugLiveEventConditionResult {
         val detectionArea: Rect?,
         val numberDetected: Double? = null,
         val numberComparisonFulfilled: Boolean? = null,
+        val detectedPoint: Point? = null,
+        val colorPreview: ColorSamplePreview? = null,
+        val errorReason: String? = null,
     ) : DebugLiveEventConditionResult
 
     data class Trigger(

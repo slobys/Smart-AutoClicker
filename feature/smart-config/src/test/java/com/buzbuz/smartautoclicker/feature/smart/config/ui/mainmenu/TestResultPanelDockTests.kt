@@ -146,9 +146,23 @@ class TestResultPanelDockTests {
         assertEquals(SidePanelOverlayMenu::class.java, TryEventOverlayMenu::class.java.superclass)
     }
 
-    private fun open(event: Boolean, position: Point): TestMenu {
+    @Test fun colorPreviewRemainsInsideScreenWhenDockedAtBottomAndAfterRotation() {
+        val menu = open(event = false, position = Point(1919, 1079), color = true)
+        assertDock(menu, left = false)
+        assertOnScreen(menu)
+        val preview = menu.root.findViewById<View>(DebugR.id.color_preview)
+        assertTrue(preview.width > 0 && preview.height > 0)
+        saved[Configuration.ORIENTATION_PORTRAIT] = Point(899, 1599)
+        config = config.copy(sizePx = Point(900, 1600), orientation = Configuration.ORIENTATION_PORTRAIT)
+        menu.rotate()
+        idle()
+        assertDock(menu, left = false)
+        assertOnScreen(menu)
+    }
+
+    private fun open(event: Boolean, position: Point, color: Boolean = false): TestMenu {
         saved[config.orientation] = position
-        return TestMenu(event).also { menu ->
+        return TestMenu(event, color).also { menu ->
             opened += menu
             // Creation is module-internal; exercise it with real feature XML from this consumer's test suite.
             menu.javaClass.methods.single { it.name.startsWith("create") && it.parameterCount == 2 }
@@ -193,7 +207,7 @@ class TestResultPanelDockTests {
 
     private fun idle() = shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(2))
 
-    private class TestMenu(private val event: Boolean) : SidePanelOverlayMenu() {
+    private class TestMenu(private val event: Boolean, private val color: Boolean) : SidePanelOverlayMenu() {
         lateinit var root: ViewGroup
         public override val resultPanel: View get() = root.findViewById(if (event) DebugR.id.layout_debug else DebugR.id.layout_result)
         val params get() = root.layoutParams as WindowManager.LayoutParams
@@ -203,6 +217,9 @@ class TestResultPanelDockTests {
             LayoutInflater.from(ContextThemeWrapper(context, R.style.ScenarioConfigTheme)).inflate(
                 if (event) DebugR.layout.overlay_try_event_menu else DebugR.layout.overlay_try_image_condition_menu,
                 null,
-            ).let { it as ViewGroup }.also { root = it }
+            ).let { it as ViewGroup }.also {
+                root = it
+                if (color) root.findViewById<View>(DebugR.id.color_preview_panel).visibility = View.VISIBLE
+            }
     }
 }

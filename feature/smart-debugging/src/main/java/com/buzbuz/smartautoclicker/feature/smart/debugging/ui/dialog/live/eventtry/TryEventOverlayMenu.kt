@@ -64,7 +64,9 @@ class TryEventOverlayMenu(
         return viewBinding.root
     }
 
-    override fun onCreateOverlayView(): View = DebugOverlayView(context)
+    override fun onCreateOverlayView(): View = DebugOverlayView(context).apply {
+        setConditions(triedElement.conditions)
+    }
 
     override fun onStart() {
         super.onStart()
@@ -78,6 +80,7 @@ class TryEventOverlayMenu(
     }
 
     override fun onStop() {
+        (screenOverlayView as? DebugOverlayView)?.apply { clear(); setConditions(emptyList()) }
         viewModel.stopTry()
     }
 
