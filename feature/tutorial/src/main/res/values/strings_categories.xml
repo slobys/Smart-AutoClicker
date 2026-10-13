@@ -34,7 +34,7 @@
 
     <!-- Root category is never displayed as an item, so no need for short description -->
     <string name="tutorial_category_root_name">Tutorials</string>
-    <string name="tutorial_category_root_desc_long">Klick\'r automation is based on what is displayed on your screen,
+    <string name="tutorial_category_root_desc_long">VisionClick automation is based on what is displayed on your screen,
         which is pretty different from your time-based regular autoclicker.\n\nLearn here how to use it.</string>
 
     <string name="tutorial_category_basics_name">Scenario Basics</string>
@@ -159,7 +159,7 @@
 
     <string name="tutorial_category_combine_event_name">Combine Events</string>
     <string name="tutorial_category_combine_event_desc_short">Use multiple events for complex logic control</string>
-    <string name="tutorial_category_combine_event_desc_long">Klick\'r lets you coordinate multiple Events to build
+    <string name="tutorial_category_combine_event_desc_long">VisionClick lets you coordinate multiple Events to build
         advanced automation flows. By controlling the order in which Events are evaluated and enabling or disabling
         them at runtime, you can create complex, multi-step Scenarios.\n\n Learn here how to combine Events effectively
         to take full control of your automation.</string>

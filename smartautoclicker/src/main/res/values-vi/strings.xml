@@ -70,7 +70,7 @@
     <string name="field_remove_ads">Xóa quảng cáo</string>
     <string name="field_troubleshooting">Khắc phục sự cố</string>
     <string name="dialog_condition_migration_title">Di chuyển</string>
-    <string name="message_condition_migration_desc">Định dạng hình ảnh của Klick\'r đã thay đổi và kịch bản của bạn cần được cập nhật. Quá trình này có thể mất vài phút tùy thuộc vào số lượng điều kiện cần chuyển đổi dữ liệu.</string>
+    <string name="message_condition_migration_desc">Định dạng hình ảnh của VisionClick đã thay đổi và kịch bản của bạn cần được cập nhật. Quá trình này có thể mất vài phút tùy thuộc vào số lượng điều kiện cần chuyển đổi dữ liệu.</string>
     <string name="message_condition_migration_count">%1$d Các điều kiện hình ảnh cần chuyển đổi dữ liệu.</string>
     <string name="message_condition_migration_success">Đã chuyển đổi dữ liệu tất cả điều kiện hình ảnh.</string>
     <string name="message_condition_migration_error">Một số điều kiện không thể chuyển đổi dữ liệu. Vui lòng kiểm tra lại các kịch bản của bạn.</string>

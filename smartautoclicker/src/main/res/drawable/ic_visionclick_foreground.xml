@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AdaptiveIconDrawable expands layers to 150% of the visible mask. 10.5% insets
+     compensate for the PNG's own transparent margin, so its frame reaches the mask
+     instead of exposing a second dark tile. The artwork itself is unchanged. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetLeft="10.5%" android:insetTop="10.5%"
+    android:insetRight="10.5%" android:insetBottom="10.5%">
+    <bitmap android:src="@drawable/visionclick_artwork" android:gravity="fill" android:filter="true" />
+</inset>

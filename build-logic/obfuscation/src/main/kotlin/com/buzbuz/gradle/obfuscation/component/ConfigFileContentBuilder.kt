@@ -19,6 +19,7 @@ package com.buzbuz.gradle.obfuscation.component
 internal class ConfigFileContentBuilder {
 
     var appId: String? = null
+    var sourceNamespace: String? = null
     var isRandomized: Boolean ? = null
     var obfuscatedComponents: Iterable<ObfuscatedComponent>? = null
 
@@ -33,7 +34,7 @@ internal class ConfigFileContentBuilder {
     private fun buildHeader(): String =
         """
             // THIS FILE IS GENERATED, DO NOT MODIFY
-            package ${appId!!}
+            package ${sourceNamespace ?: appId!!}
             
             import android.content.ComponentName
             

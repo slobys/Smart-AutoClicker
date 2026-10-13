@@ -22,7 +22,7 @@
     <string name="message_game_tutorial_text_conditions_still_text">Cliquez sur le bouton lorsqu\'il affiche \"Hello\", aussi vite que possible</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_1">Bienvenue dans le tutoriel sur les conditions de texte !\n\nIci, vous allez
-        essayer de battre le meilleur score d\'un jeu avec l\'aide de Klick\'r.\n\nVous pouvez d\'abord l\'essayer en appuyant sur
+        essayer de battre le meilleur score d\'un jeu avec l\'aide de VisionClick.\n\nVous pouvez d\'abord l\'essayer en appuyant sur
         Démarrer le jeu, ou passer directement à la configuration du Scénario.</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_2">Comme pour toute autre Condition d\'écran, nous devons d\'abord créer un
@@ -42,7 +42,7 @@
         texte à détecter. \"Hello\" utilise l\'alphabet latin, vous pouvez donc conserver la valeur par défaut, mais n\'oubliez pas de
         le changer lors de la détection de textes non latins.</string>
 
-    <string name="message_tutorial_text_conditions_still_text_step_7">Maintenant, nous devons indiquer à Klick\'r où rechercher le
+    <string name="message_tutorial_text_conditions_still_text_step_7">Maintenant, nous devons indiquer à VisionClick où rechercher le
         texte.\n\nAppuyez sur le sélecteur de zone de détection pour la définir.</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_8">Positionnez et redimensionnez le rectangle de détection pour qu\'il couvre le
@@ -100,7 +100,7 @@
 
     <string name="message_tutorial_text_conditions_still_text_step_21">Ça tourne mais rien ne se passe ?\n\nC\'est normal, il ne cliquera que
         lorsque le bouton affiche \"Hello\", vous vous souvenez ? Tout en laissant le scénario actif, appuyez sur le bouton
-        Démarrer le jeu et regardez Klick\'r le battre pour vous !</string>
+        Démarrer le jeu et regardez VisionClick le battre pour vous !</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_22">Félicitations !\n\nVous savez maintenant détecter un texte affiché à l\'écran.\nJetez un œil aux autres tutoriels pour découvrir d\'autres cas d\'usage.</string>
 </resources>

@@ -74,7 +74,7 @@ jobs:
         for apk in smartautoclicker/build/outputs/apk/fDroid/release/*.apk; do
           abi="${apk##*-fDroid-}"
           abi="${abi%-release.apk}"
-          cp "$apk" "release-assets/Klickr-${version}-${abi}-release.apk"
+          cp "$apk" "release-assets/VisionClick-${version}-${abi}-release.apk"
         done
         (cd release-assets && sha256sum *.apk > SHA256SUMS.txt)
 
@@ -86,7 +86,7 @@ jobs:
       run: |
         set -euo pipefail
 
-        release_title="Klick'r ${RELEASE_TAG}"
+        release_title="VisionClick ${RELEASE_TAG}"
         notes_file="documentation/releases/${RELEASE_TAG}.md"
         notes_args=(--generate-notes)
         if [[ -f "$notes_file" ]]; then
@@ -149,4 +149,5 @@ jobs:
         gh release edit "$RELEASE_TAG" \
           --title "$release_title" \
           --draft=false \
-          --prerelease=false
+          --prerelease=false \
+          --latest

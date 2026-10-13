@@ -25,7 +25,7 @@
     <string name="message_tutorial_combine_conditions_operator_and_step_1">新しいルールです！ゲームに2つのターゲットが登場します。青いターゲットをタップしますが、青と赤の両方が同時に画面に表示されているときだけです。
         \n\nゲームを起動して、自分でついていけるか試してみましょう。</string>
 
-    <string name="message_tutorial_combine_conditions_operator_and_step_2">手動で対応するには難しすぎるので、Klick\'rを使いましょう。
+    <string name="message_tutorial_combine_conditions_operator_and_step_2">手動で対応するには難しすぎるので、VisionClickを使いましょう。
         \n\nシナリオ設定メニューを開き、新しいスクリーンイベントを作成して、ゲームのターゲットに対する条件を追加していきます。</string>
 
     <string name="message_tutorial_combine_conditions_operator_and_step_3">ターゲットごとに1つの条件が必要です。まず青いターゲットから始めましょう。

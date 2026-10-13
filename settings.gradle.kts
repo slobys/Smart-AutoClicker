@@ -24,7 +24,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Klick'r"
+rootProject.name = "VisionClick"
 
 includeBuild("build-logic")
 

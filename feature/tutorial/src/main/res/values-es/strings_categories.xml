@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
 * Copyright (C) 2026 Kevin Buzeau
 *
@@ -18,7 +18,7 @@
 <resources>
 
     <string name="tutorial_category_root_name">Tutoriales</string>
-    <string name="tutorial_category_root_desc_long">La automatización de Klick\'r se basa en lo que se muestra en tu
+    <string name="tutorial_category_root_desc_long">La automatización de VisionClick se basa en lo que se muestra en tu
         pantalla, lo que es bastante diferente de un autoclicker convencional basado en tiempo. Aprende aquí cómo
         usarlo.</string>
 
@@ -77,7 +77,7 @@
 
     <string name="tutorial_category_combine_event_name">Combinar Eventos</string>
     <string name="tutorial_category_combine_event_desc_short">Coordina múltiples Eventos para un control avanzado</string>
-    <string name="tutorial_category_combine_event_desc_long">Klick\'r te permite coordinar múltiples Eventos para crear
+    <string name="tutorial_category_combine_event_desc_long">VisionClick te permite coordinar múltiples Eventos para crear
         flujos de automatización avanzados. Controlando el orden de evaluación y activando o desactivando Eventos en
         tiempo de ejecución, puedes crear Escenarios complejos de varios pasos.\n\n Aprende aquí a combinar Eventos
         eficazmente para tener el control total de tu automatización.</string>

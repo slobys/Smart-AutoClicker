@@ -99,7 +99,7 @@
 
     <string name="dialog_condition_migration_title">移轉</string>
 
-    <string name="message_condition_migration_desc">Klick\'r 的影像格式已變更，您的情境須予更新。所需時間視待移轉條件數量而定，可能需數分鐘。</string>
+    <string name="message_condition_migration_desc">VisionClick 的影像格式已變更，您的情境須予更新。所需時間視待移轉條件數量而定，可能需數分鐘。</string>
     <string name="message_condition_migration_count">待移轉影像條件：%1$d 項</string>
     <string name="message_condition_migration_success">全部影像條件已移轉完成。</string>
     <string name="message_condition_migration_error">部分條件未能移轉，請檢查您的情境。</string>

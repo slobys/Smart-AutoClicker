@@ -24,10 +24,10 @@
     <string name="message_tutorial_screen_condition_moving_target_step_1">Welcome to your second tutorial!\n\nThis time, the target is randomly
         moving on the screen.\n\nFirst, start the game and check if you can win by yourself.</string>
 
-    <string name="message_tutorial_screen_condition_moving_target_step_3">Difficult, isn\'t it?\nLet\'s use Klick\'r to beat it!\n\n
+    <string name="message_tutorial_screen_condition_moving_target_step_3">Difficult, isn\'t it?\nLet\'s use VisionClick to beat it!\n\n
         Click on the Scenario configuration icon to start editing your new scenario.</string>
 
-    <string name="message_tutorial_screen_condition_moving_target_step_4">A Scenario is the root structure of Klick\'r automation.\n\n
+    <string name="message_tutorial_screen_condition_moving_target_step_4">A Scenario is the root structure of VisionClick automation.\n\n
         It contains the general detection settings and a list of Events describing what will be executed when running
         your Scenario.\n\nClick on the create event button to create your first Event.</string>
 
@@ -60,7 +60,7 @@
         crop it as close as possible to him in order to ease the image detection.</string>
 
     <string name="message_tutorial_screen_condition_moving_target_step_11">Your Condition image is now captured!\n\nBy default, the detection type
-        is set to \"Exact\", meaning Klick\'r will only look for it at the capture position. Since the blue character
+        is set to \"Exact\", meaning VisionClick will only look for it at the capture position. Since the blue character
         can appear anywhere on the game area, select \"In Area\".</string>
     <string name="message_tutorial_screen_condition_moving_target_step_secondary_11">The third option is \"Whole screen\". The bigger than detection
         is, the slower the detection will be. Keep that in mind when your Scenario execution timing is important.</string>

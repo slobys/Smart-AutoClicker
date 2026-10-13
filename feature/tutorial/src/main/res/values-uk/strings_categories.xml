@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
 * Copyright (C) 2026 Kevin Buzeau
 *
@@ -18,7 +18,7 @@
 <resources>
 
     <string name="tutorial_category_root_name">Навчальні матеріали</string>
-    <string name="tutorial_category_root_desc_long">Автоматизація Klick\'r базується на тому, що відображається на
+    <string name="tutorial_category_root_desc_long">Автоматизація VisionClick базується на тому, що відображається на
         вашому екрані, що суттєво відрізняється від звичайного автоклікера, заснованого на часі. Дізнайтеся тут, як
         ним користуватися.</string>
 
@@ -76,7 +76,7 @@
 
     <string name="tutorial_category_combine_event_name">Комбінування подій</string>
     <string name="tutorial_category_combine_event_desc_short">Координуйте кілька Подій для складної логіки</string>
-    <string name="tutorial_category_combine_event_desc_long">Klick\'r дозволяє координувати кілька Подій для створення
+    <string name="tutorial_category_combine_event_desc_long">VisionClick дозволяє координувати кілька Подій для створення
         складних потоків автоматизації. Контролюючи порядок оцінювання та вмикаючи або вимикаючи Події під час
         виконання, ви можете створювати комплексні багатоетапні Сценарії.\n\n Дізнайтеся тут, як ефективно
         комбінувати Події для повного контролю над автоматизацією.</string>

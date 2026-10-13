@@ -120,7 +120,7 @@
     <string name="field_scenario_fps_dropdown_item_second">Giây</string>
     <string name="field_scenario_fps_dropdown_item_minute">Phút</string>
     <string name="field_scenario_quality_title">Độ phân giải phát hiện</string>
-    <string name="field_scenario_quality_description">Để tăng tốc độ nhận diện, Klick\'r sẽ giảm độ phân giải của hình ảnh trước khi quét.\n\nNếu bạn tăng độ phân giải, quá trình nhận diện sẽ chậm hơn nhưng chính xác hơn. Nếu giảm độ phân giải, tốc độ nhận diện sẽ nhanh hơn nhưng kém chính xác hơn. Hãy cân đối giữa độ phân giải nhận diện và ngưỡng điều kiện để kịch bản hoạt động tối ưu nhất!</string>
+    <string name="field_scenario_quality_description">Để tăng tốc độ nhận diện, VisionClick sẽ giảm độ phân giải của hình ảnh trước khi quét.\n\nNếu bạn tăng độ phân giải, quá trình nhận diện sẽ chậm hơn nhưng chính xác hơn. Nếu giảm độ phân giải, tốc độ nhận diện sẽ nhanh hơn nhưng kém chính xác hơn. Hãy cân đối giữa độ phân giải nhận diện và ngưỡng điều kiện để kịch bản hoạt động tối ưu nhất!</string>
     <string name="field_counters_title">Bộ đếm</string>
     <string name="field_counters_desc_empty">Không có bộ đếm nào được xác định</string>
     <string name="field_counters_desc">%1$d Đã xác định bộ đếm</string>
@@ -319,8 +319,8 @@
     <string name="warning_dialog_message_close_without_saving">Bạn có những sửa đổi chưa được lưu, bạn có muốn loại bỏ chúng không?</string>
     <string name="warning_dialog_message_delete">Bạn sắp xóa mục này, bạn có chắc chắn không?</string>
     <string name="error_dialog_message_scenario_saving">Không thể lưu kịch bản của bạn do lỗi nội bộ.\nBạn có muốn sửa đổi nó hoặc hủy tất cả các sửa đổi của mình không?</string>
-    <string name="error_dialog_message_error_native_lib">Klick\'r được cài đặt không chính xác và không thể bắt đầu phát hiện.\n\nNếu bạn đã cài đặt nó từ một cửa hàng ứng dụng hợp pháp, vui lòng liên hệ với chúng tôi trên GitHub vì nó sẽ giúp chúng tôi khắc phục vấn đề này.</string>
-    <string name="error_dialog_message_screen_capture_unsupported">Klick\'r không thể đọc màn hình thiết bị của bạn do giới hạn trình điều khiển.\n\nThật không may, đây là một hạn chế về phần cứng không thể khắc phục được. Vui lòng liên hệ với chúng tôi trên GitHub kèm theo kiểu thiết bị của bạn để chúng tôi có thể theo dõi các thiết bị bị ảnh hưởng.</string>
+    <string name="error_dialog_message_error_native_lib">VisionClick được cài đặt không chính xác và không thể bắt đầu phát hiện.\n\nNếu bạn đã cài đặt nó từ một cửa hàng ứng dụng hợp pháp, vui lòng liên hệ với chúng tôi trên GitHub vì nó sẽ giúp chúng tôi khắc phục vấn đề này.</string>
+    <string name="error_dialog_message_screen_capture_unsupported">VisionClick không thể đọc màn hình thiết bị của bạn do giới hạn trình điều khiển.\n\nThật không may, đây là một hạn chế về phần cứng không thể khắc phục được. Vui lòng liên hệ với chúng tôi trên GitHub kèm theo kiểu thiết bị của bạn để chúng tôi có thể theo dõi các thiết bị bị ảnh hưởng.</string>
     <string name="content_desc_event_state">Trạng thái của Sự kiện</string>
     <string name="content_desc_conditions_count">Số lượng điều kiện trong Sự kiện này</string>
     <string name="content_desc_actions_count">Số hành động trong Sự kiện này</string>

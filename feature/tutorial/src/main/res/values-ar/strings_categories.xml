@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
 * Copyright (C) 2026 Kevin Buzeau
 *
@@ -18,7 +18,7 @@
 <resources>
 
     <string name="tutorial_category_root_name">الدروس التعليمية</string>
-    <string name="tutorial_category_root_desc_long">تعتمد أتمتة Klick\'r على ما يُعرض على شاشتك، وهو ما يختلف تماماً
+    <string name="tutorial_category_root_desc_long">تعتمد أتمتة VisionClick على ما يُعرض على شاشتك، وهو ما يختلف تماماً
         عن برامج النقر التلقائي العادية المعتمدة على الوقت. تعلّم هنا كيفية استخدامها.</string>
 
     <string name="tutorial_category_basics_name">أساسيات السيناريو</string>
@@ -71,7 +71,7 @@
 
     <string name="tutorial_category_combine_event_name">دمج الأحداث</string>
     <string name="tutorial_category_combine_event_desc_short">نسّق أحداثاً متعددة للتحكم في منطق معقد</string>
-    <string name="tutorial_category_combine_event_desc_long">يتيح لك Klick\'r تنسيق أحداث متعددة لبناء تدفقات أتمتة
+    <string name="tutorial_category_combine_event_desc_long">يتيح لك VisionClick تنسيق أحداث متعددة لبناء تدفقات أتمتة
         متقدمة. من خلال التحكم في ترتيب تقييم الأحداث وتفعيلها أو تعطيلها أثناء التشغيل، يمكنك إنشاء سيناريوهات
         معقدة متعددة الخطوات.\n\n تعلّم هنا كيفية دمج الأحداث بفاعلية للتحكم الكامل في عملية الأتمتة.</string>
 

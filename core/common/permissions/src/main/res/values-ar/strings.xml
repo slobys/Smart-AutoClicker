@@ -30,16 +30,16 @@
       - Messages.
       - Views handles any length here, so no limitations.
       -->
-    <string name="message_permission_desc_overlay">إذن التراكب مطلوب لإظهار Klick\'r
+    <string name="message_permission_desc_overlay">إذن التراكب مطلوب لإظهار VisionClick
         واجهة على التطبيقات التي تريد أتمتتها، مما يسمح لك بتكوين السيناريو الخاص بك دون توقف
         التطبيق الآخر.</string>
-    <string name="message_permission_desc_accessibility">يسمح إذن خدمة الوصول بـ Klick\'r
+    <string name="message_permission_desc_accessibility">يسمح إذن خدمة الوصول بـ VisionClick
         لأداء الإيماءات على شاشة جهازك. هذا الإذن مطلوب من أجل تنفيذ النقرات والضربات الشديدة
         التي ستقوم بإنشائها في سيناريوهات التنفيذ التلقائي الخاصة بك.\n\nلا يتم جمع أي بيانات عن طريق النقر\'r\n\nلمنح إمكانية الوصول
         إذن الخدمة، انقر على الزر أدناه.</string>
     <string name="message_permission_desc_notification">اختياري: يعرض الإشعار أثناء تشغيل التطبيق بالترتيب
         للعودة بسهولة إلى شاشة اختيار السيناريو.</string>
-    <string name="message_permission_mandatory_denied">هذا الإذن إلزامي لـ Klick\'r.
+    <string name="message_permission_mandatory_denied">هذا الإذن إلزامي لـ VisionClick.
         لن يتمكن من العمل بشكل صحيح بدونه.</string>
 
     <!--

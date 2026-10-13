@@ -59,7 +59,7 @@ class ServiceNotificationController(
         Log.i(TAG, "Create notification")
 
         nightModeReceiver.register(context)
-        notificationActionReceiver.register(context)
+        notificationActionReceiver.register(context, exported = false)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             notificationManager.createNotificationChannel(createKlickrServiceNotificationChannel(context))

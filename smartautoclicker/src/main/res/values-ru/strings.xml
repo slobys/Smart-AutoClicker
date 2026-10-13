@@ -151,7 +151,7 @@
     <!-- Legacy condition migration dialog  ======================================================================== -->
     <string name="dialog_condition_migration_title">Миграция</string>
 
-    <string name="message_condition_migration_desc">Формат изображений Klick\'r изменился, и ваш сценарий необходимо обновить.         Это может занять несколько минут в зависимости от количества условий для миграции.</string>
+    <string name="message_condition_migration_desc">Формат изображений VisionClick изменился, и ваш сценарий необходимо обновить.         Это может занять несколько минут в зависимости от количества условий для миграции.</string>
     <string name="message_condition_migration_count">%1$d Изображение Условия для миграции.</string>
     <string name="message_condition_migration_success">Все условия изображения перенесены.</string>
     <string name="message_condition_migration_error">Некоторые условия не удалось перенести. Пожалуйста, проверьте свои сценарии.</string>

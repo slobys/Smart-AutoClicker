@@ -21,7 +21,7 @@
     <string name="item_desc_tutorial_text_conditions_moving_text">學習如何建立事件以點擊隨機移動的文字</string>
     <string name="message_game_tutorial_text_conditions_moving_text">只點擊「Hello」按鈕，盡可能快</string>
 
-    <string name="message_tutorial_text_conditions_moving_text_step_1">歡迎來到移動文字條件教學！\n\n在這裡，你將借助Klick\'r挑戰
+    <string name="message_tutorial_text_conditions_moving_text_step_1">歡迎來到移動文字條件教學！\n\n在這裡，你將借助VisionClick挑戰
         遊戲的最高分。\n\n你可以先按下開始遊戲來試玩，
         也可以直接進行場景設定。</string>
 
@@ -42,7 +42,7 @@
         「Hello」使用拉丁字母，因此這裡可以保持預設值，但偵測非拉丁文字時不要忘記
         更改它。</string>
 
-    <string name="message_tutorial_text_conditions_moving_text_step_7">現在我們需要告訴Klick\'r在哪裡搜尋
+    <string name="message_tutorial_text_conditions_moving_text_step_7">現在我們需要告訴VisionClick在哪裡搜尋
         文字。\n\n點擊偵測區域選擇器來定義它。</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_8">調整偵測矩形的位置和大小，使其
@@ -91,7 +91,7 @@
 
     <string name="message_tutorial_text_conditions_moving_text_step_22">正在運行但什麼都沒發生？\n\n這是正常的，它只會在
         按鈕顯示「Hello」時才點擊，還記得嗎？在保持場景運行的同時，按下開始遊戲按鈕
-        然後看Klick\'r替你贏得比賽！</string>
+        然後看VisionClick替你贏得比賽！</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_23">恭喜！\n\n你現在知道如何偵測螢幕上顯示的移動文字了。
         \n查看其他教學以發現更多使用案例。</string>

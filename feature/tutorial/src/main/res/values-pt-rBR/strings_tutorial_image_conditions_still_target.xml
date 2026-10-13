@@ -22,12 +22,12 @@
     <string name="message_game_tutorial_screen_condition_still_target">Clique no botão azul o mais rápido possível</string>
 
     <string name="message_tutorial_screen_condition_still_target_step_1">Bem-vindo ao seu primeiro tutorial!\n\nAqui, você tentará superar a maior
-        pontuação de um jogo com a ajuda do Klick\'r.\n\nPrimeiro, inicie o jogo e tente vencer por si mesmo.</string>
+        pontuação de um jogo com a ajuda do VisionClick.\n\nPrimeiro, inicie o jogo e tente vencer por si mesmo.</string>
 
-    <string name="message_tutorial_screen_condition_still_target_step_3">Difícil, não é?\nVamos usar o Klick\'r para superá-lo!\n\n
+    <string name="message_tutorial_screen_condition_still_target_step_3">Difícil, não é?\nVamos usar o VisionClick para superá-lo!\n\n
         Clique no ícone de configuração de cenário para começar a editar seu novo cenário.</string>
 
-    <string name="message_tutorial_screen_condition_still_target_step_4">Um cenário é a estrutura básica da automação Klick\'r.\n\n
+    <string name="message_tutorial_screen_condition_still_target_step_4">Um cenário é a estrutura básica da automação VisionClick.\n\n
         Ele contém as configurações gerais de detecção e uma lista de Eventos descrevendo o que será executado ao
         rodar seu Cenário.\n\nClique no botão de criar evento para criar seu primeiro evento.</string>
 
@@ -105,8 +105,8 @@
     
     <string name="message_tutorial_screen_condition_still_target_step_23">Está rodando, mas nada está acontecendo?\n\nIsso é normal, ele só vai clicar
             quando o personagem azul estiver visível, lembra? Enquanto mantém o cenário em execução, pressione o botão
-            iniciar jogo e observe como o Klick\'r vai vencer para você!</string>
+            iniciar jogo e observe como o VisionClick vai vencer para você!</string>
     
-    <string name="message_tutorial_screen_condition_still_target_step_24">Parabéns!\n\nAgora você conhece o básico do Klick\'r, mas nem todos os casos de
+    <string name="message_tutorial_screen_condition_still_target_step_24">Parabéns!\n\nAgora você conhece o básico do VisionClick, mas nem todos os casos de
             uso serão tão simples quanto este jogo.\nDê uma olhada no próximo tutorial para aprender a rastrear um alvo móvel</string>
 </resources>

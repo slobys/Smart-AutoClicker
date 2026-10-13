@@ -20,7 +20,7 @@
     <string name="item_title_tutorial_color_conditions">Phát hiện màu cho một pixel nhất định</string>
     <string name="item_desc_tutorial_color_conditions">Tìm hiểu cách phát hiện một màu cụ thể trên màn hình và nhấp vào khi nó xuất hiện</string>
     <string name="message_game_tutorial_color_conditions">Bấm vào nút màu xanh càng nhanh càng tốt</string>
-    <string name="message_tutorial_color_conditions_step_1">Chào mừng bạn đến với hướng dẫn về Sự kiện màu sắc!\n\nTại đây, bạn sẽ cố gắng vượt qua số điểm cao của trò chơi với sự trợ giúp của Klick\'r.\n\nTrước tiên, bạn có thể thử bằng cách nhấn bắt đầu trò chơi hoặc trực tiếp tiến hành cài đặt Kịch bản.</string>
+    <string name="message_tutorial_color_conditions_step_1">Chào mừng bạn đến với hướng dẫn về Sự kiện màu sắc!\n\nTại đây, bạn sẽ cố gắng vượt qua số điểm cao của trò chơi với sự trợ giúp của VisionClick.\n\nTrước tiên, bạn có thể thử bằng cách nhấn bắt đầu trò chơi hoặc trực tiếp tiến hành cài đặt Kịch bản.</string>
     <string name="message_tutorial_color_conditions_step_2">Cũng giống như bất kỳ Sự kiện màn hình nào khác, trước tiên chúng ta cần tạo Sự kiện màn hình.</string>
     <string name="message_tutorial_color_conditions_step_3">Bây giờ, hãy nhấp vào trường Sự kiện để mở danh sách Sự kiện.</string>
     <string name="message_tutorial_color_conditions_step_4">Chúng ta cần tạo Điều kiện. Bấm vào Tạo.</string>
@@ -44,7 +44,7 @@
     <string name="message_tutorial_color_conditions_step_18">Sự kiện của bạn hiện có Sự kiện và Hành động, có nghĩa là Sự kiện biết phải thực hiện điều gì và khi nào thực hiện.\n\nNhấp vào nút lưu để đăng ký và quay lại hộp thoại Kịch bản.</string>
     <string name="message_tutorial_color_conditions_step_19">Yêu cầu duy nhất đối với Kịch bản là phải có ít nhất một Sự kiện.\nVì Sự kiện của chúng tôi đã đề cập đến cách giành chiến thắng trong trò chơi nên chúng tôi không cần bất cứ điều gì khác.\n\nNhấp vào nút lưu để lưu Kịch bản trong cơ sở dữ liệu và đóng hộp thoại cấu hình.</string>
     <string name="message_tutorial_color_conditions_step_20">Như bạn có thể thấy, nút phát hiện có sẵn, nghĩa là Kịch bản của bạn hợp lệ và có thể được sử dụng để phát hiện.\n\nClick vào nó để bắt đầu phát hiện.</string>
-    <string name="message_tutorial_color_conditions_step_21">Nó đang chơi nhưng không có gì xảy ra?\n\nĐiều đó là bình thường, nó sẽ chỉ nhấp khi nhìn thấy nút màu xanh, nhớ không? Trong khi vẫn tiếp tục kịch bản, hãy nhấn nút bắt đầu trò chơi và chỉ cần xem Klick\'r sẽ đánh bại nó giúp bạn!</string>
-    <string name="message_tutorial_color_conditions_step_22">Chúc mừng!\n\nBây giờ bạn đã biết những điều cơ bản về Klick\'r, nhưng không phải tất cả các trường hợp sử dụng đều đơn giản như trò chơi này.\nHãy xem các hướng dẫn khác để khám phá thêm các trường hợp sử dụng.</string>
+    <string name="message_tutorial_color_conditions_step_21">Nó đang chơi nhưng không có gì xảy ra?\n\nĐiều đó là bình thường, nó sẽ chỉ nhấp khi nhìn thấy nút màu xanh, nhớ không? Trong khi vẫn tiếp tục kịch bản, hãy nhấn nút bắt đầu trò chơi và chỉ cần xem VisionClick sẽ đánh bại nó giúp bạn!</string>
+    <string name="message_tutorial_color_conditions_step_22">Chúc mừng!\n\nBây giờ bạn đã biết những điều cơ bản về VisionClick, nhưng không phải tất cả các trường hợp sử dụng đều đơn giản như trò chơi này.\nHãy xem các hướng dẫn khác để khám phá thêm các trường hợp sử dụng.</string>
 
 </resources>

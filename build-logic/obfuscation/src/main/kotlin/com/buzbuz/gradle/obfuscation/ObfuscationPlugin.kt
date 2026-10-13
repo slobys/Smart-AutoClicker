@@ -124,11 +124,12 @@ class ObfuscationPlugin : Plugin<Project> {
     private fun createComponentConfigFile(target: Project, originalAppId: String, components: List<ObfuscatedComponent>) {
         val configFileContent = ConfigFileContentBuilder().apply {
             appId = originalAppId
+            sourceNamespace = configPluginExtension.sourceNamespace
             obfuscatedComponents  = components
             isRandomized = configPluginExtension.randomize
         }.build()
 
-        val path = "${target.layout.projectDirectory}/src/main/java/${originalAppId.replace('.', '/')}"
+        val path = "${target.layout.projectDirectory}/src/main/java/${configPluginExtension.sourceNamespace.replace('.', '/')}"
         val configFile = File(path, COMPONENT_CONFIG_FILE_NAME)
 
         target.logger.info("Create component config file at $path")

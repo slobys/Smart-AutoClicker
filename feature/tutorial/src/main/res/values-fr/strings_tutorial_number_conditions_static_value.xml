@@ -22,7 +22,7 @@
     <string name="message_game_tutorial_number_conditions_static_value">Cliquez uniquement quand la valeur dépasse 9000 !</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_1">Bienvenue dans le tutoriel sur la condition numérique !\n\nIci, vous allez
-        essayer de battre le record d\'un jeu avec l\'aide de Klick\'r.\n\nVous pouvez d\'abord l\'essayer en appuyant sur démarrer le jeu,
+        essayer de battre le record d\'un jeu avec l\'aide de VisionClick.\n\nVous pouvez d\'abord l\'essayer en appuyant sur démarrer le jeu,
         ou accéder directement à la configuration du Scénario.</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_2">Tout comme pour n\'importe quelle autre Condition d\'écran, nous devons d\'abord
@@ -49,7 +49,7 @@
     <string name="message_tutorial_number_conditions_static_value_step_9">Maintenant, vous devez saisir la valeur à comparer.
         Entrez simplement \"9000\" dans le champ valeur pour passer à l\'étape suivante du tutoriel.</string>
 
-    <string name="message_tutorial_number_conditions_static_value_step_10">Maintenant, nous devons indiquer à Klick\'r où chercher le
+    <string name="message_tutorial_number_conditions_static_value_step_10">Maintenant, nous devons indiquer à VisionClick où chercher le
         nombre.\n\nCliquez sur le sélecteur de zone de détection pour le définir</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_11">Positionnez et redimensionnez le rectangle de détection pour qu\'il couvre le
@@ -104,7 +104,7 @@
 
     <string name="message_tutorial_number_conditions_static_value_step_24">Il joue mais rien ne se passe ?\n\nC\'est normal, il ne cliquera que
         lorsque le bouton affiche un nombre supérieur à 9000, vous vous souvenez ? Tout en gardant le scénario en cours d\'exécution, appuyez sur le bouton démarrer le jeu
-        et regardez simplement Klick\'r le battre pour vous !</string>
+        et regardez simplement VisionClick le battre pour vous !</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_25">Félicitations !\n\nVous savez maintenant comment détecter un nombre affiché à l\'
         écran.\nJetez un œil aux autres tutoriels pour découvrir d\'autres cas d\'utilisation.</string>

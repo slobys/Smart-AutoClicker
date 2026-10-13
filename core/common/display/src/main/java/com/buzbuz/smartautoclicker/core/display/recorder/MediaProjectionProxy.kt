@@ -140,7 +140,7 @@ private const val GET_PROJECTION_RETRY_DELAY_MS = 500L
 private const val GET_PROJECTION_RETRY_MAX_COUNT = 10
 
 /** Name of the virtual display generating [Image]. */
-@VisibleForTesting internal const val VIRTUAL_DISPLAY_NAME = "Klickr"
+@VisibleForTesting internal const val VIRTUAL_DISPLAY_NAME = "VisionClick"
 
 /** Tag for logs. */
 private const val TAG = "MediaProjectionProxy"

@@ -22,7 +22,7 @@
     <string name="message_game_tutorial_text_conditions_still_text">Clique no botão quando ele exibir \"Hello\", o mais rápido possível</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_1">Bem-vindo ao tutorial de condições de texto!\n\nAqui você tentará
-        bater o recorde de pontuação de um jogo com a ajuda do Klick\'r.\n\nVocê pode experimentar primeiro pressionando
+        bater o recorde de pontuação de um jogo com a ajuda do VisionClick.\n\nVocê pode experimentar primeiro pressionando
         Iniciar jogo, ou ir direto para a configuração do Cenário.</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_2">Assim como qualquer outra Condição de tela, precisamos primeiro
@@ -42,7 +42,7 @@
         texto a detectar. \"Hello\" usa o alfabeto latino, então você pode manter o valor padrão, mas não se esqueça de
         alterá-lo ao detectar textos não latinos.</string>
 
-    <string name="message_tutorial_text_conditions_still_text_step_7">Agora precisamos informar ao Klick\'r onde procurar o
+    <string name="message_tutorial_text_conditions_still_text_step_7">Agora precisamos informar ao VisionClick onde procurar o
         texto.\n\nToque no seletor de área de detecção para defini-la.</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_8">Posicione e redimensione o retângulo de detecção para cobrir o
@@ -97,7 +97,7 @@
 
     <string name="message_tutorial_text_conditions_still_text_step_21">Está funcionando mas nada acontece?\n\nIsso é normal, ele só clicará
         quando o botão exibir \"Hello\", lembra? Enquanto mantém o cenário em execução, pressione o botão Iniciar jogo
-        e veja o Klick\'r vencê-lo por você!</string>
+        e veja o VisionClick vencê-lo por você!</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_22">Parabéns!\n\nAgora você sabe como detectar um texto exibido na tela.\nDê uma olhada nos outros tutoriais para descobrir mais casos de uso.</string>
 </resources>

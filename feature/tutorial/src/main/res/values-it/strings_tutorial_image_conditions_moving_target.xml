@@ -24,10 +24,10 @@
     <string name="message_tutorial_screen_condition_moving_target_step_1">Benvenuto al tuo secondo tutorial!\n\nQuesta volta, il bersaglio si muove casualmente
         sullo schermo.\n\nInizia prima il gioco e verifica se riesci a vincere da solo.</string>
 
-    <string name="message_tutorial_screen_condition_moving_target_step_3">Difficile, vero?\nUtilizziamo Klick\'r per batterlo!\n\n
+    <string name="message_tutorial_screen_condition_moving_target_step_3">Difficile, vero?\nUtilizziamo VisionClick per batterlo!\n\n
         Clicca sull\'icona di configurazione dello scenario per iniziare a modificare il tuo nuovo scenario.</string>
 
-    <string name="message_tutorial_screen_condition_moving_target_step_4">Uno Scenario è la struttura principale dell\'automazione di Klick\'r.\n\n
+    <string name="message_tutorial_screen_condition_moving_target_step_4">Uno Scenario è la struttura principale dell\'automazione di VisionClick.\n\n
         Contiene le impostazioni generali di rilevamento e un elenco di Eventi che descrivono cosa verrà eseguito quando si esegue il tuo
         Scenario.\n\nClicca sul pulsante crea evento per creare il tuo primo Evento.</string>
 
@@ -59,7 +59,7 @@
         più possibile vicino a lui per facilitare il rilevamento dell\'immagine.</string>
 
     <string name="message_tutorial_screen_condition_moving_target_step_11">La tua immagine di Condizione è ora catturata!\n\nPer impostazione predefinita, il tipo di
-        rilevamento è impostato su "Esatto", il che significa che Klick\'r lo cercherà solo nella posizione di acquisizione. Poiché il
+        rilevamento è impostato su "Esatto", il che significa che VisionClick lo cercherà solo nella posizione di acquisizione. Poiché il
         personaggio blu può apparire ovunque nell\'area di gioco, seleziona "In un\'area".</string>
     <string name="message_tutorial_screen_condition_moving_target_step_secondary_11">La terza opzione è "Tutto lo schermo". Più grande è la zona di rilevamento, più lento
         sarà il rilevamento. Tienilo presente quando la tempistica dell\'esecuzione dello Scenario è importante.</string>

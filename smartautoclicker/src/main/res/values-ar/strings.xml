@@ -161,7 +161,7 @@
     <!-- Legacy condition migration dialog  ======================================================================== -->
     <string name="dialog_condition_migration_title">الترحيل</string>
 
-    <string name="message_condition_migration_desc">تغير تنسيق صور Klick\'r ويحتاج السيناريو الخاص بك إلى تحديث. قد يستغرق هذا بضع دقائق حسب عدد الشروط المراد ترحيلها.</string>
+    <string name="message_condition_migration_desc">تغير تنسيق صور VisionClick ويحتاج السيناريو الخاص بك إلى تحديث. قد يستغرق هذا بضع دقائق حسب عدد الشروط المراد ترحيلها.</string>
     <string name="message_condition_migration_count">%1$d شروط صور للترحيل.</string>
     <string name="message_condition_migration_success">تم ترحيل جميع شروط الصور.</string>
     <string name="message_condition_migration_error">لم يتم ترحيل بعض الشروط. يرجى التحقق من السيناريوهات الخاصة بك.</string>

@@ -24,7 +24,7 @@
     <string name="message_tutorial_combine_conditions_not_visible_target_step_1">新しいルールです！青いターゲットは動かなくなりましたが、赤いターゲットが見えないときだけタップする必要があります。
         \n\nゲームを起動して、自分で勝てるか試してみましょう。</string>
 
-    <string name="message_tutorial_combine_conditions_not_visible_target_step_2">やはり手動では勝てそうにないので、Klick\'rを使いましょう。
+    <string name="message_tutorial_combine_conditions_not_visible_target_step_2">やはり手動では勝てそうにないので、VisionClickを使いましょう。
         \n\nシナリオ設定メニューを開き、新しいスクリーンイベントを作成して、ゲームのターゲットに対する条件を追加していきます。</string>
 
     <string name="message_tutorial_combine_conditions_not_visible_target_step_3">まず、赤いターゲットが画面に表示されていないことを確認する条件が必要です。

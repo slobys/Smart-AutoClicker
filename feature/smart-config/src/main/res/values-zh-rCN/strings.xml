@@ -182,8 +182,8 @@
     <string name="warning_dialog_message_close_without_saving">存在未保存的更改，是否放弃？</string>
 
     <string name="error_dialog_message_scenario_saving">由于内部错误，场景无法保存。要继续编辑还是放弃所有更改？</string>
-    <string name="error_dialog_message_error_native_lib">Klick\'r 安装错误，无法启动检测。\n\n如果您是从合法的应用程序商店安装的，请在 GitHub 上联系我们，这将有助于我们修复此问题。</string>
-    <string name="error_dialog_message_screen_capture_unsupported">由于图形驱动程序的限制，Klick\'r 无法读取您设备的屏幕。\n\n遗憾的是，这是一个硬件限制，无法绕过。请在 GitHub 上联系我们并提供您的设备型号，以便我们追踪受影响的设备。</string>
+    <string name="error_dialog_message_error_native_lib">VisionClick 安装错误，无法启动检测。\n\n如果您是从合法的应用程序商店安装的，请在 GitHub 上联系我们，这将有助于我们修复此问题。</string>
+    <string name="error_dialog_message_screen_capture_unsupported">由于图形驱动程序的限制，VisionClick 无法读取您设备的屏幕。\n\n遗憾的是，这是一个硬件限制，无法绕过。请在 GitHub 上联系我们并提供您的设备型号，以便我们追踪受影响的设备。</string>
 
     <!--
       - Section titles.
@@ -219,7 +219,7 @@
       - TextButton content.
       - Should be short and concise.
       -->
-    <string name="field_scenario_quality_description">为了加快检测速度，Klick\'r 会在检测前降低图像的分辨率。\n\n如果提高分辨率，检测会更慢，但更准确。如果降低分辨率，检测速度会更快，但准确性会降低。 找到检测分辨率和条件阈值之间的最佳比例，以获得最佳方案！</string>
+    <string name="field_scenario_quality_description">为了加快检测速度，VisionClick 会在检测前降低图像的分辨率。\n\n如果提高分辨率，检测会更慢，但更准确。如果降低分辨率，检测速度会更快，但准确性会降低。 找到检测分辨率和条件阈值之间的最佳比例，以获得最佳方案！</string>
 
     <!--
       - Text input fields labels and error messages.

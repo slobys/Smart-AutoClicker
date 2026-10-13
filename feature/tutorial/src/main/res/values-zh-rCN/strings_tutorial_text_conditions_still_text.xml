@@ -21,7 +21,7 @@
     <string name="item_desc_tutorial_text_conditions_still_text">学习如何检测屏幕上的特定文本并在其出现时点击</string>
     <string name="message_game_tutorial_text_conditions_still_text">当按钮显示 \"Hello\" 时，尽快点击它</string>
 
-    <string name="message_tutorial_text_conditions_still_text_step_1">欢迎来到文本条件教程！\n\n在这里，您将借助 Klick\'r 尝试打破一个
+    <string name="message_tutorial_text_conditions_still_text_step_1">欢迎来到文本条件教程！\n\n在这里，您将借助 VisionClick 尝试打破一个
         游戏的最高分。\n\n您可以先按下"开始游戏"体验一下，或直接进入场景配置。</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_2">与任何其他屏幕条件一样，我们首先需要创建一个屏幕事件。</string>
@@ -38,7 +38,7 @@
     <string name="message_tutorial_text_conditions_still_text_step_secondary_6">字母表字段定义要检测文本的书写系统。\"Hello\" 使用拉丁字母，
         因此可以保持默认值，但检测非拉丁文本时请记得更改它。</string>
 
-    <string name="message_tutorial_text_conditions_still_text_step_7">现在我们需要告诉 Klick\'r 在哪里搜索文本。\n\n
+    <string name="message_tutorial_text_conditions_still_text_step_7">现在我们需要告诉 VisionClick 在哪里搜索文本。\n\n
         点击检测区域选择器来定义它。</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_8">定位并调整检测矩形的大小以覆盖游戏按钮，因为 \"Hello\" 将在那里显示。
@@ -83,7 +83,7 @@
         点击它开始检测。</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_21">它在运行但什么都没发生？\n\n这是正常的，它只会在按钮显示 \"Hello\" 时点击，
-        还记得吗？在保持场景运行的同时，按下"开始游戏"按钮，看 Klick\'r 替您赢得游戏！</string>
+        还记得吗？在保持场景运行的同时，按下"开始游戏"按钮，看 VisionClick 替您赢得游戏！</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_22">恭喜！\n\n您现在已经学会了如何检测屏幕上显示的文本。\n查看其他教程以发现更多用例。</string>
 </resources>

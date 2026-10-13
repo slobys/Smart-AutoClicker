@@ -23,9 +23,9 @@
 
     <string name="message_tutorial_screen_condition_moving_target_step_1">歡迎來到你的第二個教學！\n\n這次，目標在螢幕上隨機移動。\n\n首先，開始遊戲並查看自己是否能夠贏得比賽。</string>
 
-    <string name="message_tutorial_screen_condition_moving_target_step_3">難度很大，不是嗎？\n讓我們使用Klick\'r來戰勝它！\n\n點擊場景配置圖標開始編輯你的新場景。</string>
+    <string name="message_tutorial_screen_condition_moving_target_step_3">難度很大，不是嗎？\n讓我們使用VisionClick來戰勝它！\n\n點擊場景配置圖標開始編輯你的新場景。</string>
 
-    <string name="message_tutorial_screen_condition_moving_target_step_4">場景是Klick\'r自動化的根結構。\n\n它包含了通用檢測設置和描述在運行你的場景時將執行的事件列表。\n\n點擊創建事件按鈕以創建你的第一個事件。</string>
+    <string name="message_tutorial_screen_condition_moving_target_step_4">場景是VisionClick自動化的根結構。\n\n它包含了通用檢測設置和描述在運行你的場景時將執行的事件列表。\n\n點擊創建事件按鈕以創建你的第一個事件。</string>
 
     <string name="message_tutorial_screen_condition_moving_target_step_5">事件描述了在滿足特定條件時執行的操作（點擊、滑動等）。\n\n為了打贏這個遊戲，我們需要檢測藍色角色在螢幕上移動時的位置。\n\n單擊條件欄位，顯示條件列表。</string>
 
@@ -42,7 +42,7 @@
     <string name="message_tutorial_screen_condition_moving_target_step_10">對於這個遊戲，感興趣的部分是藍色角色，所以裁剪你的截圖以只獲取他。\n\n你可以捏合截圖進行縮放，以獲得更好的裁剪精度。</string>
     <string name="message_tutorial_screen_condition_moving_target_step_secondary_10">確保選擇器中的角色完整。也儘量將其裁剪得離他越近越好，以便簡化圖像檢測。</string>
 
-    <string name="message_tutorial_screen_condition_moving_target_step_11">你的條件圖像現在已經捕獲！\n\n默認情況下，檢測類型設置為「精確」，這意味著Klick\'r只會在捕獲位置查找它。由於藍色角色可以出現在遊戲區域的任何位置，請選擇「在區域內」。</string>
+    <string name="message_tutorial_screen_condition_moving_target_step_11">你的條件圖像現在已經捕獲！\n\n默認情況下，檢測類型設置為「精確」，這意味著VisionClick只會在捕獲位置查找它。由於藍色角色可以出現在遊戲區域的任何位置，請選擇「在區域內」。</string>
     <string name="message_tutorial_screen_condition_moving_target_step_secondary_11">第三個選項是「整個螢幕」。檢測區域越大，檢測速度越慢。當你的場景執行時間很重要時請記住這一點。</string>
 
     <string name="message_tutorial_screen_condition_moving_target_step_12">點擊區域選擇器以更改檢測區域。</string>

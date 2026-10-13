@@ -22,7 +22,7 @@
     <string name="message_game_tutorial_text_conditions_moving_text">Натискайте лише на кнопку \"Hello\" якомога швидше</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_1">Ласкаво просимо до навчання з умови рухомого тексту!\n\nТут ви
-        спробуєте побити рекорд гри за допомогою Klick\'r.\n\nСпочатку ви можете спробувати самостійно, натиснувши кнопку почати гру,
+        спробуєте побити рекорд гри за допомогою VisionClick.\n\nСпочатку ви можете спробувати самостійно, натиснувши кнопку почати гру,
         або відразу перейти до налаштування Сценарію.</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_2">Як і для будь-якої іншої Умови екрана, спочатку
@@ -42,7 +42,7 @@
         тексту для виявлення. «Hello» використовує латинський алфавіт, тому тут можна залишити значення за замовчуванням, але не забудьте
         змінити його при виявленні нелатинських текстів.</string>
 
-    <string name="message_tutorial_text_conditions_moving_text_step_7">Тепер нам потрібно вказати Klick\'r, де шукати
+    <string name="message_tutorial_text_conditions_moving_text_step_7">Тепер нам потрібно вказати VisionClick, де шукати
         текст.\n\nКлікніть на селектор зони виявлення, щоб визначити її.</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_8">Розташуйте та змініть розмір прямокутника виявлення так, щоб він
@@ -94,7 +94,7 @@
 
     <string name="message_tutorial_text_conditions_moving_text_step_22">Відтворюється, але нічого не відбувається?\n\nЦе нормально, він буде клікати лише
         коли кнопка показує «Hello», пам\'ятаєте? Не зупиняючи сценарій, натисніть кнопку почати гру
-        і просто спостерігайте, як Klick\'r перемагає за вас!</string>
+        і просто спостерігайте, як VisionClick перемагає за вас!</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_23">Вітаємо!\n\nТепер ви знаєте, як виявляти рухомий текст, що відображається на
         екрані.\nОзнайомтеся з іншими уроками, щоб дізнатися про інші сценарії використання.</string>

@@ -22,7 +22,7 @@
     <string name="message_game_tutorial_number_conditions_static_value">Click only when the value is over 9000!</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_1">Welcome to the number condition tutorial!\n\nHere, you will
-        try to beat the high score of a game with the help of Klick\'r.\n\nYou can first try it by pressing start game,
+        try to beat the high score of a game with the help of VisionClick.\n\nYou can first try it by pressing start game,
         or proceed to the Scenario configuration directly.</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_2">Just like any other Screen Condition, we need to create a
@@ -49,7 +49,7 @@
     <string name="message_tutorial_number_conditions_static_value_step_9">Now, you need to enter the value to compare with.
         Simply enter \"9000\" in the value field to proceed to the next tutorial step.</string>
 
-    <string name="message_tutorial_number_conditions_static_value_step_10">Now, we need to tell Klick\'r where to search for the
+    <string name="message_tutorial_number_conditions_static_value_step_10">Now, we need to tell VisionClick where to search for the
         number.\n\nClick on the detection area selector to define it</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_11">Position and resize the detection rectangle so it covers the
@@ -104,7 +104,7 @@
 
     <string name="message_tutorial_number_conditions_static_value_step_24">It\'s playing but nothing happens?\n\nThat\'s normal, it will click only
         when the button displays a number over 9000, remember? While keeping the scenario running, press the start game button
-        and just watch as Klick\'r will beat it for you!</string>
+        and just watch as VisionClick will beat it for you!</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_25">Congratulations!\n\nYou now know how to detect a number displayed on the
         screen.\nTake a look at the other tutorials to discover more use cases.</string>

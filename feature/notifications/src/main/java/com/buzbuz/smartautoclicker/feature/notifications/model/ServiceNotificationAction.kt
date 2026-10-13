@@ -102,7 +102,8 @@ internal fun ServiceNotificationAction.getPendingIntent(context: Context, appCom
             )
 
         is NotificationActionPendingIntent.Broadcast ->
-            PendingIntent.getBroadcast(context, 0, Intent(intent.action), PendingIntent.FLAG_IMMUTABLE)
+            // Both the original app and VisionClick may be installed and running.
+            PendingIntent.getBroadcast(context, 0, Intent(intent.action).setPackage(context.packageName), PendingIntent.FLAG_IMMUTABLE)
     }
 
 
@@ -118,10 +119,10 @@ private fun ServiceNotificationAction.getIntent(appComponentsProvider: AppCompon
 
 private fun ServiceNotificationAction.getBroadcastAction(): String =
     when (this) {
-        ServiceNotificationAction.Play -> "com.buzbuz.smartautoclicker.PLAY"
-        ServiceNotificationAction.Pause -> "com.buzbuz.smartautoclicker.PAUSE"
-        ServiceNotificationAction.Show -> "com.buzbuz.smartautoclicker.SHOW"
-        ServiceNotificationAction.Hide -> "com.buzbuz.smartautoclicker.HIDE"
-        ServiceNotificationAction.Stop -> "com.buzbuz.smartautoclicker.STOP"
+        ServiceNotificationAction.Play -> "com.slobys.visionclick.PLAY"
+        ServiceNotificationAction.Pause -> "com.slobys.visionclick.PAUSE"
+        ServiceNotificationAction.Show -> "com.slobys.visionclick.SHOW"
+        ServiceNotificationAction.Hide -> "com.slobys.visionclick.HIDE"
+        ServiceNotificationAction.Stop -> "com.slobys.visionclick.STOP"
         ServiceNotificationAction.Config -> throw IllegalArgumentException("This action doesn't use broadcasts")
     }

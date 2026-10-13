@@ -29,7 +29,7 @@
         vite possible. \n\nLancez le jeu et voyez comment vous vous en sortez.</string>
 
     <string name="message_tutorial_combine_conditions_operator_or_step_2">Trop rapide à gérer manuellement, alors
-        utilisons Klick\'r. \n\nOuvrez le menu de configuration du scénario, créez un nouvel Événement Écran et
+        utilisons VisionClick. \n\nOuvrez le menu de configuration du scénario, créez un nouvel Événement Écran et
         commencez à ajouter des conditions pour les cibles du jeu.</string>
 
     <string name="message_tutorial_combine_conditions_operator_or_step_3">Nous avons besoin d\'une condition par cible.
@@ -60,7 +60,7 @@
     <string name="message_tutorial_combine_conditions_operator_or_step_10">Nous voulons cliquer sur la cible qui a
         déclenché l\'événement. Sélectionnez le type de position « Sur condition ». Avec OU, une seule condition peut
         être détectée positivement à la fois, donc aucune condition spécifique n\'a besoin d\'être sélectionnée.
-        Klick\'r cliquera automatiquement à l\'emplacement de la condition qui a correspondu. \n\nUne fois terminé,
+        VisionClick cliquera automatiquement à l\'emplacement de la condition qui a correspondu. \n\nUne fois terminé,
         enregistrez le clic, puis votre événement et votre scénario, et revenez au jeu.</string>
 
     <string name="message_tutorial_combine_conditions_operator_or_step_11">Démarrez votre scénario et lancez le jeu
@@ -69,6 +69,6 @@
 
     <string name="message_tutorial_combine_conditions_operator_or_step_12">Félicitations ! Vous avez appris à utiliser
         l\'opérateur OU et l\'importance de la priorité des conditions. En plaçant la condition rouge en premier,
-        Klick\'r favorise toujours la cible à plus haute valeur quand les deux sont visibles en même temps.</string>
+        VisionClick favorise toujours la cible à plus haute valeur quand les deux sont visibles en même temps.</string>
 
 </resources>

@@ -22,7 +22,7 @@
     <string name="message_game_tutorial_text_conditions_moving_text">Clique apenas no botão \"Hello\", o mais rápido possível</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_1">Bem-vindo ao tutorial de Condição de texto em movimento!\n\nAqui você vai
-        tentar bater o recorde de um jogo com a ajuda do Klick\'r.\n\nVocê pode primeiro experimentá-lo pressionando iniciar jogo,
+        tentar bater o recorde de um jogo com a ajuda do VisionClick.\n\nVocê pode primeiro experimentá-lo pressionando iniciar jogo,
         ou ir diretamente para a configuração do Cenário.</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_2">Assim como qualquer outra Condição de tela, precisamos primeiro
@@ -42,7 +42,7 @@
         texto a detectar. \"Hello\" usa o alfabeto latino, então você pode manter o valor padrão aqui, mas não se esqueça de
         alterá-lo ao detectar textos não latinos.</string>
 
-    <string name="message_tutorial_text_conditions_moving_text_step_7">Agora precisamos dizer ao Klick\'r onde procurar o
+    <string name="message_tutorial_text_conditions_moving_text_step_7">Agora precisamos dizer ao VisionClick onde procurar o
         texto.\n\nClique no seletor de área de detecção para defini-la.</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_8">Posicione e redimensione o retângulo de detecção para que
@@ -95,7 +95,7 @@
 
     <string name="message_tutorial_text_conditions_moving_text_step_22">Está funcionando mas nada acontece?\n\nIsto é normal, ele só clicará
         quando o botão mostrar \"Hello\", lembra? Mantendo o cenário em execução, pressione o botão iniciar jogo
-        e observe como o Klick\'r vence por você!</string>
+        e observe como o VisionClick vence por você!</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_23">Parabéns!\n\nAgora você sabe como detectar um texto em movimento exibido na
         tela.\nDê uma olhada nos outros tutoriais para descobrir mais casos de uso.</string>

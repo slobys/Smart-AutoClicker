@@ -16,7 +16,7 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
-    <string name="tile_label_start_scenario">Запустить Klick\'r</string>
-    <string name="tile_label_stop_scenario">Остановить Klick\'r</string>
+    <string name="tile_label_start_scenario">Запустить VisionClick</string>
+    <string name="tile_label_stop_scenario">Остановить VisionClick</string>
     <string name="tile_subtext_unavailable">Сценарий не был определён</string>
 </resources>

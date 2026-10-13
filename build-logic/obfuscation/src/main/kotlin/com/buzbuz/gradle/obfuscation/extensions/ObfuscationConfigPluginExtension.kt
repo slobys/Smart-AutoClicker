@@ -30,13 +30,16 @@ abstract class ObfuscationConfigPluginExtension {
         private set
     internal lateinit var appNameRes: String
         private set
+    internal lateinit var sourceNamespace: String
+        private set
     internal var randomize: Boolean = false
         private set
 
     private var setupListener: (() -> Unit)? = null
 
-    fun setup(applicationId: String, appNameResId: String, shouldRandomize: Boolean) {
+    fun setup(applicationId: String, appNameResId: String, shouldRandomize: Boolean, sourceNamespace: String = applicationId) {
         originalApplicationId = applicationId
+        this.sourceNamespace = sourceNamespace
         appNameRes = appNameResId
         randomize = shouldRandomize
         setupListener?.invoke()

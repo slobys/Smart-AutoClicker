@@ -21,7 +21,7 @@
     <string name="item_desc_tutorial_text_conditions_still_text">画面上の特定のテキストを検出し、それが現れたときにクリックする方法を学ぶ</string>
     <string name="message_game_tutorial_text_conditions_still_text">ボタンが \"Hello\" と表示したら、できるだけ速くクリックしてください</string>
 
-    <string name="message_tutorial_text_conditions_still_text_step_1">テキスト条件チュートリアルへようこそ！\n\nここでは、Klick\'r の助けを借りて
+    <string name="message_tutorial_text_conditions_still_text_step_1">テキスト条件チュートリアルへようこそ！\n\nここでは、VisionClick の助けを借りて
         ゲームのハイスコアを更新してみます。\n\nまず「ゲームを開始」を押して試してみるか、直接シナリオの設定に進むことが
         できます。</string>
 
@@ -41,7 +41,7 @@
         \"Hello\" はラテン文字を使用するため、デフォルト値を維持できますが、非ラテン文字のテキストを検出する場合は
         忘れずに変更してください。</string>
 
-    <string name="message_tutorial_text_conditions_still_text_step_7">次に、Klick\'r にテキストをどこで検索するかを指定する必要があります。\n\n
+    <string name="message_tutorial_text_conditions_still_text_step_7">次に、VisionClick にテキストをどこで検索するかを指定する必要があります。\n\n
         検出エリアセレクターをタップして定義してください。</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_8">検出矩形を配置・サイズ変更して、ゲームのボタンを覆うようにしてください。
@@ -91,7 +91,7 @@
         検出に使用できることを意味します。\n\nタップして検出を開始してください。</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_21">動いているのに何も起こらない？\n\n正常です。ボタンが \"Hello\" と
-        表示したときだけクリックすることを覚えていますか？シナリオを動かしたまま、「ゲームを開始」ボタンを押して、Klick\'r が代わりに
+        表示したときだけクリックすることを覚えていますか？シナリオを動かしたまま、「ゲームを開始」ボタンを押して、VisionClick が代わりに
         ゲームを攻略するのを見てください！</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_22">おめでとうございます！\n\n画面に表示されたテキストを検出する方法を学びました。\n他のチュートリアルも見て、さらに多くのユースケースを発見してください。</string>

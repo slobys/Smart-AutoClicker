@@ -28,7 +28,7 @@
         \n\nInicia el juego y comprueba si puedes ganar por ti mismo.</string>
 
     <string name="message_tutorial_combine_conditions_not_visible_target_step_2">Una vez más, parece imposible ganar
-        manualmente, así que usemos Klick\'r. \n\nAbre el menú de configuración del escenario, crea un nuevo Evento de
+        manualmente, así que usemos VisionClick. \n\nAbre el menú de configuración del escenario, crea un nuevo Evento de
         Pantalla y empieza a añadir condiciones para los objetivos del juego.</string>
 
     <string name="message_tutorial_combine_conditions_not_visible_target_step_3">Primero necesitamos una condición que

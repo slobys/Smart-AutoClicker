@@ -22,7 +22,7 @@
     <string name="message_game_tutorial_number_conditions_static_value">Clique apenas quando o valor estiver acima de 9000!</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_1">Bem-vindo ao tutorial de Condição numérica!\n\nAqui você vai
-        tentar bater o recorde de um jogo com a ajuda do Klick\'r.\n\nVocê pode primeiro experimentá-lo pressionando iniciar jogo,
+        tentar bater o recorde de um jogo com a ajuda do VisionClick.\n\nVocê pode primeiro experimentá-lo pressionando iniciar jogo,
         ou ir diretamente para a configuração do Cenário.</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_2">Assim como qualquer outra Condição de tela, precisamos primeiro
@@ -49,7 +49,7 @@
     <string name="message_tutorial_number_conditions_static_value_step_9">Agora você precisa inserir o valor para comparar.
         Simplesmente insira \"9000\" no campo de valor para prosseguir para o próximo passo do tutorial.</string>
 
-    <string name="message_tutorial_number_conditions_static_value_step_10">Agora precisamos dizer ao Klick\'r onde procurar o
+    <string name="message_tutorial_number_conditions_static_value_step_10">Agora precisamos dizer ao VisionClick onde procurar o
         número.\n\nClique no seletor de área de detecção para defini-la</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_11">Posicione e redimensione o retângulo de detecção para que cubra o
@@ -104,7 +104,7 @@
 
     <string name="message_tutorial_number_conditions_static_value_step_24">Está funcionando mas nada acontece?\n\nIsto é normal, ele só clicará
         quando o botão mostrar um número acima de 9000, lembra? Mantendo o cenário em execução, pressione o botão iniciar jogo
-        e observe como o Klick\'r vence por você!</string>
+        e observe como o VisionClick vence por você!</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_25">Parabéns!\n\nAgora você sabe como detectar um número exibido na
         tela.\nDê uma olhada nos outros tutoriais para descobrir mais casos de uso.</string>

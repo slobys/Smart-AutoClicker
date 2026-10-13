@@ -121,7 +121,7 @@
 
     <string name="dialog_condition_migration_title">迁移</string>
 
-    <string name="message_condition_migration_desc">Klick\'r 的图像格式已变更，您的场景需要更新。所需时间取决于待迁移条件数量，可能需要数分钟。</string>
+    <string name="message_condition_migration_desc">VisionClick 的图像格式已变更，您的场景需要更新。所需时间取决于待迁移条件数量，可能需要数分钟。</string>
     <string name="message_condition_migration_count">待迁移图像条件：%1$d 项</string>
     <string name="message_condition_migration_success">全部图像条件已迁移完成。</string>
     <string name="message_condition_migration_error">部分条件未能迁移，请检查您的场景。</string>

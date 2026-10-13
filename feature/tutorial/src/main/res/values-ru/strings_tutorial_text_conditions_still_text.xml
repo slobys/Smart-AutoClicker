@@ -22,7 +22,7 @@
     <string name="message_game_tutorial_text_conditions_still_text">Нажмите на кнопку, когда она показывает \"Hello\", как можно быстрее</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_1">Добро пожаловать в урок по условиям текста!\n\nЗдесь вы
-        попробуете побить рекорд в игре с помощью Klick\'r.\n\nМожете сначала попробовать, нажав «Начать игру», или
+        попробуете побить рекорд в игре с помощью VisionClick.\n\nМожете сначала попробовать, нажав «Начать игру», или
         перейти сразу к настройке Сценария.</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_2">Как и для любого другого условия экрана, сначала нужно
@@ -42,7 +42,7 @@
         обнаруживаемого текста. \"Hello\" использует латинский алфавит, поэтому можно оставить значение по умолчанию, но не
         забудьте изменить его при обнаружении нелатинских текстов.</string>
 
-    <string name="message_tutorial_text_conditions_still_text_step_7">Теперь нам нужно указать Klick\'r, где искать
+    <string name="message_tutorial_text_conditions_still_text_step_7">Теперь нам нужно указать VisionClick, где искать
         текст.\n\nНажмите на селектор области обнаружения, чтобы задать её.</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_8">Расположите и измените размер прямоугольника обнаружения так, чтобы он
@@ -101,7 +101,7 @@
 
     <string name="message_tutorial_text_conditions_still_text_step_21">Работает, но ничего не происходит?\n\nЭто нормально — он будет
         нажимать только тогда, когда кнопка показывает \"Hello\", помните? Пока сценарий работает, нажмите кнопку «Начать игру»
-        и наблюдайте, как Klick\'r побеждает за вас!</string>
+        и наблюдайте, как VisionClick побеждает за вас!</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_22">Поздравляем!\n\nТеперь вы умеете определять текст на экране.\nЗагляните в другие уроки, чтобы открыть для себя больше возможностей.</string>
 </resources>

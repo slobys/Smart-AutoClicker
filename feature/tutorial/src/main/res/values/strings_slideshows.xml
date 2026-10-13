@@ -101,7 +101,7 @@
     <string name="tutorial_slideshow_screen_condition_type_desc">Learn which one to use depending on your use case</string>
 
     <string name="tutorial_slideshow_screen_condition_type_step_1_text">Color condition is the fastest way of detecting
-        with Klick\'r. It simply verifies the color of a pixel on your screen. \n\nThis condition is convenient when
+        with VisionClick. It simply verifies the color of a pixel on your screen. \n\nThis condition is convenient when
         trying to detect simple UI elements such as a button color or progress bar completion, or small changes.</string>
 
     <string name="tutorial_slideshow_screen_condition_type_step_2_text">Image condition is slower than a color condition,
@@ -120,7 +120,7 @@
     <string name="tutorial_slideshow_screen_condition_threshold_title">Detection confidence</string>
     <string name="tutorial_slideshow_screen_condition_threshold_desc">Tips about detection confidence</string>
 
-    <string name="tutorial_slideshow_screen_condition_threshold_step_1_text">Klick\'r does a lot of pre-processing before
+    <string name="tutorial_slideshow_screen_condition_threshold_step_1_text">VisionClick does a lot of pre-processing before
         looking for your screen condition in order to speed up the process and reduce battery impact. This creates
         uncertainties and approximations in the results that are expressed as the confidence score. \n\nTo ensure your conditions are working
         as expected, you can test them individually by pressing the play arrow button while focusing a condition on the
@@ -131,7 +131,7 @@
         allowing you to get rid of false positive or be more flexible with allowed results.</string>
 
     <string name="tutorial_slideshow_screen_condition_threshold_step_3_text">Detection results are also impacted by the
-        detection resolution. Available in the Scenario dialog, it allows you to change how much Klick\'r downscales
+        detection resolution. Available in the Scenario dialog, it allows you to change how much VisionClick downscales
         your screen content before processing it. \n\nThis can impact the confidence score of all of your screen
         conditions, with higher resolution meaning better detection, but also slower execution time.</string>
 
@@ -142,7 +142,7 @@
 
     <string name="tutorial_slideshow_broadcast_received_step_1_text">On Android, when applications want to share their
         state with other apps, they use a Broadcast Intent. \n\nWith the \"On Broadcast Received\" condition, you can
-        monitor those states and react with an action in Klick\'r. Some default values for the Android system state are
+        monitor those states and react with an action in VisionClick. Some default values for the Android system state are
         provided, but keep in mind that broadcast conditions are more for developers, as mastering them requires Android
         development knowledge.</string>
 
@@ -189,7 +189,7 @@
         optionally refine it with a click offset.</string>
 
     <string name="tutorial_slideshow_click_action_target_step_4_text">When the event\'s operator is OR, only one
-        condition will be fulfilled, and the next ones will be skipped. Because of this, Klick\'r cannot know
+        condition will be fulfilled, and the next ones will be skipped. Because of this, VisionClick cannot know
         in advance which condition will be detected.\n\nAs a consequence, when using the OR operator, you cannot
         choose a specific condition as the click target: the click will always be applied on the first detected
         condition, whichever that turns out to be at runtime.</string>
@@ -213,7 +213,7 @@
         configured duration: during that time, no action runs and no screen detection occurs.\n\nA very common use
         case is to add a Wait at the end of your action list. When you click somewhere, the app you clicked on
         needs time to process the click and display the result, and you usually want to wait during that moment
-        before Klick\'r starts looking at the screen again.\n\nA Wait between two actions is also valid, but
+        before VisionClick starts looking at the screen again.\n\nA Wait between two actions is also valid, but
         adding one at the end of the list is often the more common use case.</string>
 
 
@@ -275,7 +275,7 @@
     <string name="tutorial_slideshow_notification_action_step_2_text">The notification importance level controls
         how intrusively the notification is presented. Higher importance levels may show a heads-up banner and play
         a sound, while lower ones are delivered silently to the notification drawer.\n\nThe exact behaviour depends
-        on the device and can be further customized in the Android notification settings for Klick\'r.</string>
+        on the device and can be further customized in the Android notification settings for VisionClick.</string>
 
 
     <!-- Toggle Event Action slideshow -->
@@ -325,7 +325,7 @@
         its index box.\n\nTry to keep your action lists short. A regular autoclicker taps one place per event;
         that\'s the model to follow. If you find yourself adding many actions to a single event, it is usually a
         sign that the work should be split across several events, each reacting to what is actually on the screen.
-        This is the see-and-act philosophy of Klick\'r: detect first, then act.</string>
+        This is the see-and-act philosophy of VisionClick: detect first, then act.</string>
 
 
     <!-- Combine Conditions Ordering slideshow -->
@@ -362,7 +362,7 @@
         is active at a time.</string>
 
     <string name="tutorial_slideshow_events_state_basics_step_3_text">When <b>all events in the scenario are
-        disabled</b>, the scenario stops on its own. There is nothing left to do, so Klick\'r stops
+        disabled</b>, the scenario stops on its own. There is nothing left to do, so VisionClick stops
         automatically.\n\nThis is a simple way to end a scenario: have your last event disable all the others once
         its job is done, and everything stops by itself.</string>
 

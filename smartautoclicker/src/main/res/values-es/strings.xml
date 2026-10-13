@@ -154,7 +154,7 @@
     <!-- Legacy condition migration dialog  ======================================================================== -->
     <string name="dialog_condition_migration_title">Migración</string>
 
-    <string name="message_condition_migration_desc">El formato de las imágenes de Klick\'r ha cambiado y es necesario actualizar su escenario.         Esto puede tardar unos minutos dependiendo de la cantidad de condiciones para migrar.</string>
+    <string name="message_condition_migration_desc">El formato de las imágenes de VisionClick ha cambiado y es necesario actualizar su escenario.         Esto puede tardar unos minutos dependiendo de la cantidad de condiciones para migrar.</string>
     <string name="message_condition_migration_count">%1$d Imagen Condiciones para migrar.</string>
     <string name="message_condition_migration_success">Todas las condiciones de imagen migraron.</string>
     <string name="message_condition_migration_error">Algunas condiciones no se pudieron migrar. Por favor revise sus escenarios.</string>

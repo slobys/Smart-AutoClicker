@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
 * Copyright (C) 2026 Kevin Buzeau
 *
@@ -18,7 +18,7 @@
 <resources>
 
     <string name="tutorial_category_root_name">教程</string>
-    <string name="tutorial_category_root_desc_long">Klick\'r 的自动化基于屏幕上显示的内容，这与基于时间的普通自动点击器大不相同。
+    <string name="tutorial_category_root_desc_long">VisionClick 的自动化基于屏幕上显示的内容，这与基于时间的普通自动点击器大不相同。
         在这里学习如何使用它。</string>
 
     <string name="tutorial_category_basics_name">场景基础</string>
@@ -64,7 +64,7 @@
 
     <string name="tutorial_category_combine_event_name">组合事件</string>
     <string name="tutorial_category_combine_event_desc_short">协调多个事件以实现复杂的逻辑控制</string>
-    <string name="tutorial_category_combine_event_desc_long">Klick\'r 让你可以协调多个事件来构建高级自动化流程。通过控制事件的评估
+    <string name="tutorial_category_combine_event_desc_long">VisionClick 让你可以协调多个事件来构建高级自动化流程。通过控制事件的评估
         顺序以及在运行时启用或禁用事件，你可以创建复杂的多步骤场景。\n\n 在这里学习如何有效地组合事件，从而完全掌控你的自动化流程。</string>
 
     <string name="tutorial_category_events_priority_name">事件优先级</string>

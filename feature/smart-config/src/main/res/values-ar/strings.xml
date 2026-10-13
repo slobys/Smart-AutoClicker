@@ -136,7 +136,7 @@
     <string name="field_scenario_keep_screen_on_disabled">استخدم سلوك شاشة الجهاز العادي.</string>
 
     <string name="field_scenario_quality_title">دقة الكشف</string>
-    <string name="field_scenario_quality_description">لتحقيق اكتشاف أسرع، يقوم Klick\'r بتصغير حجم الصور قبل الكشف.\n\nإذا قمت بزيادة الدقة، فسيكون الاكتشاف أبطأ، ولكنه أكثر دقة. إذا قمت بتقليل الدقة، فسيكون الاكتشاف أسرع، ولكن أقل دقة. ابحث عن النسبة الجيدة بين دقة الكشف وحدود الشروط للحصول على أفضل السيناريوهات الخاصة بك!</string>
+    <string name="field_scenario_quality_description">لتحقيق اكتشاف أسرع، يقوم VisionClick بتصغير حجم الصور قبل الكشف.\n\nإذا قمت بزيادة الدقة، فسيكون الاكتشاف أبطأ، ولكنه أكثر دقة. إذا قمت بتقليل الدقة، فسيكون الاكتشاف أسرع، ولكن أقل دقة. ابحث عن النسبة الجيدة بين دقة الكشف وحدود الشروط للحصول على أفضل السيناريوهات الخاصة بك!</string>
 
     <string name="field_show_debug_view_title">عرض عرض التصحيح</string>
     <string name="field_show_debug_view_desc">عرض الأحداث التي تم إطلاقها أثناء الكشف.</string>
@@ -371,8 +371,8 @@
 
 
     <string name="error_dialog_message_scenario_saving">لا يمكن حفظ السيناريو الخاص بك بسبب خطأ داخلي.\nهل تريد تعديله أو إلغاء كافة التعديلات؟</string>
-    <string name="error_dialog_message_error_native_lib">تم تثبيت Klick\'r بشكل غير صحيح ولا يمكنه بدء الاكتشاف.\n\nإذا قمت بتثبيته من متجر تطبيقات شرعي، فيرجى الاتصال بنا على GitHub، حيث سيساعدنا ذلك في حل هذه المشكلة.</string>
-    <string name="error_dialog_message_screen_capture_unsupported">لا يمكن لـ Klick\'r قراءة شاشة جهازك بسبب قيود في برنامج تشغيل الرسومات.\n\nللأسف، هذا قيد مرتبط بالأجهزة ولا يمكن تجاوزه. يُرجى التواصل معنا على GitHub مع ذكر طراز جهازك حتى نتمكن من تتبع الأجهزة المتأثرة.</string>
+    <string name="error_dialog_message_error_native_lib">تم تثبيت VisionClick بشكل غير صحيح ولا يمكنه بدء الاكتشاف.\n\nإذا قمت بتثبيته من متجر تطبيقات شرعي، فيرجى الاتصال بنا على GitHub، حيث سيساعدنا ذلك في حل هذه المشكلة.</string>
+    <string name="error_dialog_message_screen_capture_unsupported">لا يمكن لـ VisionClick قراءة شاشة جهازك بسبب قيود في برنامج تشغيل الرسومات.\n\nللأسف، هذا قيد مرتبط بالأجهزة ولا يمكن تجاوزه. يُرجى التواصل معنا على GitHub مع ذكر طراز جهازك حتى نتمكن من تتبع الأجهزة المتأثرة.</string>
 
 
     <!-- Content description ======================================================================================= -->

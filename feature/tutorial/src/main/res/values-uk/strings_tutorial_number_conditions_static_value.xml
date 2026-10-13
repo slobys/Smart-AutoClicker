@@ -22,7 +22,7 @@
     <string name="message_game_tutorial_number_conditions_static_value">Натискайте лише коли значення перевищує 9000!</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_1">Ласкаво просимо до навчання з числової умови!\n\nТут ви
-        спробуєте побити рекорд гри за допомогою Klick\'r.\n\nСпочатку ви можете спробувати самостійно, натиснувши кнопку почати гру,
+        спробуєте побити рекорд гри за допомогою VisionClick.\n\nСпочатку ви можете спробувати самостійно, натиснувши кнопку почати гру,
         або відразу перейти до налаштування Сценарію.</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_2">Як і для будь-якої іншої Умови екрана, спочатку
@@ -49,7 +49,7 @@
     <string name="message_tutorial_number_conditions_static_value_step_9">Тепер вам потрібно ввести значення для порівняння.
         Просто введіть «9000» у поле значення, щоб перейти до наступного кроку уроку.</string>
 
-    <string name="message_tutorial_number_conditions_static_value_step_10">Тепер нам потрібно вказати Klick\'r, де шукати
+    <string name="message_tutorial_number_conditions_static_value_step_10">Тепер нам потрібно вказати VisionClick, де шукати
         число.\n\nКлікніть на селектор зони виявлення, щоб визначити її</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_11">Розташуйте та змініть розмір прямокутника виявлення так, щоб він охоплював
@@ -103,7 +103,7 @@
 
     <string name="message_tutorial_number_conditions_static_value_step_24">Відтворюється, але нічого не відбувається?\n\nЦе нормально, він буде клікати лише
         коли кнопка показує число більше 9000, пам\'ятаєте? Не зупиняючи сценарій, натисніть кнопку почати гру
-        і просто спостерігайте, як Klick\'r перемагає за вас!</string>
+        і просто спостерігайте, як VisionClick перемагає за вас!</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_25">Вітаємо!\n\nТепер ви знаєте, як виявляти число, що відображається на
         екрані.\nОзнайомтеся з іншими уроками, щоб дізнатися про інші сценарії використання.</string>

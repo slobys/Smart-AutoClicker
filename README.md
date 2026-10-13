@@ -1,8 +1,14 @@
-# Klick'r - Smart AutoClicker
+# VisionClick
+
+<img src="smartautoclicker/src/main/res/drawable-nodpi/visionclick_artwork.png" alt="VisionClick 图标" width="128" height="128">
 
 Android 可视化自动化工具。根据屏幕上的图片、文字、数值和颜色判断当前状态，再执行点击、滑动、等待或子流程，处理游戏与应用中的重复操作。
 
-[下载正式版](https://github.com/slobys/Smart-AutoClicker/releases/latest) · [使用文档](documentation/reliability-and-diagnostics-zh.md) · [更新记录](https://github.com/slobys/Smart-AutoClicker/releases) · [反馈问题](https://github.com/slobys/Smart-AutoClicker/issues)
+VisionClick 是基于 Smart AutoClicker / Klick'r 二次开发的独立应用。正式版包名为 `com.slobys.visionclick`，测试版为 `com.slobys.visionclick.debug`，可与旧 Klick'r 并存；沿用现有功能和版本序列，不代表从应用商店安装的上游版本。
+
+[下载正式版](https://github.com/slobys/VisionClick/releases/latest) · [使用文档](documentation/reliability-and-diagnostics-zh.md) · [更新记录](https://github.com/slobys/VisionClick/releases) · [反馈问题](https://github.com/slobys/VisionClick/issues)
+
+从 **v4.0.5.28** 起以 VisionClick 名称发布，使用独立包名和新的触控图标。v4.0.5.27 及更早的 Klick'r 标签和安装包作为历史版本保留，不是 VisionClick 的安装包。
 
 支持 Android 7.0（API 24）及以上。通过界面配置条件与动作，不需要编写代码；脚本需要按目标应用和设备自行配置。
 
@@ -44,21 +50,24 @@ Android 可视化自动化工具。根据屏幕上的图片、文字、数值和
 
 ## 下载与安装
 
-本仓库的安装包统一发布在 [GitHub Releases](https://github.com/slobys/Smart-AutoClicker/releases/latest)：
+本仓库的安装包统一发布在 [GitHub Releases](https://github.com/slobys/VisionClick/releases/latest)：
 
 1. 打开最新正式版，展开 **Assets**（附件列表）。
-2. 不确定设备架构时，下载文件名以 `universal-release.apk` 结尾的通用包。
+2. 不确定设备架构时，下载 `VisionClick-版本-universal-release.apk` 通用包；不要把 `debug.apk` 测试包当作正式版。
 3. 在 Android 设备上安装 APK，按应用提示完成权限授权。
 
 发布页也提供 `arm64-v8a`、`armeabi-v7a`、`x86` 和 `x86_64` 架构包，以及用于核验文件的 `SHA256SUMS.txt`。通用包与对应架构包的功能相同。
 
-### 升级已有版本
+### 迁移旧版与升级 VisionClick
 
 升级前先导出场景备份，再安装新版本：
 
-- 本仓库的旧正式版沿用同一发布签名，可直接覆盖升级。**不要为升级而卸载应用或清除数据。**
+- 从旧 Klick'r 迁移：新包名不覆盖旧应用，也不会自动共用其场景、设置、路线或权限。先在旧版导出场景备份，再在 VisionClick 导入；路线单独保存在应用内，暂不包含在场景备份中，需要单独迁移。保留旧应用和数据，确认迁移结果后再自行决定是否卸载。
+- VisionClick 后续正式版保持包名和发布签名一致时，可覆盖升级。**不要为升级而卸载应用或清除数据。**
 - 上游或应用商店版本可能使用不同签名；遇到安装冲突，先确认备份完整，再处理版本迁移。
 - 独立 Debug 测试版使用 `.debug` 包名，与正式版不共享场景数据，需通过备份导出、导入转移。
+
+独立安装后需重新授予 VisionClick 无障碍、悬浮窗、通知及屏幕捕获权限；新旧应用不要同时控制同一目标。名称与图标配置见 [VisionClick 品牌与安装说明](documentation/visionclick-branding-zh.md)。GitHub 仓库已改名为 `slobys/VisionClick`，历史标签与旧版附件不变。
 
 ## 第一次使用
 
@@ -109,7 +118,7 @@ Android 可视化自动化工具。根据屏幕上的图片、文字、数值和
 - [测试结果面板](documentation/test-result-panel-zh.md)：工具栏靠左或靠右时，结果面板自动向屏幕内侧展开。
 - [路线录制与回放](documentation/route-recorder-zh.md)：数字坐标／小地图模式、摇杆校准、场景调用和安全测试（v4.0.5.25 起提供，仍为实验功能；不支持随机地图自动探索）。
 - [版本说明](documentation/releases)：每版改动、验证结果和适用范围。
-- [问题与功能建议](https://github.com/slobys/Smart-AutoClicker/issues)：提交复现信息或描述希望解决的任务。
+- [问题与功能建议](https://github.com/slobys/VisionClick/issues)：提交复现信息或描述希望解决的任务。
 
 识别效果和长时间运行情况取决于实际画面与设备环境。内存优化不能阻止系统或云手机平台回收进程，自动化测试也不能代替真实设备上的长期验证。
 
@@ -156,6 +165,6 @@ Windows（特别是仓库目录含中文时）使用项目构建入口，自动�
 
 本项目基于 [Nain57/Smart-AutoClicker](https://github.com/Nain57/Smart-AutoClicker) 开发，由 [slobys](https://github.com/slobys) 维护。感谢 Kevin Buzeau（Nain57）及所有贡献者。上游使用资料可参考 [Wiki](https://github.com/Nain57/Smart-AutoClicker/wiki)，界面与功能可能不同。
 
-项目遵循 [GNU GPL v3](LICENSE)，保留上游及其他贡献者的版权和许可证声明；源码中允许使用后续 GPL 版本的声明保持有效。新增与修改内容记录在[提交历史](https://github.com/slobys/Smart-AutoClicker/commits/master/)和版本说明中，每个发布版本的对应项目源码可从同名 Git 标签获取。
+项目遵循 [GNU GPL v3](LICENSE)，保留上游及其他贡献者的版权和许可证声明；源码中允许使用后续 GPL 版本的声明保持有效。新增与修改内容记录在[提交历史](https://github.com/slobys/VisionClick/commits/master/)和版本说明中，每个发布版本的对应项目源码可从同名 Git 标签获取。
 
 请在获得授权的设备与应用中使用，并遵守目标应用、游戏和平台的规则。

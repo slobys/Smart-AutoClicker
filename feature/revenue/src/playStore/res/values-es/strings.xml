@@ -19,8 +19,8 @@
     <string name="header_starting_detection">Iniciando detección</string>
 
     <string name="message_billing">Esta aplicación es de código abierto y está diseñada con amor por personas que trabajan en su tiempo libre.\n\n
-        Apoye el desarrollo viendo un anuncio o compre Klick\'r Pro para eliminar anuncios para siempre.</string>
-    <string name="message_billing_success">¡Gracias por comprar\nKlick\'r Pro!</string>
+        Apoye el desarrollo viendo un anuncio o compre VisionClick Pro para eliminar anuncios para siempre.</string>
+    <string name="message_billing_success">¡Gracias por comprar\nVisionClick Pro!</string>
 
     <string name="button_text_watch_ad_loading">Cargando anuncio</string>
     <string name="button_text_watch_ad">Ver un anuncio</string>

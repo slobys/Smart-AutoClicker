@@ -76,7 +76,7 @@
 
     <string name="message_tutorial_counters_basics_step_26">場景已完成！它將點擊藍色目標、記錄每次點擊，然後每10次點擊用紅色目標驗證一次並重新開始。\n\n儲存場景以套用您的設定。</string>
 
-    <string name="message_tutorial_counters_basics_step_27">一切準備就緒！啟動場景，然後開啟遊戲，看著Klick\'r替您自動計數。</string>
+    <string name="message_tutorial_counters_basics_step_27">一切準備就緒！啟動場景，然後開啟遊戲，看著VisionClick替您自動計數。</string>
 
     <string name="message_tutorial_counters_basics_step_28">做得好！您已學會如何使用計數器來追蹤多個事件之間的數值。\n\n結合「更改計數器」動作與「計數器達到時」條件，您現在可以建立能對重複模式做出反應的自動化場景了。</string>
 

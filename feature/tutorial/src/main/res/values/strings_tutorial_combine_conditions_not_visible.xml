@@ -28,7 +28,7 @@
         \n\nStart the game and see if you can win on your own.</string>
 
     <string name="message_tutorial_combine_conditions_not_visible_target_step_2">Once again, this seems impossible to
-        win manually, so let\'s use Klick\'r. \n\nOpen the scenario configuration menu, create a new Screen Event, and
+        win manually, so let\'s use VisionClick. \n\nOpen the scenario configuration menu, create a new Screen Event, and
         start adding conditions for the game targets.</string>
 
     <string name="message_tutorial_combine_conditions_not_visible_target_step_3">First, we need a condition that checks

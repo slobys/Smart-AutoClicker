@@ -17,7 +17,7 @@
 -->
 <resources>
 
-    <string name="notification_service_channel_name" translatable="false">Klick\'r</string>
+    <string name="notification_service_channel_name" translatable="false">VisionClick</string>
 
     <string name="notification_title">Scenario: %1$s</string>
     <string name="notification_message">Press to change the scenario</string>

@@ -22,7 +22,7 @@
     <string name="message_game_tutorial_number_conditions_static_value">Нажимайте только когда значение превышает 9000!</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_1">Добро пожаловать в обучение по числовому условию!\n\nЗдесь вы
-        попробуете побить рекорд игры с помощью Klick\'r.\n\nСначала можете попробовать самостоятельно, нажав кнопку начать игру,
+        попробуете побить рекорд игры с помощью VisionClick.\n\nСначала можете попробовать самостоятельно, нажав кнопку начать игру,
         или сразу перейти к настройке Сценария.</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_2">Как и для любого другого Условия экрана, сначала необходимо
@@ -49,7 +49,7 @@
     <string name="message_tutorial_number_conditions_static_value_step_9">Теперь вам нужно ввести значение для сравнения.
         Просто введите «9000» в поле значения, чтобы перейти к следующему шагу урока.</string>
 
-    <string name="message_tutorial_number_conditions_static_value_step_10">Теперь нам нужно указать Klick\'r, где искать
+    <string name="message_tutorial_number_conditions_static_value_step_10">Теперь нам нужно указать VisionClick, где искать
         число.\n\nКликните на селектор области обнаружения, чтобы задать её</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_11">Расположите и измените размер прямоугольника обнаружения так, чтобы он охватывал
@@ -103,7 +103,7 @@
 
     <string name="message_tutorial_number_conditions_static_value_step_24">Воспроизводится, но ничего не происходит?\n\nЭто нормально, он будет кликать только
         когда кнопка показывает число больше 9000, помните? Не останавливая сценарий, нажмите кнопку начать игру
-        и просто наблюдайте, как Klick\'r побеждает за вас!</string>
+        и просто наблюдайте, как VisionClick побеждает за вас!</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_25">Поздравляем!\n\nТеперь вы знаете, как обнаружить число, отображаемое на
         экране.\nОзнакомьтесь с другими уроками, чтобы узнать о других сценариях использования.</string>

@@ -17,6 +17,7 @@
 package com.buzbuz.smartautoclicker.application
 
 import android.app.Application
+import android.content.ComponentName
 import com.buzbuz.smartautoclicker.ComponentConfig
 import com.buzbuz.smartautoclicker.core.base.data.AppComponentsManager
 import com.buzbuz.smartautoclicker.core.bitmaps.BitmapRepository
@@ -47,8 +48,9 @@ class SmartAutoClickerApplication : Application() {
         val componentConfig = ComponentConfig
         appComponentsManager.apply {
             registerOriginalAppId(componentConfig.ORIGINAL_APP_ID)
-            registerSmartAutoClickerService(componentConfig.smartAutoClickerService)
-            registerScenarioActivity(componentConfig.scenarioActivity)
+            // The install ID can differ from the Kotlin namespace and include a debug suffix.
+            registerSmartAutoClickerService(ComponentName(packageName, componentConfig.smartAutoClickerService.className))
+            registerScenarioActivity(ComponentName(packageName, componentConfig.scenarioActivity.className))
         }
 
         DynamicColors.applyToActivitiesIfAvailable(this)

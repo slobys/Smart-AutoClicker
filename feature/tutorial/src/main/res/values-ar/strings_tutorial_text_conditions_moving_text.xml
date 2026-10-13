@@ -22,7 +22,7 @@
     <string name="message_game_tutorial_text_conditions_moving_text">انقر فقط على الزر \"Hello\"، في أسرع وقت ممكن</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_1">مرحبًا بك في البرنامج التعليمي لشرط النص المتحرك!\n\nهنا ستحاول
-        تحقيق أعلى نقطة في لعبة بمساعدة Klick\'r.\n\nيمكنك تجربتها أولاً بالضغط على بدء اللعبة،
+        تحقيق أعلى نقطة في لعبة بمساعدة VisionClick.\n\nيمكنك تجربتها أولاً بالضغط على بدء اللعبة،
         أو المتابعة مباشرةً إلى تكوين السيناريو.</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_2">تمامًا كأي شرط شاشة آخر، نحتاج أولاً
@@ -42,7 +42,7 @@
         بالنص المراد اكتشافه. يستخدم \"Hello\" الأبجدية اللاتينية، لذا يمكنك الإبقاء على القيمة الافتراضية هنا، لكن لا تنسَ
         تغييرها عند اكتشاف نصوص غير لاتينية.</string>
 
-    <string name="message_tutorial_text_conditions_moving_text_step_7">الآن، نحتاج إلى إخبار Klick\'r بمكان البحث عن
+    <string name="message_tutorial_text_conditions_moving_text_step_7">الآن، نحتاج إلى إخبار VisionClick بمكان البحث عن
         النص.\n\nانقر على محدد منطقة الاكتشاف لتحديدها.</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_8">ضع مستطيل الاكتشاف وغيِّر حجمه ليغطي الأزرار الأربعة،
@@ -95,7 +95,7 @@
 
     <string name="message_tutorial_text_conditions_moving_text_step_22">يعمل لكن لا يحدث شيء؟\n\nهذا طبيعي، فهو سينقر فقط
         عندما يعرض الزر \"Hello\"، أتذكر؟ بينما السيناريو يعمل، اضغط زر بدء اللعبة
-        وراقب كيف يفوز بها Klick\'r عوضًا عنك!</string>
+        وراقب كيف يفوز بها VisionClick عوضًا عنك!</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_23">تهانينا!\n\nأنت تعرف الآن كيفية اكتشاف نص متحرك معروض على
         الشاشة.\nأطَّلع على البرامج التعليمية الأخرى لاكتشاف المزيد من حالات الاستخدام.</string>

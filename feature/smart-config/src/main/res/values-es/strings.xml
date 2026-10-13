@@ -136,7 +136,7 @@
     <string name="field_scenario_keep_screen_on_disabled">Utilice el comportamiento normal de la pantalla del dispositivo.</string>
 
     <string name="field_scenario_quality_title">Resolución de detección</string>
-    <string name="field_scenario_quality_description">Para lograr una detección más rápida, Klick\'r reduce la escala de las imágenes antes de detectarlas.\n\nSi aumenta la resolución, la detección será más lenta, pero más precisa. Si disminuye la resolución, la detección será más rápida, pero menos precisa. Encuentre la buena relación entre la resolución de detección y los umbrales de condiciones para obtener lo mejor de sus escenarios.</string>
+    <string name="field_scenario_quality_description">Para lograr una detección más rápida, VisionClick reduce la escala de las imágenes antes de detectarlas.\n\nSi aumenta la resolución, la detección será más lenta, pero más precisa. Si disminuye la resolución, la detección será más rápida, pero menos precisa. Encuentre la buena relación entre la resolución de detección y los umbrales de condiciones para obtener lo mejor de sus escenarios.</string>
 
     <string name="field_show_debug_view_title">Mostrar vista de depuración</string>
     <string name="field_show_debug_view_desc">Muestra los eventos desencadenados durante la detección.</string>
@@ -371,8 +371,8 @@
 
 
     <string name="error_dialog_message_scenario_saving">Su escenario no se puede guardar debido a un error interno.\n¿Quiere modificarlo o cancelar todas sus modificaciones?</string>
-    <string name="error_dialog_message_error_native_lib">Klick\'r está instalado incorrectamente y no puede iniciar la detección.\n\nSi lo instaló desde una tienda de aplicaciones legítima, contáctenos en GitHub, ya que nos ayudará a solucionar este problema.</string>
-    <string name="error_dialog_message_screen_capture_unsupported">La pantalla de su dispositivo no puede ser leída por Klick\'r debido a una limitación del controlador gráfico.\n\nDesafortunadamente, se trata de una restricción de hardware que no puede evitarse. Por favor, contáctenos en GitHub con el modelo de su dispositivo para que podamos hacer un seguimiento de los dispositivos afectados.</string>
+    <string name="error_dialog_message_error_native_lib">VisionClick está instalado incorrectamente y no puede iniciar la detección.\n\nSi lo instaló desde una tienda de aplicaciones legítima, contáctenos en GitHub, ya que nos ayudará a solucionar este problema.</string>
+    <string name="error_dialog_message_screen_capture_unsupported">La pantalla de su dispositivo no puede ser leída por VisionClick debido a una limitación del controlador gráfico.\n\nDesafortunadamente, se trata de una restricción de hardware que no puede evitarse. Por favor, contáctenos en GitHub con el modelo de su dispositivo para que podamos hacer un seguimiento de los dispositivos afectados.</string>
 
 
     <!-- Content description ======================================================================================= -->

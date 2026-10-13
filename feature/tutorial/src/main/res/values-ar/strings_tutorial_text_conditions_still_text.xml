@@ -22,7 +22,7 @@
     <string name="message_game_tutorial_text_conditions_still_text">انقر على الزر عندما يعرض \"Hello\"، بأسرع ما يمكن</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_1">مرحباً بك في درس شروط النص!\n\nهنا ستحاول تحقيق أعلى
-        نقطة في لعبة بمساعدة Klick\'r.\n\nيمكنك تجربتها أولاً بالضغط على بدء اللعبة، أو الانتقال مباشرةً إلى
+        نقطة في لعبة بمساعدة VisionClick.\n\nيمكنك تجربتها أولاً بالضغط على بدء اللعبة، أو الانتقال مباشرةً إلى
         إعداد السيناريو.</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_2">كما هو الحال مع أي شرط شاشة آخر، نحتاج أولاً إلى إنشاء
@@ -41,7 +41,7 @@
         يستخدم \"Hello\" الحروف اللاتينية، لذا يمكنك الإبقاء على القيمة الافتراضية، لكن لا تنسَ تغييرها عند اكتشاف
         نصوص غير لاتينية.</string>
 
-    <string name="message_tutorial_text_conditions_still_text_step_7">الآن نحتاج إلى إخبار Klick\'r بمكان البحث عن النص.\n\n
+    <string name="message_tutorial_text_conditions_still_text_step_7">الآن نحتاج إلى إخبار VisionClick بمكان البحث عن النص.\n\n
         اضغط على محدد منطقة الاكتشاف لتعريفها.</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_8">ضع مستطيل الاكتشاف وغيّر حجمه ليغطي زر اللعبة، إذ هناك
@@ -92,7 +92,7 @@
         ويمكن استخدامه للاكتشاف.\n\nاضغط عليه لبدء الاكتشاف.</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_21">إنه يعمل لكن لا يحدث شيء؟\n\nهذا طبيعي، سينقر فقط عندما
-        يعرض الزر \"Hello\"، أتذكر؟ أثناء تشغيل السيناريو، اضغط على زر بدء اللعبة وشاهد Klick\'r يهزمها
+        يعرض الزر \"Hello\"، أتذكر؟ أثناء تشغيل السيناريو، اضغط على زر بدء اللعبة وشاهد VisionClick يهزمها
         عنك!</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_22">تهانيّ!\n\nأنت تعرف الآن كيفية اكتشاف نص معروض على الشاشة.\nألقِ نظرة على الدروس الأخرى لاكتشاف المزيد من حالات الاستخدام.</string>

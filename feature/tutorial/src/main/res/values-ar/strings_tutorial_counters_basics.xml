@@ -86,7 +86,7 @@
     <string name="message_tutorial_counters_basics_step_26">اكتمل السيناريو! سينقر على الهدف الأزرق، ويحسب كل نقرة، ثم يتحقق بالهدف الأحمر كل 10 نقرات ويبدأ من جديد.
         \n\nاحفظ السيناريو لتطبيق تكوينك.</string>
 
-    <string name="message_tutorial_counters_basics_step_27">كل شيء جاهز! ابدأ السيناريو، ثم شغّل اللعبة وشاهد Klick\'r يتولى العد بدلاً عنك.</string>
+    <string name="message_tutorial_counters_basics_step_27">كل شيء جاهز! ابدأ السيناريو، ثم شغّل اللعبة وشاهد VisionClick يتولى العد بدلاً عنك.</string>
 
     <string name="message_tutorial_counters_basics_step_28">أحسنت! لقد تعلمت كيفية استخدام العدادات لتتبع القيم عبر أحداث متعددة.
         \n\nبدمج إجراء «تغيير العداد» وشرط «على العداد وصلت»، يمكنك الآن بناء أتمتة تتفاعل مع الأنماط المتكررة.</string>

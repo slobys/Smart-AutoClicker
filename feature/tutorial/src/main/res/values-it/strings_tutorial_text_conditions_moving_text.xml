@@ -22,7 +22,7 @@
     <string name="message_game_tutorial_text_conditions_moving_text">Clicca solo sul pulsante \"Hello\", il più velocemente possibile</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_1">Benvenuto nel tutorial sulla Condizione di testo in movimento!\n\nQui cercherai
-        di battere il punteggio massimo di un gioco con l\'aiuto di Klick\'r.\n\nPuoi prima provarlo premendo avvia gioco,
+        di battere il punteggio massimo di un gioco con l\'aiuto di VisionClick.\n\nPuoi prima provarlo premendo avvia gioco,
         oppure passare direttamente alla configurazione dello Scenario.</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_2">Proprio come per qualsiasi altra Condizione schermo, dobbiamo prima
@@ -42,7 +42,7 @@
         testo da rilevare. \"Hello\" usa l\'alfabeto latino, quindi puoi mantenere il valore predefinito qui, ma non dimenticare di
         cambiarlo quando rilevi testi non latini.</string>
 
-    <string name="message_tutorial_text_conditions_moving_text_step_7">Ora dobbiamo indicare a Klick\'r dove cercare il
+    <string name="message_tutorial_text_conditions_moving_text_step_7">Ora dobbiamo indicare a VisionClick dove cercare il
         testo.\n\nClicca sul selettore di area di rilevamento per definirlo.</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_8">Posiziona e ridimensiona il rettangolo di rilevamento in modo che
@@ -95,7 +95,7 @@
 
     <string name="message_tutorial_text_conditions_moving_text_step_22">Sta funzionando ma non succede nulla?\n\nÈ normale, cliccherà solo
         quando il pulsante mostra \"Hello\", ricordi? Tenendo lo scenario in esecuzione, premi il pulsante avvia gioco
-        e guarda come Klick\'r lo batte al posto tuo!</string>
+        e guarda come VisionClick lo batte al posto tuo!</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_23">Congratulazioni!\n\nOra sai come rilevare un testo in movimento visualizzato sullo
         schermo.\nDai un\'occhiata agli altri tutorial per scoprire altri casi d\'uso.</string>

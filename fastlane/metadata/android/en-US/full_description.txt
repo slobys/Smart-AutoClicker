@@ -1,6 +1,6 @@
-<p>Klick'r is an open-source Android application designed to automate repetitive tasks effortlessly. Formerly known as Smart AutoClicker, Klick'r offers unique image detection capabilities alongside traditional auto-clicking functionalities, providing a versatile solution for all your automation needs.
+<p>VisionClick is an independent open-source Android application based on Smart AutoClicker / Klick'r by Kevin Buzeau (Nain57) and contributors, maintained by slobys. It combines visual recognition with traditional auto-clicking to automate repetitive tasks.
 </p>
-<p>Whether you’re a gamer automating in-game actions, a tester simulating user interactions, or anyone performing repetitive clicking tasks, Klick'r offers both image detection for sophisticated automation and a Regular Mode for straightforward auto-clicking.
+<p>Whether you’re a gamer automating in-game actions, a tester simulating user interactions, or anyone performing repetitive clicking tasks, VisionClick offers both image detection for sophisticated automation and a Regular Mode for straightforward auto-clicking.
 </p>
 
 </br>
@@ -10,5 +10,5 @@
 * **Advanced Automation**: Enhance your automation scripts with advanced features like counters operations, Android Intents, and flow control, giving you unparalleled flexibility.
 * **Triggers**: Set up sophisticated triggers based on image detection, timers, counters, and Android broadcast receivers to perfectly tailor your automation tasks.
 * **Regular Mode**: Enjoy a straightforward auto-clicking experience with our Regular Mode, designed for easy configuration and ideal for simpler, repetitive tasks.
-* **Tutorials**: Learn to master Klick'r with our interactive game tutorials, which provide step-by-step instructions to help you automate tasks and beat the game using Klick'r's powerful features.
-* **Open Source**: As an open-source project, Klick'r is continuously improved by a dedicated community.
+* **Tutorials**: Learn to master VisionClick with interactive game tutorials and step-by-step instructions.
+* **Open Source**: VisionClick preserves its upstream copyright notices and GNU GPL license. Use it only on authorized devices and applications.

@@ -22,12 +22,12 @@
     <string name="message_game_tutorial_screen_condition_still_target">Клікніть на синю кнопку якомога швидше</string>
 
     <string name="message_tutorial_screen_condition_still_target_step_1">Ласкаво просимо до вашого першого навчання!\n\nТут ви спробуєте побити рекорд
-        гри за допомогою Klick\'r.\n\nСпочатку запустіть гру і спробуйте виграти самостійно.</string>
+        гри за допомогою VisionClick.\n\nСпочатку запустіть гру і спробуйте виграти самостійно.</string>
 
-    <string name="message_tutorial_screen_condition_still_target_step_3">Складно, чи не так?\nДавайте використаємо Klick\'r, щоб побити його!\n\n
+    <string name="message_tutorial_screen_condition_still_target_step_3">Складно, чи не так?\nДавайте використаємо VisionClick, щоб побити його!\n\n
         Клікніть на іконку налаштування сценарію, щоб почати редагування вашого нового сценарію.</string>
 
-    <string name="message_tutorial_screen_condition_still_target_step_4">Сценарій є кореневою структурою автоматизації Klick\'r.           Він містить загальні налаштування виявлення та список подій, що описують, що буде виконано при запуску         вашого сценарію.  Клікніть на кнопку створення події, щоб створити вашу першу подію.</string>
+    <string name="message_tutorial_screen_condition_still_target_step_4">Сценарій є кореневою структурою автоматизації VisionClick.           Він містить загальні налаштування виявлення та список подій, що описують, що буде виконано при запуску         вашого сценарію.  Клікніть на кнопку створення події, щоб створити вашу першу подію.</string>
 
     <string name="message_tutorial_screen_condition_still_target_step_5">Подія описує, які дії (клік, свайп…) виконувати, коли певні
         умови виконані.\n\nВи повинні створити принаймні одну умову та одну дію, щоб створити дійсну подію
@@ -100,9 +100,9 @@
 
     <string name="message_tutorial_screen_condition_still_target_step_23">Воно працює, але нічого не відбувається?\n\nЦе нормально, воно буде клікати лише
         коли синій персонаж видимий, пам\'ятаєте? Залишаючи сценарій запущеним, натисніть кнопку початку гри
-        і просто спостерігайте, як Klick\'r переможе її для вас!</string>
+        і просто спостерігайте, як VisionClick переможе її для вас!</string>
 
-    <string name="message_tutorial_screen_condition_still_target_step_24">Вітаємо!\n\nТепер ви знаєте основи Klick\'r, але не
+    <string name="message_tutorial_screen_condition_still_target_step_24">Вітаємо!\n\nТепер ви знаєте основи VisionClick, але не
         всі випадки використання будуть такими простими, як ця гра.\nПодивіться на наступне навчання, щоб дізнатися, як відстежувати рухому
         ціль</string>
 </resources>

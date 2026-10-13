@@ -76,7 +76,7 @@
 
     <string name="message_tutorial_counters_basics_step_26">场景已完成！它将点击蓝色目标、记录每次点击，然后每10次点击用红色目标验证一次并重新开始。\n\n保存场景以应用您的配置。</string>
 
-    <string name="message_tutorial_counters_basics_step_27">一切准备就绪！启动场景，然后打开游戏，看看 Klick\'r 为您自动完成计数。</string>
+    <string name="message_tutorial_counters_basics_step_27">一切准备就绪！启动场景，然后打开游戏，看看 VisionClick 为您自动完成计数。</string>
 
     <string name="message_tutorial_counters_basics_step_28">干得好！您已经学会了如何使用计数器跨多个事件追踪数值。\n\n结合"更改计数器"动作和"计数器达到时"条件，您现在可以构建能够响应重复模式的自动化流程。</string>
 

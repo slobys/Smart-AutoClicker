@@ -31,15 +31,15 @@
       - Views handles any length here, so no limitations.
       -->
     <string name="message_permission_desc_overlay">Дозвіл на накладання необхідний для відображення
-        інтерфейсу Klick\'r поверх програм, які ви хочете автоматизувати, що дозволяє вам налаштовувати ваш
+        інтерфейсу VisionClick поверх програм, які ви хочете автоматизувати, що дозволяє вам налаштовувати ваш
         сценарій без зупинки іншої програми.</string>
-    <string name="message_permission_desc_accessibility">Дозвіл служби доступності дозволяє Klick\'r
+    <string name="message_permission_desc_accessibility">Дозвіл служби доступності дозволяє VisionClick
         виконувати жести на екрані вашого пристрою. Цей дозвіл необхідний для виконання натискань та
-        свайпів, які ви створите у ваших сценаріях автоматизації.\n\nKlick\'r не збирає ніяких даних\n\nЩоб
+        свайпів, які ви створите у ваших сценаріях автоматизації.\n\nVisionClick не збирає ніяких даних\n\nЩоб
         надати дозвіл служби доступності, натисніть кнопку нижче.</string>
     <string name="message_permission_desc_notification">Опційно: Показує сповіщення під час роботи програми,
         щоб легко повернутися до екрану вибору сценарію.</string>
-    <string name="message_permission_mandatory_denied">Цей дозвіл є обов\'язковим для Klick\'r.
+    <string name="message_permission_mandatory_denied">Цей дозвіл є обов\'язковим для VisionClick.
         Програма не зможе працювати правильно без нього.</string>
     <!--
       - TextButton content.

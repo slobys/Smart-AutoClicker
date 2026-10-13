@@ -17,7 +17,7 @@
 -->
 <resources>
 
-    <string name="notification_scenario_channel_group_name">Kịch bản Klick\'r</string>
+    <string name="notification_scenario_channel_group_name">Kịch bản VisionClick</string>
     <string name="notification_scenario_channel_low_name">Thấp</string>
     <string name="notification_scenario_channel_default_name">Bình thường</string>
     <string name="notification_scenario_channel_high_name">Cao</string>

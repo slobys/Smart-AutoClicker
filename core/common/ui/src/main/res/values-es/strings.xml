@@ -49,11 +49,11 @@
       - Views handles any length here, so no limitations.
       -->
     <string name="message_tutorial_volume_down_stop">Si su escenario hace clic demasiado rápido, puede
-        bloquearle el uso del menú Klick\'r para detenerlo.\n\nEn ese caso, puede presionar el botón
+        bloquearle el uso del menú VisionClick para detenerlo.\n\nEn ese caso, puede presionar el botón
         botón físico \"Bajar volumen\" de su dispositivo para detener el escenario en ejecución.</string>
     <string name="message_dont_show_again">No mostrar este mensaje nuevamente</string>
     <string name="message_error_screen_capture_permission_dialog_not_found">Tu dispositivo no provee el diálogo de
-        capturar pantalla estándar de Android. Smart AutoClicker no podrá ejecutarse.</string>
+        capturar pantalla estándar de Android. VisionClick no podrá ejecutarse.</string>
 
 
     <string name="button_understood">Comprendido</string>
@@ -112,7 +112,7 @@
     <string name="content_desc_drag_and_drop">Arrastra y suelta para reordenar los elementos.</string>
     <string name="content_desc_move_menu">Mover el menú flotante</string>
     <string name="content_desc_play_pause_scenario">Reproducir o pausar el escenario</string>
-    <string name="content_desc_stop_clicker">Detener Klick\'r</string>
+    <string name="content_desc_stop_clicker">Detener VisionClick</string>
     <string name="content_desc_confirm">Confirmar</string>
     <string name="content_desc_go_back">Volver al diálogo</string>
 

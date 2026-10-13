@@ -27,9 +27,9 @@
     <string name="item_title_try_element">Kiểm tra %1$s</string>
     <string name="item_error_action_invalid_generic">Hành động này không hợp lệ</string>
     <string name="message_empty_copy">Không có gì để sao chép</string>
-    <string name="message_tutorial_volume_down_stop">Nếu kịch bản của bạn nhấp quá nhanh, nó có thể chặn bạn sử dụng menu Klick\'r để dừng nó.\n\nTrong trường hợp đó, bạn có thể nhấn nút \"Giảm âm lượng\" vật lý trên thiết bị của mình để dừng kịch bản đang chạy.</string>
+    <string name="message_tutorial_volume_down_stop">Nếu kịch bản của bạn nhấp quá nhanh, nó có thể chặn bạn sử dụng menu VisionClick để dừng nó.\n\nTrong trường hợp đó, bạn có thể nhấn nút \"Giảm âm lượng\" vật lý trên thiết bị của mình để dừng kịch bản đang chạy.</string>
     <string name="message_dont_show_again">Không hiển thị lại thông báo này</string>
-    <string name="message_error_screen_capture_permission_dialog_not_found">Thiết bị của bạn không cung cấp hộp thoại cấp phép chụp màn hình Android tiêu chuẩn. Klick\'r sẽ không thể chạy trên đó.</string>
+    <string name="message_error_screen_capture_permission_dialog_not_found">Thiết bị của bạn không cung cấp hộp thoại cấp phép chụp màn hình Android tiêu chuẩn. VisionClick sẽ không thể chạy trên đó.</string>
     <string name="button_understood">Đã hiểu</string>
     <string name="input_field_label_anti_detection">Chống phát hiện</string>
     <string name="input_field_label_click_press_duration">Thời lượng nhấn (ms)</string>
@@ -57,7 +57,7 @@
     <string name="content_desc_drag_and_drop">Kéo và thả để sắp xếp lại các phần tử</string>
     <string name="content_desc_move_menu">Di chuyển menu nổi</string>
     <string name="content_desc_play_pause_scenario">Phát hoặc tạm dừng kịch bản</string>
-    <string name="content_desc_stop_clicker">Dừng Klick\'r</string>
+    <string name="content_desc_stop_clicker">Dừng VisionClick</string>
     <string name="content_desc_confirm">Xác nhận</string>
     <string name="content_desc_go_back">Quay lại hộp thoại</string>
 

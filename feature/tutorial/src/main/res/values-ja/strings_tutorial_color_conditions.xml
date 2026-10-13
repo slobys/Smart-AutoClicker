@@ -21,7 +21,7 @@
     <string name="item_desc_tutorial_color_conditions">画面上の特定の色を検出し、それが現れたときにクリックする方法を学ぶ</string>
     <string name="message_game_tutorial_color_conditions">できるだけ速く青いボタンをクリックしてください</string>
 
-    <string name="message_tutorial_color_conditions_step_1">色の条件チュートリアルへようこそ！\n\nここでは、Klick\'r の助けを借りて
+    <string name="message_tutorial_color_conditions_step_1">色の条件チュートリアルへようこそ！\n\nここでは、VisionClick の助けを借りて
         ゲームのハイスコアを更新してみます。\n\nまず「ゲームを開始」を押して試してみるか、直接シナリオの設定に進むことが
         できます。</string>
 
@@ -88,9 +88,9 @@
         検出に使用できることを意味します。\n\nタップして検出を開始してください。</string>
 
     <string name="message_tutorial_color_conditions_step_21">動いているのに何も起こらない？\n\n正常です。青いボタンが見えたとき
-        だけクリックすることを覚えていますか？シナリオを動かしたまま、「ゲームを開始」ボタンを押して、Klick\'r が代わりに
+        だけクリックすることを覚えていますか？シナリオを動かしたまま、「ゲームを開始」ボタンを押して、VisionClick が代わりに
         ゲームを攻略するのを見てください！</string>
 
-    <string name="message_tutorial_color_conditions_step_22">おめでとうございます！\n\nKlick\'r の基本を学びましたが、すべての
+    <string name="message_tutorial_color_conditions_step_22">おめでとうございます！\n\nVisionClick の基本を学びましたが、すべての
         ユースケースがこのゲームほど単純ではありません。\n他のチュートリアルも見て、さらに多くのユースケースを発見してください。</string>
 </resources>

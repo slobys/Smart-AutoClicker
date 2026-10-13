@@ -22,7 +22,7 @@
     <string name="message_game_tutorial_number_conditions_static_value">Clicca solo quando il valore supera 9000!</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_1">Benvenuto nel tutorial sulla Condizione numerica!\n\nQui cercherai
-        di battere il punteggio massimo di un gioco con l\'aiuto di Klick\'r.\n\nPuoi prima provarlo premendo avvia gioco,
+        di battere il punteggio massimo di un gioco con l\'aiuto di VisionClick.\n\nPuoi prima provarlo premendo avvia gioco,
         oppure passare direttamente alla configurazione dello Scenario.</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_2">Proprio come per qualsiasi altra Condizione schermo, dobbiamo prima
@@ -49,7 +49,7 @@
     <string name="message_tutorial_number_conditions_static_value_step_9">Ora devi inserire il valore con cui confrontare.
         Inserisci semplicemente \"9000\" nel campo valore per procedere al passo successivo del tutorial.</string>
 
-    <string name="message_tutorial_number_conditions_static_value_step_10">Ora dobbiamo indicare a Klick\'r dove cercare il
+    <string name="message_tutorial_number_conditions_static_value_step_10">Ora dobbiamo indicare a VisionClick dove cercare il
         numero.\n\nClicca sul selettore di area di rilevamento per definirlo</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_11">Posiziona e ridimensiona il rettangolo di rilevamento in modo che copra il
@@ -104,7 +104,7 @@
 
     <string name="message_tutorial_number_conditions_static_value_step_24">Sta funzionando ma non succede nulla?\n\nÈ normale, cliccherà solo
         quando il pulsante mostra un numero superiore a 9000, ricordi? Tenendo lo scenario in esecuzione, premi il pulsante avvia gioco
-        e guarda come Klick\'r lo batte al posto tuo!</string>
+        e guarda come VisionClick lo batte al posto tuo!</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_25">Congratulazioni!\n\nOra sai come rilevare un numero visualizzato sullo
         schermo.\nDai un\'occhiata agli altri tutorial per scoprire altri casi d\'uso.</string>

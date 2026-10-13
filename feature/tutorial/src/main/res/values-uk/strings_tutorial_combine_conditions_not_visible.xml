@@ -28,7 +28,7 @@
         \n\nЗапустіть гру і подивіться, чи зможете перемогти самостійно.</string>
 
     <string name="message_tutorial_combine_conditions_not_visible_target_step_2">Знову здається неможливим перемогти
-        вручну, тому скористаємося Klick\'r. \n\nВідкрийте меню налаштування сценарію, створіть нову Подію екрана
+        вручну, тому скористаємося VisionClick. \n\nВідкрийте меню налаштування сценарію, створіть нову Подію екрана
         та почніть додавати умови для цілей гри.</string>
 
     <string name="message_tutorial_combine_conditions_not_visible_target_step_3">Спочатку нам потрібна умова, яка

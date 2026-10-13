@@ -30,9 +30,9 @@
     <application
         android:name="${smartAutoClickerApplication}"
         android:allowBackup="false"
-        android:icon="@mipmap/ic_smart_auto_clicker"
+        android:icon="@mipmap/ic_visionclick"
         android:label="${appName}"
-        android:roundIcon="@mipmap/ic_smart_auto_clicker_round"
+        android:roundIcon="@mipmap/ic_visionclick_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="DataExtractionRules">

@@ -21,12 +21,12 @@
     <string name="item_desc_tutorial_screen_condition_still_target">学习如何创建你的第一个事件，以便点击静止目标</string>
     <string name="message_game_tutorial_screen_condition_still_target">尽可能快地点击蓝色按钮</string>
 
-    <string name="message_tutorial_screen_condition_still_target_step_1">欢迎来到你的第一个教程！\n\n在这里，你将尝试在Klick\'r的帮助下打破游戏的最高分记录。\n\n首先，开始游戏并尝试自己赢得比赛。</string>
+    <string name="message_tutorial_screen_condition_still_target_step_1">欢迎来到你的第一个教程！\n\n在这里，你将尝试在VisionClick的帮助下打破游戏的最高分记录。\n\n首先，开始游戏并尝试自己赢得比赛。</string>
 
-    <string name="message_tutorial_screen_condition_still_target_step_3">难度很大，不是吗？\n让我们使用Klick\'r来战胜它！\n\n
+    <string name="message_tutorial_screen_condition_still_target_step_3">难度很大，不是吗？\n让我们使用VisionClick来战胜它！\n\n
     点击场景配置图标开始编辑你的新场景。</string>
 
-    <string name="message_tutorial_screen_condition_still_target_step_4">场景是Klick\'r自动化的根结构。\n\n
+    <string name="message_tutorial_screen_condition_still_target_step_4">场景是VisionClick自动化的根结构。\n\n
     它包含了通用检测设置和描述在运行你的场景时将执行的事件列表。\n\n点击创建事件按钮以创建你的第一个事件。</string>
 
     <string name="message_tutorial_screen_condition_still_target_step_5">事件描述了在满足特定条件时执行的操作（点击、滑动等）。\n\n为了创建一个有效的事件并在场景中使用它，你必须至少创建一个条件和一个操作。\n\n单击条件字段，显示条件列表。</string>
@@ -72,7 +72,7 @@
 
     <string name="message_tutorial_screen_condition_still_target_step_22">正如你所看到的，播放按钮现在可用，这意味着你的场景有效并且可以用于检测\n\n点击它以开始检测。</string>
 
-    <string name="message_tutorial_screen_condition_still_target_step_23">它正在运行，但没有发生任何事情？\n\n那是正常的，它只会在蓝色角色可见时点击，记住吗？在保持场景运行的同时，按下开始游戏按钮，只需观看Klick\'r将为你赢得比赛！</string>
+    <string name="message_tutorial_screen_condition_still_target_step_23">它正在运行，但没有发生任何事情？\n\n那是正常的，它只会在蓝色角色可见时点击，记住吗？在保持场景运行的同时，按下开始游戏按钮，只需观看VisionClick将为你赢得比赛！</string>
 
-    <string name="message_tutorial_screen_condition_still_target_step_24">恭喜！\n\n你现在了解了Klick\'r的基础知识，但并非所有用例都像这个游戏那么简单。\n看看下一个教程，了解如何跟踪移动目标</string>
+    <string name="message_tutorial_screen_condition_still_target_step_24">恭喜！\n\n你现在了解了VisionClick的基础知识，但并非所有用例都像这个游戏那么简单。\n看看下一个教程，了解如何跟踪移动目标</string>
 </resources>

@@ -24,10 +24,10 @@
     <string name="message_tutorial_screen_condition_moving_target_step_1">مرحبًا بك في البرنامج التعليمي الثاني!\n\nهذه المرة، الهدف يتحرك بشكل عشوائي
         عبر الشاشة.\n\nأولاً، ابدأ اللعبة وتحقق مما إذا كان بإمكانك الفوز بنفسك.</string>
 
-    <string name="message_tutorial_screen_condition_moving_target_step_3">الأمر صعب، أليس كذلك؟\nدعونا نستخدم Klick\'r للتغلب عليه!\n\n
+    <string name="message_tutorial_screen_condition_moving_target_step_3">الأمر صعب، أليس كذلك؟\nدعونا نستخدم VisionClick للتغلب عليه!\n\n
         انقر فوق رمز تكوين السيناريو لبدء تحرير السيناريو الجديد.</string>
 
-    <string name="message_tutorial_screen_condition_moving_target_step_4">"السيناريو" هو البنية الجذرية لأتمتة Klick\'r.\n\n
+    <string name="message_tutorial_screen_condition_moving_target_step_4">"السيناريو" هو البنية الجذرية لأتمتة VisionClick.\n\n
         يحتوي على إعدادات الكشف العامة وقائمة الأحداث التي تصف ما سيتم تنفيذه عند التشغيل.
         \n\nانقر فوق زر إنشاء حدث لإنشاء حدثك الأول.</string>
 
@@ -60,7 +60,7 @@
         قم بقصها في أقرب وقت ممكن منه لتسهيل اكتشاف الصورة.</string>
 
     <string name="message_tutorial_screen_condition_moving_target_step_11">تم الآن التقاط صورة الشرط الخاصة بك!\n\nافتراضيًا، تم تعيين نوع الاكتشاف على
-        "تام"، مما يعني أن Klick\'r سيبحث عنه فقط في موضع الالتقاط. نظرًا لأن الحرف الأزرق يمكن أن
+        "تام"، مما يعني أن VisionClick سيبحث عنه فقط في موضع الالتقاط. نظرًا لأن الحرف الأزرق يمكن أن
         يظهر في أي مكان في منطقة اللعبة، حدد "في منطقة".</string>
     <string name="message_tutorial_screen_condition_moving_target_step_secondary_11">الخيار الثالث هو "الشاشة بأكملها". كلما كانت منطقة الاكتشاف أكبر، كان الاكتشاف أبطأ.
         ضع ذلك في الاعتبار عندما يكون توقيت تنفيذ السيناريو مهمًا.</string>

@@ -24,7 +24,7 @@
     <string name="message_tutorial_combine_conditions_not_visible_target_step_1">新規則！藍色目標已停止移動，但只有在紅色目標不可見時才能點擊它。
         \n\n啟動遊戲，看看你能否自己獲勝。</string>
 
-    <string name="message_tutorial_combine_conditions_not_visible_target_step_2">再次看來，手動獲勝似乎不可能，所以讓我們使用 Klick\'r。
+    <string name="message_tutorial_combine_conditions_not_visible_target_step_2">再次看來，手動獲勝似乎不可能，所以讓我們使用 VisionClick。
         \n\n開啟場景設定選單，建立一個新的螢幕事件，並開始為遊戲目標新增條件。</string>
 
     <string name="message_tutorial_combine_conditions_not_visible_target_step_3">首先，我們需要一個條件來偵測紅色目標何時不在螢幕上。

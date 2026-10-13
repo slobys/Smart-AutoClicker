@@ -19,8 +19,8 @@
     <string name="header_starting_detection">Начинается обнаружение</string>
 
     <string name="message_billing">У этого приложения открытый исходный код и оно с любовью создаётся людьми в их 
-    свободное время.\n\nПоддержите разработку просмотром рекламы или купите Klick\'r Pro, чтобы убрать её навсегда!</string>
-    <string name="message_billing_success">Спасибо Вам за покупку\nKlick\'r Pro !</string>
+    свободное время.\n\nПоддержите разработку просмотром рекламы или купите VisionClick Pro, чтобы убрать её навсегда!</string>
+    <string name="message_billing_success">Спасибо Вам за покупку\nVisionClick Pro !</string>
 
     <string name="button_text_watch_ad_loading">Загрузка объявления</string>
     <string name="button_text_watch_ad">Посмотреть рекламу</string>

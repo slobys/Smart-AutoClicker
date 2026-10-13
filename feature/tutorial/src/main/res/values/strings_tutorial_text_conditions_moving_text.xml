@@ -22,7 +22,7 @@
     <string name="message_game_tutorial_text_conditions_moving_text">Click only on the button \"Hello\", as fast as possible</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_1">Welcome to the moving text condition tutorial!\n\nHere, you will
-        try to beat the high score of a game with the help of Klick\'r.\n\nYou can first try it by pressing start game,
+        try to beat the high score of a game with the help of VisionClick.\n\nYou can first try it by pressing start game,
         or proceed to the Scenario configuration directly.</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_2">Just like any other Screen Condition, we need to create a
@@ -42,7 +42,7 @@
         the text to detect. \"Hello\" uses the latin alphabet, so you can keep the default value here, but don\'t forget to
         change it when detecting non-latin texts.</string>
 
-    <string name="message_tutorial_text_conditions_moving_text_step_7">Now, we need to tell Klick\'r where to search for the
+    <string name="message_tutorial_text_conditions_moving_text_step_7">Now, we need to tell VisionClick where to search for the
         text.\n\nClick on the detection area selector to define it.</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_8">Position and resize the detection rectangle so it
@@ -95,7 +95,7 @@
 
     <string name="message_tutorial_text_conditions_moving_text_step_22">It\'s playing but nothing happens?\n\nThat\'s normal, it will click only
         when the button displays \"Hello\", remember? While keeping the scenario running, press the start game button
-        and just watch as Klick\'r will beat it for you!</string>
+        and just watch as VisionClick will beat it for you!</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_23">Congratulations!\n\nYou now know how to detect a moving text displayed on the
         screen.\nTake a look at the other tutorials to discover more use cases.</string>

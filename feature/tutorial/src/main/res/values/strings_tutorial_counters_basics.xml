@@ -115,7 +115,7 @@
         apply your configuration.</string>
 
     <string name="message_tutorial_counters_basics_step_27">Everything is ready! Start the scenario, then launch the
-        game and watch Klick\'r handle the counting for you.</string>
+        game and watch VisionClick handle the counting for you.</string>
 
     <string name="message_tutorial_counters_basics_step_28">Well done! You\'ve learned how to use Counters to track
         values across multiple events. \n\nCombined with the Change Counter action and the Counter Reached condition,

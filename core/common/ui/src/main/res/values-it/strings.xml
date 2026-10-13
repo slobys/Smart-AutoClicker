@@ -49,12 +49,12 @@
       - Views handles any length here, so no limitations.
       -->
     <string name="message_tutorial_volume_down_stop">Se lo scenario fa clic troppo rapidamente, può
-        bloccare l\'utilizzo del menu Klick\'r per interromperlo.\n\nIn questo caso, è
+        bloccare l\'utilizzo del menu VisionClick per interromperlo.\n\nIn questo caso, è
         possibile premere il pulsante fisico \"Volume giù\" del dispositivo per interrompere lo
         scenario in corso.</string>
     <string name="message_dont_show_again">Non mostrare più questo messaggio</string>
     <string name="message_error_screen_capture_permission_dialog_not_found">Il tuo dispositivo non fornisce la finestra
-        di dialogo standard per l\'autorizzazione all\'acquisizione dello schermo Android. Klick\'r non potrà essere eseguito su di esso.</string>
+        di dialogo standard per l\'autorizzazione all\'acquisizione dello schermo Android. VisionClick non potrà essere eseguito su di esso.</string>
 
 
     <string name="button_understood">Capito</string>
@@ -111,7 +111,7 @@
     <string name="content_desc_drag_and_drop">Trascina e rilascia per riordinare gli elementi</string>
     <string name="content_desc_move_menu">Sposta il menù fluttuante</string>
     <string name="content_desc_play_pause_scenario">Avvia o ferma lo scenario</string>
-    <string name="content_desc_stop_clicker">Ferma Klick\'r</string>
+    <string name="content_desc_stop_clicker">Ferma VisionClick</string>
     <string name="content_desc_confirm">Conferma</string>
     <string name="content_desc_go_back">Torna al dialogo</string>
 

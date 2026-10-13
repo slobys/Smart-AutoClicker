@@ -49,12 +49,12 @@
       - Views handles any length here, so no limitations.
       -->
     <string name="message_tutorial_volume_down_stop">Если действия в вашем сценарии выполняются 
-        слишком быстро, то они могут попрепятствовать остановке Klick\'r через плавающее 
+        слишком быстро, то они могут попрепятствовать остановке VisionClick через плавающее
         меню.\n\nВ данном случае остановить выполнение можно нажав на физическую кнопку 
         уменьшения громкости.</string>
     <string name="message_dont_show_again">Больше не показывать это сообщение</string>
     <string name="message_error_screen_capture_permission_dialog_not_found">Ваша система не отправляет
-        стандартный в Android запрос на трансляцию экрана. Klick\'r не сможет работать на ней.</string>
+        стандартный в Android запрос на трансляцию экрана. VisionClick не сможет работать на ней.</string>
 
 
     <string name="button_understood">Понял</string>
@@ -113,7 +113,7 @@
     <string name="content_desc_drag_and_drop">Перетащить элемент, чтобы изменить порядок</string>
     <string name="content_desc_move_menu">Переместить плавающее меню</string>
     <string name="content_desc_play_pause_scenario">Запустить или приостановить сценарий</string>
-    <string name="content_desc_stop_clicker">Остановить Klick\'r</string>
+    <string name="content_desc_stop_clicker">Остановить VisionClick</string>
     <string name="content_desc_confirm">Подтвердить</string>
     <string name="content_desc_go_back">Вернуться</string>
 

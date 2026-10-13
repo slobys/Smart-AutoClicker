@@ -22,7 +22,7 @@
     <string name="message_game_tutorial_color_conditions">Нажмите на синюю кнопку как можно быстрее</string>
 
     <string name="message_tutorial_color_conditions_step_1">Добро пожаловать в урок по цветовым условиям!\n\nЗдесь вы
-        попробуете побить рекорд в игре с помощью Klick\'r.\n\nМожете сначала попробовать, нажав «Начать игру», или
+        попробуете побить рекорд в игре с помощью VisionClick.\n\nМожете сначала попробовать, нажав «Начать игру», или
         перейти сразу к настройке Сценария.</string>
 
     <string name="message_tutorial_color_conditions_step_2">Как и для любого другого условия экрана, сначала нужно
@@ -101,9 +101,9 @@
 
     <string name="message_tutorial_color_conditions_step_21">Работает, но ничего не происходит?\n\nЭто нормально — он будет
         нажимать только тогда, когда синяя кнопка видна, помните? Пока сценарий работает, нажмите кнопку «Начать игру»
-        и наблюдайте, как Klick\'r побеждает за вас!</string>
+        и наблюдайте, как VisionClick побеждает за вас!</string>
 
-    <string name="message_tutorial_color_conditions_step_22">Поздравляем!\n\nТеперь вы знаете основы Klick\'r, но не все
+    <string name="message_tutorial_color_conditions_step_22">Поздравляем!\n\nТеперь вы знаете основы VisionClick, но не все
         случаи будут такими простыми, как эта игра.\nЗагляните в другие уроки, чтобы открыть для себя больше
         возможностей.</string>
 </resources>

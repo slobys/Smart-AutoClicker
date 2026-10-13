@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
 * Copyright (C) 2026 Kevin Buzeau
 *
@@ -96,7 +96,7 @@
     <string name="tutorial_slideshow_screen_condition_type_title">画面条件の種類</string>
     <string name="tutorial_slideshow_screen_condition_type_desc">用途に応じてどれを使うか学ぶ</string>
 
-    <string name="tutorial_slideshow_screen_condition_type_step_1_text">カラー条件はKlick\'rで最も速く検出する方法です。
+    <string name="tutorial_slideshow_screen_condition_type_step_1_text">カラー条件はVisionClickで最も速く検出する方法です。
         画面上のピクセルの色を確認するだけです。\n\nこの条件は、ボタンの色や進捗バーの完了などのシンプルなUI要素、
         または小さな変化を検出しようとするときに便利です。</string>
 
@@ -114,7 +114,7 @@
     <string name="tutorial_slideshow_screen_condition_threshold_title">検出の信頼性</string>
     <string name="tutorial_slideshow_screen_condition_threshold_desc">検出の信頼性に関するヒント</string>
 
-    <string name="tutorial_slideshow_screen_condition_threshold_step_1_text">Klick\'rはプロセスを高速化し、バッテリーへの影響を
+    <string name="tutorial_slideshow_screen_condition_threshold_step_1_text">VisionClickはプロセスを高速化し、バッテリーへの影響を
         軽減するために、画面条件を検索する前に多くの前処理を行います。これにより、信頼性スコアとして表される結果の不確実性と
         近似値が生じます。\n\n条件が期待通りに機能していることを確認するには、画面条件リストで条件にフォーカスしながら
         再生矢印ボタンを押して個別にテストできます。</string>
@@ -123,7 +123,7 @@
         ここで許容差を直接変更することができます。これにより、誤検知を排除したり、許容される結果をより柔軟に設定したりできます。</string>
 
     <string name="tutorial_slideshow_screen_condition_threshold_step_3_text">検出結果は検出解像度にも影響されます。
-        シナリオダイアログで利用可能なこの設定では、Klick\'rが処理前に画面コンテンツをどれだけダウンスケールするかを変更できます。
+        シナリオダイアログで利用可能なこの設定では、VisionClickが処理前に画面コンテンツをどれだけダウンスケールするかを変更できます。
         \n\nこれはすべての画面条件の信頼性スコアに影響を与える可能性があり、解像度が高いほど検出が良くなりますが、
         実行時間も遅くなります。</string>
 
@@ -134,7 +134,7 @@
     <string name="tutorial_slideshow_broadcast_received_desc">他のアプリからのブロードキャストを受け取る</string>
 
     <string name="tutorial_slideshow_broadcast_received_step_1_text">Androidでは、アプリが自身の状態を他のアプリと共有したいとき、
-        Broadcast Intentを使用します。\n\n「ブロードキャスト受信時」条件を使うと、それらの状態を監視してKlick\'rのアクションで
+        Broadcast Intentを使用します。\n\n「ブロードキャスト受信時」条件を使うと、それらの状態を監視してVisionClickのアクションで
         反応することができます。Androidシステムの状態に関するデフォルト値がいくつか提供されていますが、ブロードキャスト条件は
         Android開発の知識が必要なため、主に開発者向けであることに注意してください。</string>
 
@@ -154,7 +154,7 @@
     <string name="tutorial_slideshow_pause_action_step_1_text">待機アクションはシナリオ全体を設定した時間だけ
         一時停止します。その間、アクションは実行されず、画面の検出も行われません。\n\nよくある使い方は、アクション
         リストの末尾に待機を追加することです。どこかをタップすると、タップされたアプリがそれを処理して結果を表示
-        するまでに時間がかかります。Klick\'r が再び画面を分析し始める前に、その瞬間を待ちたいことが多いでしょう。
+        するまでに時間がかかります。VisionClick が再び画面を分析し始める前に、その瞬間を待ちたいことが多いでしょう。
         \n\n2つのアクションの間に待機を入れることも有効ですが、リストの末尾に追加することの方が重要なケースが
         多いです。</string>
 
@@ -188,7 +188,7 @@
         満たされる必要があるため、各画像条件には利用可能な位置があります。自由にどれかを選んでオフセットで
         調整できます。</string>
     <string name="tutorial_slideshow_click_action_target_step_4_text">ORオペレーターでは、最初に満たされた条件のみが
-        評価され、残りは無視されます。そのため、Klick\'r はどの条件が検出されるかを事前に知ることができません。
+        評価され、残りは無視されます。そのため、VisionClick はどの条件が検出されるかを事前に知ることができません。
         \n\n結果として、ORオペレーターでは特定の条件をターゲットとして選ぶことができません：クリックは常に実行時に
         最初に検出された条件に適用されます。</string>
 
@@ -217,7 +217,7 @@
         たは同時に1つだけがアクティブなイベントのグループ。</string>
 
     <string name="tutorial_slideshow_events_state_basics_step_3_text"><b>シナリオ内のすべてのイベントが無効になった</b>とき、シナリオは自動的に停止します。やるこ
-        とが何もなくなるため、Klick\'rが自動的に停止します。\n\nこれはシナリオを終了するシンプルな方法です：最後のイベントが役割を果たした後に他のすべてを無効にすれば、すべてが自動的に停止します。</string>
+        とが何もなくなるため、VisionClickが自動的に停止します。\n\nこれはシナリオを終了するシンプルな方法です：最後のイベントが役割を果たした後に他のすべてを無効にすれば、すべてが自動的に停止します。</string>
 
 
     <!-- Actions List slideshow -->
@@ -227,7 +227,7 @@
         &gt;&gt; ボタンを使うか、インデックス番号を直接タップしてアクションの順序を変更できます。\n\nアクションリストは
         短く保つようにしましょう。通常のオートクリッカーはイベントごとに一か所をタップします——それが従うべきモデルです。一つの
         イベントに多くのアクションを追加していると感じたら、それは作業を複数のイベントに分割すべきサインです。各イベントが
-        実際に画面に表示されているものに反応するようにしましょう。これが Klick\'r の「見て動く」哲学です：まず検出、それから
+        実際に画面に表示されているものに反応するようにしましょう。これが VisionClick の「見て動く」哲学です：まず検出、それから
         アクション。</string>
 
     <!-- Write Text Action slideshow -->
@@ -272,7 +272,7 @@
         「りんごが{りんご}個あります」は「りんごが18個あります」になります。</string>
     <string name="tutorial_slideshow_notification_action_step_2_text">通知の重要度レベルは、通知がどれほど目立つ形で
         表示されるかを制御します。高い重要度レベルではヘッドアップバナーが表示されたり音が鳴ったりしますが、低いものは
-        通知トレイに静かに届きます。\n\n正確な動作はデバイスによって異なり、Klick\'r の Android 通知設定でさらに
+        通知トレイに静かに届きます。\n\n正確な動作はデバイスによって異なり、VisionClick の Android 通知設定でさらに
         カスタマイズできます。</string>
 
     <!-- Toggle Event Action slideshow -->

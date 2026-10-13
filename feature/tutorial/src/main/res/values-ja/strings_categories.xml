@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
 * Copyright (C) 2026 Kevin Buzeau
 *
@@ -18,7 +18,7 @@
 <resources>
 
     <string name="tutorial_category_root_name">チュートリアル</string>
-    <string name="tutorial_category_root_desc_long">Klick\'r の自動化は、画面に表示されている内容を基にしており、時間ベースの通常の
+    <string name="tutorial_category_root_desc_long">VisionClick の自動化は、画面に表示されている内容を基にしており、時間ベースの通常の
         オートクリッカーとは大きく異なります。ここでの使い方を学びましょう。</string>
 
     <string name="tutorial_category_basics_name">シナリオの基本</string>
@@ -69,7 +69,7 @@
 
     <string name="tutorial_category_combine_event_name">イベントの組み合わせ</string>
     <string name="tutorial_category_combine_event_desc_short">複数のイベントを連携して高度な制御を実現する</string>
-    <string name="tutorial_category_combine_event_desc_long">Klick\'rでは複数のイベントを連携させて高度な自動化フローを構築できます。
+    <string name="tutorial_category_combine_event_desc_long">VisionClickでは複数のイベントを連携させて高度な自動化フローを構築できます。
         イベントの評価順序を制御したり、実行中にイベントを有効化・無効化したりすることで、複雑な多段階シナリオを作成できます。\n\n
         ここでイベントを効果的に組み合わせて自動化を完全にコントロールする方法を学びましょう。</string>
 

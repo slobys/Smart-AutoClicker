@@ -18,7 +18,7 @@
 <resources>
 
     <string name="tutorial_category_root_name">Hướng dẫn</string>
-    <string name="tutorial_category_root_desc_long">Tự động hóa Klick\'r dựa trên những gì được hiển thị trên màn hình của bạn, điều này khá khác so với trình nhấp chuột tự động thông thường dựa trên thời gian của bạn.\n\nTìm hiểu ở đây làm thế nào để sử dụng nó.</string>
+    <string name="tutorial_category_root_desc_long">Tự động hóa VisionClick dựa trên những gì được hiển thị trên màn hình của bạn, điều này khá khác so với trình nhấp chuột tự động thông thường dựa trên thời gian của bạn.\n\nTìm hiểu ở đây làm thế nào để sử dụng nó.</string>
     <string name="tutorial_category_basics_name">Kịch bản cơ bản</string>
     <string name="tutorial_category_basics_desc_short">Tìm hiểu cách sử dụng từng phần tử Kịch bản</string>
     <string name="tutorial_category_basics_desc_long">Kịch bản là thành phần gốc của tập lệnh tự động hóa của bạn. Nó chứa danh sách ScreenEvents và danh sách TriggerEvents.\nSự kiện là danh sách các Sự kiện màn hình/Sự kiện kích hoạt cần thực hiện để thực thi danh sách Hành động.\n\nTìm hiểu ở đây cách sử dụng từng thành phần của Kịch bản.</string>
@@ -78,7 +78,7 @@
     <string name="tutorial_category_write_text_action_desc_long">Hành động Viết văn bản sẽ dán một chuỗi đã định cấu hình vào trường nhập hiện được tập trung bằng AccessibilityService. Nó rất hữu ích để điền vào biểu mẫu hoặc trường tìm kiếm mà không cần mô phỏng các lần nhấn phím riêng lẻ.\n\nTìm hiểu ở đây cách sử dụng nó để nhập văn bản trong quá trình tự động hóa.</string>
     <string name="tutorial_category_combine_event_name">Kết hợp Sự kiện</string>
     <string name="tutorial_category_combine_event_desc_short">Sử dụng nhiều Sự kiện để điều khiển logic phức tạp</string>
-    <string name="tutorial_category_combine_event_desc_long">Klick\'r cho phép bạn điều phối nhiều Sự kiện để xây dựng các luồng tự động hóa nâng cao. Bằng cách kiểm soát thứ tự đánh giá Sự kiện và bật hoặc tắt chúng trong thời gian chạy, bạn có thể tạo các Kịch bản phức tạp gồm nhiều bước.\n\nTìm hiểu ở đây cách kết hợp Sự kiện hiệu quả để kiểm soát hoàn toàn quá trình tự động hóa của bạn.</string>
+    <string name="tutorial_category_combine_event_desc_long">VisionClick cho phép bạn điều phối nhiều Sự kiện để xây dựng các luồng tự động hóa nâng cao. Bằng cách kiểm soát thứ tự đánh giá Sự kiện và bật hoặc tắt chúng trong thời gian chạy, bạn có thể tạo các Kịch bản phức tạp gồm nhiều bước.\n\nTìm hiểu ở đây cách kết hợp Sự kiện hiệu quả để kiểm soát hoàn toàn quá trình tự động hóa của bạn.</string>
     <string name="tutorial_category_events_priority_name">Ưu tiên Sự kiện</string>
     <string name="tutorial_category_events_priority_desc_short">Kiểm soát tầm quan trọng của Sự kiện của bạn</string>
     <string name="tutorial_category_events_priority_desc_long">Sự kiện màn hình được đánh giá theo thứ tự ưu tiên trong mỗi chu kỳ phát hiện. Sự kiện cao hơn trong danh sách được kiểm tra trước Sự kiện thấp hơn, cho phép bạn xác định Sự kiện nào được ưu tiên khi nhiều Sự kiện có thể kích hoạt cùng một lúc.\n\nTìm hiểu ở đây cách đặt mức độ ưu tiên của Sự kiện để tinh chỉnh thứ tự thực hiện Kịch bản của bạn.</string>

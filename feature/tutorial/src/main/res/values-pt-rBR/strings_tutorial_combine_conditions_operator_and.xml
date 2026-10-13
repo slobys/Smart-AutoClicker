@@ -29,7 +29,7 @@
         tempo. \n\nInicie o jogo e veja se consegue acompanhar o ritmo por conta própria.</string>
 
     <string name="message_tutorial_combine_conditions_operator_and_step_2">O tempo é muito apertado para gerenciar
-        manualmente, então vamos usar o Klick\'r. \n\nAbra o menu de configuração do cenário, crie um novo Evento de
+        manualmente, então vamos usar o VisionClick. \n\nAbra o menu de configuração do cenário, crie um novo Evento de
         Tela e comece a adicionar condições para os alvos do jogo.</string>
 
     <string name="message_tutorial_combine_conditions_operator_and_step_3">Precisamos de uma condição por alvo.

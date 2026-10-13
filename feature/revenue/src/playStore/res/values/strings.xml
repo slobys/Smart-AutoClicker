@@ -16,14 +16,14 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
-    <string name="dialog_title_billing" translatable="false">Klick\'r Pro</string>
+    <string name="dialog_title_billing" translatable="false">VisionClick Pro</string>
 
-    <string name="header_billing" translatable="false">Klick\'r Pro</string>
+    <string name="header_billing" translatable="false">VisionClick Pro</string>
     <string name="header_starting_detection">Starting detection</string>
 
     <string name="message_billing">This application is open source and crafted with love by people working on their free time.\n\n
-        Support the development by watching an ad, or buy Klick\'r Pro to remove ads forever!</string>
-    <string name="message_billing_success">Thank you for buying\nKlick\'r Pro !</string>
+        Support the development by watching an ad, or buy VisionClick Pro to remove ads forever!</string>
+    <string name="message_billing_success">Thank you for buying\nVisionClick Pro !</string>
 
     <string name="button_text_watch_ad_loading">Loading Ad</string>
     <string name="button_text_watch_ad">Watch an Ad</string>

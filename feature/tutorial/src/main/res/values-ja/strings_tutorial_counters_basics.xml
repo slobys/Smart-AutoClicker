@@ -75,7 +75,7 @@
 
     <string name="message_tutorial_counters_basics_step_26">シナリオが完成しました！青いターゲットをクリックして各クリックをカウントし、10回クリックするごとに赤いターゲットで確認してまた最初から始めます。\n\nシナリオを保存して設定を適用してください。</string>
 
-    <string name="message_tutorial_counters_basics_step_27">準備完了です！シナリオを開始し、ゲームを起動して、Klick\'rがカウントを代わりに処理するのを見てください。</string>
+    <string name="message_tutorial_counters_basics_step_27">準備完了です！シナリオを開始し、ゲームを起動して、VisionClickがカウントを代わりに処理するのを見てください。</string>
 
     <string name="message_tutorial_counters_basics_step_28">よくできました！複数のイベントにまたがって値を追跡するためのカウンターの使い方を学びました。\n\n「カウンターを変更する」アクションと「カウンター到達時」条件を組み合わせることで、繰り返しのパターンに反応する自動化を構築できるようになりました。</string>
 

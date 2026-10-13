@@ -33,7 +33,7 @@
     <string name="runtime_create_success">Created “%1$s”. Add events or actions before running it.</string>
     <string name="runtime_create_saved_not_opened">“%1$s” was saved, but could not be opened. Select it from Switch script or the home screen to edit it.</string>
 
-    <string name="app_name" translatable="false">Klick\'r</string>
+    <string name="app_name" translatable="false">VisionClick</string>
 
     <string name="activity_scenario_title">Scenarios</string>
     <string name="accessibility_service_description">This application needs this service to inject the clicks you have
@@ -174,7 +174,7 @@
     <!-- Legacy condition migration dialog  ======================================================================== -->
     <string name="dialog_condition_migration_title">Migration</string>
 
-    <string name="message_condition_migration_desc">Klick\'r images format have changed and your scenario needs to be updated.         This can take a few minutes depending on the number of conditions to migrate.</string>
+    <string name="message_condition_migration_desc">VisionClick images format have changed and your scenario needs to be updated.         This can take a few minutes depending on the number of conditions to migrate.</string>
     <string name="message_condition_migration_count">%1$d Image Conditions to migrate.</string>
     <string name="message_condition_migration_success">All Image Conditions migrated.</string>
     <string name="message_condition_migration_error">Some conditions could not be migrated. Please check your scenarios.</string>

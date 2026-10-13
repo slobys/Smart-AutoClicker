@@ -25,7 +25,7 @@
     <string name="message_tutorial_combine_conditions_operator_or_step_1">新挑戰！螢幕上可能出現兩個目標。紅色目標值 2 分，藍色目標值 1 分，所以要盡快點擊出現的那個。
         \n\n啟動遊戲，看看你能發揮多好。</string>
 
-    <string name="message_tutorial_combine_conditions_operator_or_step_2">手動操作太難跟上節奏，所以讓我們使用 Klick\'r。
+    <string name="message_tutorial_combine_conditions_operator_or_step_2">手動操作太難跟上節奏，所以讓我們使用 VisionClick。
         \n\n開啟場景設定選單，建立一個新的螢幕事件，並開始為遊戲目標新增條件。</string>
 
     <string name="message_tutorial_combine_conditions_operator_or_step_3">每個目標需要一個條件。先從藍色目標開始。
@@ -46,12 +46,12 @@
 
     <string name="message_tutorial_combine_conditions_operator_or_step_9">OR 運算子已設定好。開啟「動作」部分，建立一個新的點擊動作。</string>
 
-    <string name="message_tutorial_combine_conditions_operator_or_step_10">我們想點擊觸發事件的目標。選擇位置類型「依條件」。使用 OR 時，每次只有一個條件能被正向偵測到，因此無需選擇特定條件。Klick\'r 會自動點擊符合條件的位置。
+    <string name="message_tutorial_combine_conditions_operator_or_step_10">我們想點擊觸發事件的目標。選擇位置類型「依條件」。使用 OR 時，每次只有一個條件能被正向偵測到，因此無需選擇特定條件。VisionClick 會自動點擊符合條件的位置。
         \n\n完成後，儲存點擊動作，然後儲存事件和場景，並返回遊戲。</string>
 
     <string name="message_tutorial_combine_conditions_operator_or_step_11">啟動你的場景並開始遊戲以獲勝！
         \n\n如果無效，請檢查你的條件是否正確擷取，以及點擊時長是否設定為 1ms。</string>
 
-    <string name="message_tutorial_combine_conditions_operator_or_step_12">恭喜！你已學會使用 OR 運算子，也明白了為什麼條件優先級很重要。透過將紅色條件排在第一位，當兩個目標同時可見時，Klick\'r 始終優先選擇得分更高的目標。</string>
+    <string name="message_tutorial_combine_conditions_operator_or_step_12">恭喜！你已學會使用 OR 運算子，也明白了為什麼條件優先級很重要。透過將紅色條件排在第一位，當兩個目標同時可見時，VisionClick 始終優先選擇得分更高的目標。</string>
 
 </resources>

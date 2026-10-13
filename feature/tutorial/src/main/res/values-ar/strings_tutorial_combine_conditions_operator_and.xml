@@ -29,7 +29,7 @@
         \n\nابدأ اللعبة وانظر إن كنت تستطيع مواكبة الوتيرة بمفردك.</string>
 
     <string name="message_tutorial_combine_conditions_operator_and_step_2">التوقيت ضيق جدًا للتعامل معه يدويًا،
-        لذا لنستخدم Klick\'r. \n\nافتح قائمة إعداد السيناريو، وأنشئ حدث شاشة جديدًا، وابدأ في إضافة شروط
+        لذا لنستخدم VisionClick. \n\nافتح قائمة إعداد السيناريو، وأنشئ حدث شاشة جديدًا، وابدأ في إضافة شروط
         لأهداف اللعبة.</string>
 
     <string name="message_tutorial_combine_conditions_operator_and_step_3">نحتاج إلى شرط واحد لكل هدف. لنبدأ

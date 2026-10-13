@@ -33,6 +33,6 @@
     <string name="message_tutorial_timer_reached_conditions_step_11">Bây giờ Sự kiện đã biết khi nào nên kích hoạt các hành động của nó, nhưng chúng ta vẫn cần xác định những gì cần kích hoạt. Bấm vào trường Hành động để hiển thị danh sách hành động.</string>
     <string name="message_tutorial_timer_reached_conditions_step_12">Khi Sự kiện được đáp ứng (mỗi giây), chúng ta cần nhấp vào nút trò chơi. Chỉ cần tạo hành động Nhấp chuột mới và đặt vị trí của nó trên nút trò chơi.\n\nHướng dẫn sẽ tiếp tục khi bạn quay lại danh sách Sự kiện với Sự kiện đã tạo của mình.</string>
     <string name="message_tutorial_timer_reached_conditions_step_13">Sự kiện kích hoạt của chúng tôi biết khi nào nên hành động và phải làm gì, giờ đây chúng tôi có thể lưu kịch bản của mình và cố gắng đánh bại trò chơi.\n\nHướng dẫn sẽ tiếp tục sau khi bạn lưu kịch bản.</string>
-    <string name="message_tutorial_timer_reached_conditions_step_14">Bây giờ hãy khởi động lại trò chơi, bắt đầu kịch bản của bạn và xem Klick\'r đánh bại trò chơi giúp bạn!</string>
+    <string name="message_tutorial_timer_reached_conditions_step_14">Bây giờ hãy khởi động lại trò chơi, bắt đầu kịch bản của bạn và xem VisionClick đánh bại trò chơi giúp bạn!</string>
 
 </resources>

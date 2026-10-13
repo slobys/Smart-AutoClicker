@@ -58,5 +58,5 @@
     <string name="message_tutorial_timer_reached_conditions_step_13">我们的触发器事件知道何时行动以及做什么，现在我们可以保存场景并尝试赢得游戏。
         \n\n保存场景后教程将继续。</string>
 
-    <string name="message_tutorial_timer_reached_conditions_step_14">现在重启游戏，启动您的场景，看着Klick\'r替您赢得游戏！</string>
+    <string name="message_tutorial_timer_reached_conditions_step_14">现在重启游戏，启动您的场景，看着VisionClick替您赢得游戏！</string>
 </resources>

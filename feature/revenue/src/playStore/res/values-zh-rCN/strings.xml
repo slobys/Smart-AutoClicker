@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="header_starting_detection">正在启动检测</string>
-    <string name="message_billing">本应用为开源项目，由志工在业余时间维护。\n\n请通过观看广告支持开发，或购买 Klick\'r 专业版以永久移除广告。</string>
-    <string name="message_billing_success">感谢您购买\nKlick\'r 专业版！</string>
+    <string name="message_billing">本应用为开源项目，由志工在业余时间维护。\n\n请通过观看广告支持开发，或购买 VisionClick 专业版以永久移除广告。</string>
+    <string name="message_billing_success">感谢您购买\nVisionClick 专业版！</string>
     <string name="button_text_watch_ad_loading">正在加载广告</string>
     <string name="button_text_watch_ad">观看广告</string>
     <string name="button_text_watch_ad_error">广告错误</string>

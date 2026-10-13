@@ -17,8 +17,8 @@
 -->
 <resources>
 
-    <string name="tile_label_start_scenario">Khởi động Klick\'r</string>
-    <string name="tile_label_stop_scenario">Dừng Klick\'r</string>
+    <string name="tile_label_start_scenario">Khởi động VisionClick</string>
+    <string name="tile_label_stop_scenario">Dừng VisionClick</string>
     <string name="tile_subtext_unavailable">Không có kịch bản nào được xác định</string>
 
 </resources>

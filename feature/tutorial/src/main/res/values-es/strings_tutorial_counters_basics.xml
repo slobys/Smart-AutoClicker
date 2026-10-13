@@ -120,7 +120,7 @@
         escenario para aplicar tu configuración.</string>
 
     <string name="message_tutorial_counters_basics_step_27">¡Todo está listo! Inicia el escenario, luego lanza el juego
-        y observa cómo Klick\'r gestiona el conteo por ti.</string>
+        y observa cómo VisionClick gestiona el conteo por ti.</string>
 
     <string name="message_tutorial_counters_basics_step_28">¡Bien hecho! Has aprendido a usar Contadores para registrar
         valores a lo largo de múltiples eventos. \n\nCombinado con la acción Contador de cambios y la condición

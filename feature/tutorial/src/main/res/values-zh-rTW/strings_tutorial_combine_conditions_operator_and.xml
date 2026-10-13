@@ -25,7 +25,7 @@
     <string name="message_tutorial_combine_conditions_operator_and_step_1">新規則！遊戲現在顯示兩個目標。你需要點擊藍色目標，但只有在藍色和紅色目標同時出現在螢幕上時才能點擊。
         \n\n啟動遊戲，看看你能否靠自己跟上節奏。</string>
 
-    <string name="message_tutorial_combine_conditions_operator_and_step_2">手動操作時機太難掌握，所以讓我們使用 Klick\'r。
+    <string name="message_tutorial_combine_conditions_operator_and_step_2">手動操作時機太難掌握，所以讓我們使用 VisionClick。
         \n\n開啟場景設定選單，建立一個新的螢幕事件，並開始為遊戲目標新增條件。</string>
 
     <string name="message_tutorial_combine_conditions_operator_and_step_3">每個目標需要一個條件。先從藍色目標開始。

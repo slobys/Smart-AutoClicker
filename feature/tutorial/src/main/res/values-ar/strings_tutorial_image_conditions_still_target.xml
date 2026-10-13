@@ -22,12 +22,12 @@
     <string name="message_game_tutorial_screen_condition_still_target">انقر على الزر الأزرق في أسرع وقت ممكن</string>
 
     <string name="message_tutorial_screen_condition_still_target_step_1">مرحبًا بك في البرنامج التعليمي الأول!\n\nهنا، ستحاول تحقيق أعلى الدرجات
-        لعبة بمساعدة Klick\'r.\n\nأولاً، ابدأ اللعبة وحاول الفوز بنفسك.</string>
+        لعبة بمساعدة VisionClick.\n\nأولاً، ابدأ اللعبة وحاول الفوز بنفسك.</string>
 
-    <string name="message_tutorial_screen_condition_still_target_step_3">الأمر صعب، أليس كذلك؟\nدعونا نستخدم Klick\'r للتغلب عليه!\n\n
+    <string name="message_tutorial_screen_condition_still_target_step_3">الأمر صعب، أليس كذلك؟\nدعونا نستخدم VisionClick للتغلب عليه!\n\n
         انقر على أيقونة تكوين السيناريو لبدء تحرير السيناريو الجديد.</string>
 
-    <string name="message_tutorial_screen_condition_still_target_step_4">"السيناريو" هو البنية الجذرية لأتمتة Klick\'r.\n\n
+    <string name="message_tutorial_screen_condition_still_target_step_4">"السيناريو" هو البنية الجذرية لأتمتة VisionClick.\n\n
         يحتوي على إعدادات الكشف العامة وقائمة الأحداث التي تصف ما سيتم تنفيذه عند التشغيل
         السيناريو الخاص بك. \n\nانقر فوق زر إنشاء حدث لإنشاء حدثك الأول.</string>
 
@@ -105,9 +105,9 @@
 
     <string name="message_tutorial_screen_condition_still_target_step_23">يتم تشغيله ولكن لا يحدث شيء؟\n\nهذا طبيعي، سيتم النقر فقط
         عندما يكون الحرف الأزرق مرئيا، تذكر؟ أثناء استمرار تشغيل السيناريو، اضغط على زر بدء اللعبة
-        وشاهد فقط كيف سيهزمك Klick\'r!</string>
+        وشاهد فقط كيف سيهزمك VisionClick!</string>
 
-    <string name="message_tutorial_screen_condition_still_target_step_24">تهانينا!\n\nأنت تعرف الآن أساسيات Klick\'r، ولكنك لا تعرفها
+    <string name="message_tutorial_screen_condition_still_target_step_24">تهانينا!\n\nأنت تعرف الآن أساسيات VisionClick، ولكنك لا تعرفها
         ستكون جميع حالات الاستخدام بسيطة مثل هذه اللعبة.\nألق نظرة على البرنامج التعليمي التالي لتتعلم كيفية تتبع حركة متحركة
         الهدف</string>
 </resources>

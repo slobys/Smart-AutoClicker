@@ -22,12 +22,12 @@
     <string name="message_game_tutorial_screen_condition_still_target">Clicca sul pulsante blu il più velocemente possibile</string>
 
     <string name="message_tutorial_screen_condition_still_target_step_1">Benvenuto al tuo primo tutorial!\n\nQui proverai a battere il punteggio più alto di un gioco
-    con l\'aiuto di Klick\'r.\n\nInizia prima il gioco e cerca di vincere da solo.</string>
+    con l\'aiuto di VisionClick.\n\nInizia prima il gioco e cerca di vincere da solo.</string>
 
-    <string name="message_tutorial_screen_condition_still_target_step_3">Difficile, vero?\nUtilizziamo Klick\'r per batterlo!\n\nClicca sull\'icona di configurazione
+    <string name="message_tutorial_screen_condition_still_target_step_3">Difficile, vero?\nUtilizziamo VisionClick per batterlo!\n\nClicca sull\'icona di configurazione
     dello scenario per iniziare a modificare il tuo nuovo scenario.</string>
 
-    <string name="message_tutorial_screen_condition_still_target_step_4">Uno Scenario è la struttura principale dell\'automazione di Klick\'r.\n\n
+    <string name="message_tutorial_screen_condition_still_target_step_4">Uno Scenario è la struttura principale dell\'automazione di VisionClick.\n\n
     Contiene le impostazioni generali di rilevamento e un elenco di Eventi che descrivono cosa verrà eseguito quando si esegue il tuo
     Scenario.\n\nClicca sul pulsante crea evento per creare il tuo primo evento.</string>
 
@@ -101,8 +101,8 @@
 
     <string name="message_tutorial_screen_condition_still_target_step_23">Sta giocando ma non succede nulla?\n\nÈ normale, si limita a fare clic
         quando è visibile il carattere blu, ricordi? Mentre mantieni lo scenario in esecuzione, premi il pulsante di avvio del gioco
-        e guarda come Klick\'r batterà per te!</string>
+        e guarda come VisionClick batterà per te!</string>
 
-    <string name="message_tutorial_screen_condition_still_target_step_24">Congratulazioni!\n\nOra conosci le basi di Klick\'r, ma non tutti i casi d\'uso saranno
+    <string name="message_tutorial_screen_condition_still_target_step_24">Congratulazioni!\n\nOra conosci le basi di VisionClick, ma non tutti i casi d\'uso saranno
         semplici come questo gioco.\nGuarda il tutorial successivo per imparare come tracciare un bersaglio in movimento.</string>
 </resources>

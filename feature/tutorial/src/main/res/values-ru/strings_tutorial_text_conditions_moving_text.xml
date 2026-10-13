@@ -22,7 +22,7 @@
     <string name="message_game_tutorial_text_conditions_moving_text">Нажимайте только на кнопку \"Hello\" как можно быстрее</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_1">Добро пожаловать в обучение по условию движущегося текста!\n\nЗдесь вы
-        попробуете побить рекорд игры с помощью Klick\'r.\n\nСначала можете попробовать самостоятельно, нажав кнопку начать игру,
+        попробуете побить рекорд игры с помощью VisionClick.\n\nСначала можете попробовать самостоятельно, нажав кнопку начать игру,
         или сразу перейти к настройке Сценария.</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_2">Как и для любого другого Условия экрана, сначала необходимо
@@ -42,7 +42,7 @@
         обнаруживаемого текста. «Hello» использует латинский алфавит, поэтому здесь можно оставить значение по умолчанию, но не забудьте
         изменить его при обнаружении нелатинских текстов.</string>
 
-    <string name="message_tutorial_text_conditions_moving_text_step_7">Теперь нам нужно указать Klick\'r, где искать
+    <string name="message_tutorial_text_conditions_moving_text_step_7">Теперь нам нужно указать VisionClick, где искать
         текст.\n\nКликните на селектор области обнаружения, чтобы задать её.</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_8">Расположите и измените размер прямоугольника обнаружения так, чтобы он
@@ -94,7 +94,7 @@
 
     <string name="message_tutorial_text_conditions_moving_text_step_22">Воспроизводится, но ничего не происходит?\n\nЭто нормально, он будет кликать только
         когда кнопка показывает «Hello», помните? Не останавливая сценарий, нажмите кнопку начать игру
-        и просто наблюдайте, как Klick\'r побеждает за вас!</string>
+        и просто наблюдайте, как VisionClick побеждает за вас!</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_23">Поздравляем!\n\nТеперь вы знаете, как обнаружить движущийся текст, отображаемый на
         экране.\nОзнакомьтесь с другими уроками, чтобы узнать о других сценариях использования.</string>

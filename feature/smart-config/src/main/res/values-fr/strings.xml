@@ -175,8 +175,8 @@
     <string name="warning_dialog_message_condition_delete_associated_action">Cette condition est référencée par une ou plusieures actions. La supprimer supprimera aussi les actions associées.\nÊtes vous sûr ?</string>
     <string name="warning_dialog_message_close_without_saving">Vous avez des modifications non sauvées, voulez-vous vous en débarrasser ?</string>
     <string name="error_dialog_message_scenario_saving">Votre scenario ne peux pas être enregistré à cause d\'une erreur interne.\nVoulez vous le modifier ou annuler vos modifications ?</string>
-    <string name="error_dialog_message_error_native_lib">Klick\'r est mal installé et ne peut pas démarrer la détection.\n\nSi vous l\'avez installé à partir d\'une boutique d\'applications légitime, veuillez nous contacter sur GitHub, car cela nous aidera à résoudre ce problème.</string>
-    <string name="error_dialog_message_screen_capture_unsupported">L\'écran de votre appareil ne peut pas être lu par Klick\'r en raison d\'une limitation du pilote graphique.\n\nMalheureusement, il s\'agit d\'une restriction matérielle qui ne peut pas être contournée. Veuillez nous contacter sur GitHub avec le modèle de votre appareil afin que nous puissions suivre les appareils affectés.</string>
+    <string name="error_dialog_message_error_native_lib">VisionClick est mal installé et ne peut pas démarrer la détection.\n\nSi vous l\'avez installé à partir d\'une boutique d\'applications légitime, veuillez nous contacter sur GitHub, car cela nous aidera à résoudre ce problème.</string>
+    <string name="error_dialog_message_screen_capture_unsupported">L\'écran de votre appareil ne peut pas être lu par VisionClick en raison d\'une limitation du pilote graphique.\n\nMalheureusement, il s\'agit d\'une restriction matérielle qui ne peut pas être contournée. Veuillez nous contacter sur GitHub avec le modèle de votre appareil afin que nous puissions suivre les appareils affectés.</string>
 
     <!--
       - Section titles.
@@ -211,7 +211,7 @@
       - TextButton content.
       - Should be short and concise.
       -->
-    <string name="field_scenario_quality_description">Pour accélérer la détection, Klick\'r réduit la résolution des images avant de procéder à la détection.\n\nSi vous augmentez la résolution, la détection sera plus lente, mais plus précise. Si vous diminuez la résolution, la détection sera plus rapide, mais moins précise. Trouvez le bon rapport entre la résolution de détection et les seuils de conditions pour tirer le meilleur parti de vos scénarios !</string>
+    <string name="field_scenario_quality_description">Pour accélérer la détection, VisionClick réduit la résolution des images avant de procéder à la détection.\n\nSi vous augmentez la résolution, la détection sera plus lente, mais plus précise. Si vous diminuez la résolution, la détection sera plus rapide, mais moins précise. Trouvez le bon rapport entre la résolution de détection et les seuils de conditions pour tirer le meilleur parti de vos scénarios !</string>
 
     <!--
       - Text input fields labels and error messages.

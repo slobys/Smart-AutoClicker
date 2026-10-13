@@ -19,9 +19,9 @@
     <string name="item_title_tutorial_screen_condition_still_target">静止しているターゲットを押します</string>
     <string name="item_desc_tutorial_screen_condition_still_target">静止ターゲットをクリックするための最初のイベントを作成する方法を学びます。</string>
     <string name="message_game_tutorial_screen_condition_still_target">青いボタンをできるだけ早くクリックしてください</string>
-    <string name="message_tutorial_screen_condition_still_target_step_1">最初のチュートリアルへようこそ!\n\nここでハイスコアを目指しましょう\n        Klick\'r の助けを借りたゲームの様子。\n\nまずはゲームをスタートして、自分だけで勝ってみよう。</string>
-    <string name="message_tutorial_screen_condition_still_target_step_3">難しいですね。\nKlick\'rを使って倒しましょう！\n\n\n        シナリオ設定アイコンをクリックして、新しいシナリオの編集を開始します。</string>
-    <string name="message_tutorial_screen_condition_still_target_step_4">シナリオは、Klick\'r オートメーションのルート構造です。\n\n\n        これには、一般的な検出設定と、実行時に実行される内容を説明するイベントのリストが含まれています。\n        あなたのシナリオ。 \n\n「イベントの作成」ボタンをクリックして最初のイベントを作成します。</string>
+    <string name="message_tutorial_screen_condition_still_target_step_1">最初のチュートリアルへようこそ!\n\nここでハイスコアを目指しましょう\n        VisionClick の助けを借りたゲームの様子。\n\nまずはゲームをスタートして、自分だけで勝ってみよう。</string>
+    <string name="message_tutorial_screen_condition_still_target_step_3">難しいですね。\nVisionClickを使って倒しましょう！\n\n\n        シナリオ設定アイコンをクリックして、新しいシナリオの編集を開始します。</string>
+    <string name="message_tutorial_screen_condition_still_target_step_4">シナリオは、VisionClick オートメーションのルート構造です。\n\n\n        これには、一般的な検出設定と、実行時に実行される内容を説明するイベントのリストが含まれています。\n        あなたのシナリオ。 \n\n「イベントの作成」ボタンをクリックして最初のイベントを作成します。</string>
     <string name="message_tutorial_screen_condition_still_target_step_5">イベントは、特定の場合に実行するアクション (クリック、スワイプなど) を記述します。\n        条件は満たされています。\n\n有効なイベントを作成するには、少なくとも 1 つの条件と 1 つのアクションを作成する必要があります\n        そしてそれをあなたのシナリオで使用してください\n\n「条件」フィールドをクリックして「条件」リストを表示します。</string>
     <string name="message_tutorial_screen_condition_still_target_step_6">条件は、各画面と比較されるスクリーンショットの一部です。\n        デバイスのフレーム。\n\nゲームに勝つには、青いキャラクターが表示されているときにクリックする必要があるため、\n        キャラクターがデバイス画面に表示されたときに満たされる条件。\n\n「作成」をクリックします\n        最初の条件を作成するための条件ボタン。</string>
     <string name="message_tutorial_screen_condition_still_target_step_7">このチュートリアルでは、画面上の画像を検出する方法を学びます。画像条件を選択してください</string>
@@ -45,6 +45,6 @@
     <string name="message_tutorial_screen_condition_still_target_step_20">イベントには条件とアクションが追加されました。これは、イベントが何を認識しているかを意味します。\n        実行するか、いつ実行するか。\n\n保存ボタンをクリックして登録し、シナリオダイアログに戻ります。</string>
     <string name="message_tutorial_screen_condition_still_target_step_21">シナリオの唯一の要件は、少なくとも 1 つのイベントがあることです。\n\n        イベントでゲームに勝つ方法はすでにカバーされているため、他に何も必要ありません。\n\n保存ボタンをクリックして、\n        シナリオをデータベースに保存し、設定ダイアログを閉じます。</string>
     <string name="message_tutorial_screen_condition_still_target_step_22">ご覧のとおり、再生ボタンが使用できるようになりました。\n        シナリオは有効であり、検出に使用できます\n\nそれをクリックして検出を開始します。</string>
-    <string name="message_tutorial_screen_condition_still_target_step_23">再生中ですが何も起こりませんか？\n\nそれは正常です、クリックするだけです\n        青い文字が表示されたら、覚えていますか?シナリオ実行中にゲーム開始ボタンを押す\n        そして、Klick\'r があなたのためにそれを倒すのを見てください!</string>
-    <string name="message_tutorial_screen_condition_still_target_step_24">おめでとう！\n\nKlick\'r の基本はわかりましたが、まだわかっていません。\n        すべてのユースケースはこのゲームと同じくらい単純になります。\n移動を追跡する方法については、次のチュートリアルをご覧ください。\n        ターゲット</string>
+    <string name="message_tutorial_screen_condition_still_target_step_23">再生中ですが何も起こりませんか？\n\nそれは正常です、クリックするだけです\n        青い文字が表示されたら、覚えていますか?シナリオ実行中にゲーム開始ボタンを押す\n        そして、VisionClick があなたのためにそれを倒すのを見てください!</string>
+    <string name="message_tutorial_screen_condition_still_target_step_24">おめでとう！\n\nVisionClick の基本はわかりましたが、まだわかっていません。\n        すべてのユースケースはこのゲームと同じくらい単純になります。\n移動を追跡する方法については、次のチュートリアルをご覧ください。\n        ターゲット</string>
 </resources>

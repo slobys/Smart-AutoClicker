@@ -22,7 +22,7 @@
     <string name="message_game_tutorial_text_conditions_still_text">Fai clic sul pulsante quando mostra \"Hello\", il più velocemente possibile</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_1">Benvenuto nel tutorial sulle condizioni di testo!\n\nQui proverai
-        a battere il punteggio massimo di un gioco con l\'aiuto di Klick\'r.\n\nPuoi prima provarlo premendo Avvia gioco,
+        a battere il punteggio massimo di un gioco con l\'aiuto di VisionClick.\n\nPuoi prima provarlo premendo Avvia gioco,
         o passare direttamente alla configurazione dello Scenario.</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_2">Come per qualsiasi altra Condizione dello schermo, dobbiamo prima
@@ -42,7 +42,7 @@
         testo da rilevare. \"Hello\" usa l\'alfabeto latino, quindi puoi mantenere il valore predefinito, ma ricorda di
         cambiarlo quando rilevi testi non latini.</string>
 
-    <string name="message_tutorial_text_conditions_still_text_step_7">Ora dobbiamo indicare a Klick\'r dove cercare il
+    <string name="message_tutorial_text_conditions_still_text_step_7">Ora dobbiamo indicare a VisionClick dove cercare il
         testo.\n\nPremi sul selettore dell\'area di rilevamento per definirla.</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_8">Posiziona e ridimensiona il rettangolo di rilevamento in modo che copra il
@@ -99,7 +99,7 @@
 
     <string name="message_tutorial_text_conditions_still_text_step_21">Sta funzionando ma non succede nulla?\n\nÈ normale, farà clic solo
         quando il pulsante mostra \"Hello\", ricordi? Mentre mantieni lo scenario in esecuzione, premi il pulsante Avvia gioco
-        e guarda Klick\'r batterlo al posto tuo!</string>
+        e guarda VisionClick batterlo al posto tuo!</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_22">Congratulazioni!\n\nOra sai come rilevare un testo sullo schermo.\nDai un\'occhiata agli altri tutorial per scoprire altri casi d\'uso.</string>
 </resources>

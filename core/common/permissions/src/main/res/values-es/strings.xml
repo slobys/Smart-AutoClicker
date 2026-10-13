@@ -30,16 +30,16 @@
       - Messages.
       - Views handles any length here, so no limitations.
       -->
-    <string name="message_permission_desc_overlay">Se requiere permiso de superposición para mostrar Klick\'r
+    <string name="message_permission_desc_overlay">Se requiere permiso de superposición para mostrar VisionClick
         interfaz sobre las aplicaciones que desea automatizar, permitiéndole configurar su escenario sin detenerse
         la otra aplicación.</string>
-    <string name="message_permission_desc_accessibility">El permiso del servicio de accesibilidad permite a Klick\'r
+    <string name="message_permission_desc_accessibility">El permiso del servicio de accesibilidad permite a VisionClick
         para realizar gestos en la pantalla de su dispositivo. Este permiso es necesario para ejecutar los clics y deslizamientos.
-        creará en sus escenarios de automatizaciones.\n\nKlick\'r\n\nNo recopila datos para otorgar Accesibilidad
+        creará en sus escenarios de automatizaciones.\n\nVisionClick\n\nNo recopila datos para otorgar Accesibilidad
         permiso de servicio, haga clic en el botón a continuación.</string>
     <string name="message_permission_desc_notification">Opcional: muestra la notificación mientras la aplicación se ejecuta en orden
         para volver fácilmente a la pantalla de selección de escenario.</string>
-    <string name="message_permission_mandatory_denied">Este permiso es obligatorio para Klick\'r.
+    <string name="message_permission_mandatory_denied">Este permiso es obligatorio para VisionClick.
         No podrá funcionar correctamente sin él.</string>
 
     <!--

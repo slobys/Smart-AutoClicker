@@ -48,7 +48,7 @@
     <string name="message_tutorial_counters_basics_step_24">Đặt điều kiện thành = và giá trị thành 0 để đặt lại bộ đếm sau mỗi lần xác thực. Sau đó lưu hành động và quay lại hộp thoại Sự kiện để tiếp tục.</string>
     <string name="message_tutorial_counters_basics_step_25">Sự kiện kích hoạt này sẽ nhấp vào mục tiêu màu đỏ và đặt lại bộ đếm mỗi khi đếm được 10 lần nhấp màu xanh. Danh sách Sự kiện kích hoạt được thực thi giữa mỗi khung màn hình, trước danh sách Sự kiện màn hình, do đó, khi bộ đếm bằng 10, Sự kiện này sẽ chạy ngay lập tức: mục tiêu màu đỏ được nhấp vào và bộ đếm được đặt lại, sẵn sàng bắt đầu lại.\n\nLưu Sự kiện để quay lại kịch bản.</string>
     <string name="message_tutorial_counters_basics_step_26">Kịch bản đã hoàn tất! Nó sẽ nhấp vào mục tiêu màu xanh, đếm từng lần nhấp, sau đó xác thực bằng mục tiêu màu đỏ sau mỗi 10 lần nhấp và bắt đầu lại.\n\nLưu kịch bản để áp dụng cấu hình của bạn.</string>
-    <string name="message_tutorial_counters_basics_step_27">Mọi thứ đã sẵn sàng! Bắt đầu kịch bản, sau đó khởi chạy trò chơi và xem Klick\'r xử lý việc đếm cho bạn.</string>
+    <string name="message_tutorial_counters_basics_step_27">Mọi thứ đã sẵn sàng! Bắt đầu kịch bản, sau đó khởi chạy trò chơi và xem VisionClick xử lý việc đếm cho bạn.</string>
     <string name="message_tutorial_counters_basics_step_28">Làm tốt! Bạn đã học cách sử dụng Bộ đếm để theo dõi giá trị trên nhiều Sự kiện.\n\nKết hợp với hành động Thay đổi bộ đếm và điều kiện Đã đạt đến bộ đếm, giờ đây bạn có thể xây dựng các quy trình tự động hóa phản ứng với các mẫu lặp lại.</string>
 
 </resources>

@@ -21,7 +21,7 @@
     <string name="item_desc_tutorial_text_conditions_moving_text">ランダムに動くテキストをクリックするイベントの作成方法を学ぶ</string>
     <string name="message_game_tutorial_text_conditions_moving_text">\"Hello\"ボタンだけをできるだけ早くクリックしてください</string>
 
-    <string name="message_tutorial_text_conditions_moving_text_step_1">動くテキスト条件チュートリアルへようこそ！\n\nここでは、Klick\'rの助けを借りて
+    <string name="message_tutorial_text_conditions_moving_text_step_1">動くテキスト条件チュートリアルへようこそ！\n\nここでは、VisionClickの助けを借りて
         ゲームのハイスコアを更新してみます。\n\nまずスタートゲームを押して試してみるか、
         直接シナリオの設定に進むこともできます。</string>
 
@@ -42,7 +42,7 @@
         「Hello」はラテン文字を使用しているため、ここではデフォルト値のままで構いませんが、
         非ラテン文字のテキストを検出する際は変更を忘れずに。</string>
 
-    <string name="message_tutorial_text_conditions_moving_text_step_7">次に、Klick\'rにテキストをどこで検索するかを指定する必要があります。
+    <string name="message_tutorial_text_conditions_moving_text_step_7">次に、VisionClickにテキストをどこで検索するかを指定する必要があります。
         \n\n検出エリアセレクターをクリックして設定してください。</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_8">「Hello」が4つの場所のいずれかにランダムに現れるため、
@@ -90,7 +90,7 @@
         \n\nそれをクリックして検出を開始してください。</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_22">動いているのに何も起きない？\n\nそれは正常です。ボタンが「Hello」を表示したときだけクリックします。
-        シナリオを実行したまま、スタートゲームボタンを押して、Klick\'rがあなたの代わりに勝つのを見守ってください！</string>
+        シナリオを実行したまま、スタートゲームボタンを押して、VisionClickがあなたの代わりに勝つのを見守ってください！</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_23">おめでとうございます！\n\n画面に表示される動くテキストを検出する方法を学びました。
         \n他のチュートリアルをご覧いただき、さらに多くの使用例をご確認ください。</string>

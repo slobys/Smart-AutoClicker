@@ -16,7 +16,7 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
-    <string name="notification_scenario_channel_group_name">Сценарії Klick\'r</string>
+    <string name="notification_scenario_channel_group_name">Сценарії VisionClick</string>
     <string name="notification_scenario_channel_low_name">Низький</string>
     <string name="notification_scenario_channel_default_name">Звичайний</string>
     <string name="notification_scenario_channel_high_name">Високий</string>

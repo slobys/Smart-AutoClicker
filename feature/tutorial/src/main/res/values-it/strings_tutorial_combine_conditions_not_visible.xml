@@ -28,7 +28,7 @@
         \n\nAvvia il gioco e vedi se riesci a vincere da solo.</string>
 
     <string name="message_tutorial_combine_conditions_not_visible_target_step_2">Ancora una volta, sembra impossibile
-        vincere manualmente, quindi usiamo Klick\'r. \n\nApri il menu di configurazione dello scenario, crea un nuovo
+        vincere manualmente, quindi usiamo VisionClick. \n\nApri il menu di configurazione dello scenario, crea un nuovo
         Evento Schermo e inizia ad aggiungere condizioni per gli obiettivi del gioco.</string>
 
     <string name="message_tutorial_combine_conditions_not_visible_target_step_3">Prima di tutto, abbiamo bisogno di una

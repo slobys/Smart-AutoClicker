@@ -29,7 +29,7 @@
         posible. \n\nInicia el juego y comprueba cómo te va.</string>
 
     <string name="message_tutorial_combine_conditions_operator_or_step_2">Demasiado rápido para manejarlo manualmente,
-        así que usemos Klick\'r. \n\nAbre el menú de configuración del escenario, crea un nuevo Evento de Pantalla y
+        así que usemos VisionClick. \n\nAbre el menú de configuración del escenario, crea un nuevo Evento de Pantalla y
         empieza a añadir condiciones para los objetivos del juego.</string>
 
     <string name="message_tutorial_combine_conditions_operator_or_step_3">Necesitamos una condición por objetivo.
@@ -58,7 +58,7 @@
 
     <string name="message_tutorial_combine_conditions_operator_or_step_10">Queremos hacer clic en el objetivo que
         activó el evento. Selecciona el tipo de posición «En condición». Con O, solo una condición puede detectarse
-        positivamente a la vez, así que no hace falta seleccionar ninguna condición específica. Klick\'r hará clic
+        positivamente a la vez, así que no hace falta seleccionar ninguna condición específica. VisionClick hará clic
         automáticamente en la ubicación de la condición que coincidió. \n\nCuando hayas terminado, guarda el clic,
         luego tu evento y escenario, y vuelve al juego.</string>
 
@@ -67,7 +67,7 @@
         clic esté ajustada a 1 ms.</string>
 
     <string name="message_tutorial_combine_conditions_operator_or_step_12">¡Enhorabuena! Has aprendido a usar el
-        operador O y por qué importa la prioridad de las condiciones. Al colocar la condición roja primero, Klick\'r
+        operador O y por qué importa la prioridad de las condiciones. Al colocar la condición roja primero, VisionClick
         siempre prioriza el objetivo de mayor valor cuando ambos son visibles al mismo tiempo.</string>
 
 </resources>

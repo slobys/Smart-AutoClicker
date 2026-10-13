@@ -22,7 +22,7 @@
     <string name="message_game_tutorial_color_conditions">Click on the blue button as fast as possible</string>
 
     <string name="message_tutorial_color_conditions_step_1">Welcome to the color condition tutorial!\n\nHere, you will
-        try to beat the high score of a game with the help of Klick\'r.\n\nYou can first try it by pressing start game,
+        try to beat the high score of a game with the help of VisionClick.\n\nYou can first try it by pressing start game,
         or proceed to the Scenario configuration directly.</string>
 
     <string name="message_tutorial_color_conditions_step_2">Just like any other Screen Condition, we need to create a
@@ -97,8 +97,8 @@
 
     <string name="message_tutorial_color_conditions_step_21">It\'s playing but nothing happens?\n\nThat\'s normal, it will click only
         when the blue button is visible, remember? While keeping the scenario running, press the start game button
-        and just watch as Klick\'r will beat it for you!</string>
+        and just watch as VisionClick will beat it for you!</string>
 
-    <string name="message_tutorial_color_conditions_step_22">Congratulations!\n\nYou now know the basics of Klick\'r, but not
+    <string name="message_tutorial_color_conditions_step_22">Congratulations!\n\nYou now know the basics of VisionClick, but not
         all use cases will be as simple as this game.\nTake a look at the other tutorials to discover more use cases.</string>
 </resources>

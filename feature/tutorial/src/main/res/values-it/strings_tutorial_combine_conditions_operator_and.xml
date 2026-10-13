@@ -29,7 +29,7 @@
         contemporaneamente. \n\nAvvia il gioco e vedi se riesci a stare al passo da solo.</string>
 
     <string name="message_tutorial_combine_conditions_operator_and_step_2">I tempi sono troppo stretti per gestirli
-        manualmente, quindi usiamo Klick\'r. \n\nApri il menu di configurazione dello scenario, crea un nuovo Evento
+        manualmente, quindi usiamo VisionClick. \n\nApri il menu di configurazione dello scenario, crea un nuovo Evento
         Schermo e inizia ad aggiungere condizioni per gli obiettivi del gioco.</string>
 
     <string name="message_tutorial_combine_conditions_operator_and_step_3">Abbiamo bisogno di una condizione per

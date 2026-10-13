@@ -16,7 +16,7 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
-    <string name="tile_label_start_scenario">Start Klick\'r</string>
-    <string name="tile_label_stop_scenario">Stop Klick\'r</string>
+    <string name="tile_label_start_scenario">Start VisionClick</string>
+    <string name="tile_label_stop_scenario">Stop VisionClick</string>
     <string name="tile_subtext_unavailable">No Scenario defined</string>
 </resources>

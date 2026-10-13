@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
 * Copyright (C) 2026 Kevin Buzeau
 *
@@ -83,7 +83,7 @@
     <string name="tutorial_slideshow_screen_condition_type_title">螢幕條件類型</string>
     <string name="tutorial_slideshow_screen_condition_type_desc">根據您的使用情境了解選擇哪種類型</string>
 
-    <string name="tutorial_slideshow_screen_condition_type_step_1_text">顏色條件是使用 Klick\'r 偵測最快的方式。它僅驗證螢幕上某個
+    <string name="tutorial_slideshow_screen_condition_type_step_1_text">顏色條件是使用 VisionClick 偵測最快的方式。它僅驗證螢幕上某個
         像素的顏色。\n\n當嘗試偵測簡單的 UI 元素（如按鈕顏色或進度條完成情況）或細微變化時，此條件非常方便。</string>
 
     <string name="tutorial_slideshow_screen_condition_type_step_2_text">圖像條件比顏色條件慢，但對螢幕內容偵測提供了更多彈性。
@@ -98,7 +98,7 @@
     <string name="tutorial_slideshow_screen_condition_threshold_title">偵測信心度</string>
     <string name="tutorial_slideshow_screen_condition_threshold_desc">關於偵測信心度的提示</string>
 
-    <string name="tutorial_slideshow_screen_condition_threshold_step_1_text">Klick\'r 在搜尋您的螢幕條件之前會進行大量預處理，以加快
+    <string name="tutorial_slideshow_screen_condition_threshold_step_1_text">VisionClick 在搜尋您的螢幕條件之前會進行大量預處理，以加快
         過程並減少電池消耗。這會在結果中產生不確定性和近似值，以信心度分數表示。\n\n為確保您的條件按預期工作，您可以在螢幕條件
         清單中聚焦某個條件時，按下播放箭頭按鈕來單獨測試它們。</string>
 
@@ -106,7 +106,7 @@
         修改允許的差異，從而消除誤報或對允許的結果更加彈性。</string>
 
     <string name="tutorial_slideshow_screen_condition_threshold_step_3_text">偵測結果還受偵測解析度影響。在情境對話框中可用，它允許
-        您更改 Klick\'r 在處理之前對螢幕內容的縮小程度。\n\n這可能會影響所有螢幕條件的信心度分數，解析度越高意味著偵測越好，
+        您更改 VisionClick 在處理之前對螢幕內容的縮小程度。\n\n這可能會影響所有螢幕條件的信心度分數，解析度越高意味著偵測越好，
         但執行時間也越慢。</string>
 
 
@@ -116,7 +116,7 @@
     <string name="tutorial_slideshow_broadcast_received_desc">監聽其他應用程式的廣播</string>
 
     <string name="tutorial_slideshow_broadcast_received_step_1_text">在 Android 上，當應用程式想與其他應用程式共享狀態時，
-        會使用 Broadcast Intent。\n\n透過「收到廣播時」條件，您可以監聽這些狀態並在 Klick\'r 中觸發相應動作。
+        會使用 Broadcast Intent。\n\n透過「收到廣播時」條件，您可以監聽這些狀態並在 VisionClick 中觸發相應動作。
         系統提供了一些 Android 系統狀態的預設值，但請注意，廣播條件更適合開發者，因為完全掌握它需要
         Android 開發知識。</string>
 
@@ -135,7 +135,7 @@
     <string name="tutorial_slideshow_pause_action_step_1_text">等待動作會將整個情境暫停設定的時間：在此期間，
         不會執行任何動作，也不會進行任何螢幕偵測。\n\n非常常見的用法是在動作清單末尾新增一個等待。當您點擊
         某個地方時，被點擊的應用程式需要時間來處理點擊並顯示結果——通常您會希望等待這個時刻，然後再讓
-        Klick\'r 重新開始分析螢幕。\n\n在兩個動作之間新增等待也是有效的，但在清單末尾新增等待通常是更重要的
+        VisionClick 重新開始分析螢幕。\n\n在兩個動作之間新增等待也是有效的，但在清單末尾新增等待通常是更重要的
         需求。</string>
 
     <!-- Swipe Action slideshow -->
@@ -164,7 +164,7 @@
         條件的中心，無論目標出現在螢幕的哪個位置都會跟蹤它。\n\n使用 AND 運算子時，所有條件都必須滿足，因此
         每個圖片條件都有一個可用位置。您可以自由選擇任意一個並透過偏移量進行微調。</string>
     <string name="tutorial_slideshow_click_action_target_step_4_text">使用 OR 運算子時，只有第一個滿足的條件會被
-        評估，其餘條件將被忽略。因此，Klick\'r 無法提前知道哪個條件會被偵測到。\n\n因此，使用 OR 運算子時無法
+        評估，其餘條件將被忽略。因此，VisionClick 無法提前知道哪個條件會被偵測到。\n\n因此，使用 OR 運算子時無法
         選擇特定條件作為目標：點擊始終會應用於執行時第一個偵測到的條件，無論它是哪個。</string>
 
     <!-- Combine Conditions Ordering slideshow -->
@@ -189,7 +189,7 @@
         換一個或多個事件的狀態。\n\n這開啟了很多可能性：一個接一個相互開啟的事件、執行一次後自動關閉的事件，或者同一時間只有一個處於活動狀態的事件組。</string>
 
     <string name="tutorial_slideshow_events_state_basics_step_3_text">當<b>場景中的所有事件都被停用</b>時，場景會自動停止。沒有更多事情要做，因此
-        Klick\'r 會自動停止。\n\n這是結束場景的簡單方法：讓最後一個事件在完成任務後停用所有其他事件，一切都會自動停止。</string>
+        VisionClick 會自動停止。\n\n這是結束場景的簡單方法：讓最後一個事件在完成任務後停用所有其他事件，一切都會自動停止。</string>
 
 
     <!-- Actions List slideshow -->
@@ -198,7 +198,7 @@
     <string name="tutorial_slideshow_actions_list_step_1_text">動作按順序依次執行。您可以使用 &lt;&lt; 和 &gt;&gt;
         按鈕更改動作的順序，或直接點擊其索引編號。\n\n請盡量保持動作清單簡短。一般自動點擊器每個事件只執行一個動作——這就是
         應該遵循的模式。如果您發現自己在單一事件中添加了很多動作，通常表示應該將工作拆分為多個事件，每個事件回應螢幕上
-        實際顯示的內容。這就是 Klick\'r 的「看見即行動」理念：先偵測，再行動。</string>
+        實際顯示的內容。這就是 VisionClick 的「看見即行動」理念：先偵測，再行動。</string>
 
     <!-- Write Text Action slideshow -->
     <string name="tutorial_slideshow_write_text_action_title">輸入文字動作</string>
@@ -236,7 +236,7 @@
         替換為計數器的值——例如，「我有 {蘋果} 個蘋果」變為「我有 18 個蘋果」。</string>
     <string name="tutorial_slideshow_notification_action_step_2_text">通知重要性等級控制通知顯示的醒目程度。較高的重要性
         等級可能顯示橫幅並播放聲音，而較低等級則靜默地傳送到通知抽屜。\n\n確切行為取決於裝置，可在 Android 通知設定中針對
-        Klick\'r 進一步自訂。</string>
+        VisionClick 進一步自訂。</string>
 
     <!-- Toggle Event Action slideshow -->
     <string name="tutorial_slideshow_toggle_event_action_title">變更事件狀態動作</string>

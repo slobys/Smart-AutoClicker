@@ -28,7 +28,7 @@
         \n\nابدأ اللعبة وانظر إن كنت تستطيع الفوز بمفردك.</string>
 
     <string name="message_tutorial_combine_conditions_not_visible_target_step_2">مرة أخرى، يبدو من المستحيل الفوز
-        يدويًا، لذا لنستخدم Klick\'r. \n\nافتح قائمة إعداد السيناريو، وأنشئ حدث شاشة جديد، وابدأ في إضافة شروط
+        يدويًا، لذا لنستخدم VisionClick. \n\nافتح قائمة إعداد السيناريو، وأنشئ حدث شاشة جديد، وابدأ في إضافة شروط
         لأهداف اللعبة.</string>
 
     <string name="message_tutorial_combine_conditions_not_visible_target_step_3">أولاً، نحتاج إلى شرط يتحقق من أن

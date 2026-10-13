@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simplified phone, touch rings and finger for Android themed icons. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="@android:color/transparent"
+        android:strokeColor="@android:color/white" android:strokeWidth="3.2"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M65,81H36C32,81 29,78 29,74V31C29,27 32,24 36,24H65C69,24 72,27 72,31V59M46,29H56M47,75H54M63,55A17,17 0,1 0,44 68M60,54A12,12 0,1 0,45 63M55,53A7,7 0,1 0,46 58" />
+    <path android:fillColor="@android:color/white"
+        android:pathData="M50,51C48,49 45,51 47,54L58,71L52,68C49,67 47,70 50,72L62,81C64,83 68,83 71,82L80,76C83,74 84,71 82,68L76,59C74,57 71,59 72,61L74,65L69,58C67,56 64,58 65,60L68,65L63,59C61,57 58,59 60,62L62,66Z" />
+</vector>

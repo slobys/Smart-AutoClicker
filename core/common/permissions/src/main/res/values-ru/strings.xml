@@ -31,16 +31,16 @@
       - Views handles any length here, so no limitations.
       -->
     <string name="message_permission_desc_overlay">Данное разрешение требуется для 
-        отображения интерфейса Klick\'r поверх приложений, на которых вы хотите использовать 
+        отображения интерфейса VisionClick поверх приложений, на которых вы хотите использовать
         его. Это позволит вам настраивать выбранный сценарий не выходя из другого приложения.</string>
-    <string name="message_permission_desc_accessibility">Служба спец. возможностей позволит Klick\'r 
+    <string name="message_permission_desc_accessibility">Служба спец. возможностей позволит VisionClick
         выполнять жесты на экране вашего устройства. Она необходима для выполнения заданных вами в 
-        сценарии нажатий и смахиваний.\n\nKlick\'r не будет собирать никаких данных.\n\nЧтобы активировать 
+        сценарии нажатий и смахиваний.\n\nVisionClick не будет собирать никаких данных.\n\nЧтобы активировать
         эту службу, нажмите на кнопку ниже.</string>
     <string name="message_permission_desc_notification">(необязательно) При работе приложения будет 
         показываться уведомление для быстрого возврата на экран выбора сценария.</string>
     <string name="message_permission_mandatory_denied">Данное разрешение необходимо для 
-        работы Klick\'r. </string>
+        работы VisionClick. </string>
 
     <!--
       - TextButton content.

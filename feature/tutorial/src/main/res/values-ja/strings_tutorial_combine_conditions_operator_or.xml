@@ -25,7 +25,7 @@
     <string name="message_tutorial_combine_conditions_operator_or_step_1">新しいチャレンジです！2つのターゲットが画面に現れることがあります。赤いターゲットは2ポイント、青いターゲットは1ポイントです。どちらが現れても、できるだけ素早くタップしましょう。
         \n\nゲームを起動して、自分でどこまでできるか試してみましょう。</string>
 
-    <string name="message_tutorial_combine_conditions_operator_or_step_2">手動で対応するには速すぎるので、Klick\'rを使いましょう。
+    <string name="message_tutorial_combine_conditions_operator_or_step_2">手動で対応するには速すぎるので、VisionClickを使いましょう。
         \n\nシナリオ設定メニューを開き、新しいスクリーンイベントを作成して、ゲームのターゲットに対する条件を追加していきます。</string>
 
     <string name="message_tutorial_combine_conditions_operator_or_step_3">ターゲットごとに1つの条件が必要です。まず青いターゲットから始めましょう。
@@ -46,12 +46,12 @@
 
     <string name="message_tutorial_combine_conditions_operator_or_step_9">OR演算子が設定されました。アクションセクションを開き、新しいタップアクションを作成してください。</string>
 
-    <string name="message_tutorial_combine_conditions_operator_or_step_10">イベントを発動させたターゲットをタップしたいので、位置タイプ「条件の上」を選択してください。ORでは同時に正に検出できる条件は1つだけなので、特定の条件を選択する必要はありません。Klick\'rが一致した条件の場所に自動的にタップします。
+    <string name="message_tutorial_combine_conditions_operator_or_step_10">イベントを発動させたターゲットをタップしたいので、位置タイプ「条件の上」を選択してください。ORでは同時に正に検出できる条件は1つだけなので、特定の条件を選択する必要はありません。VisionClickが一致した条件の場所に自動的にタップします。
         \n\n完了したら、タップを保存し、イベントとシナリオも保存してゲームに戻りましょう。</string>
 
     <string name="message_tutorial_combine_conditions_operator_or_step_11">シナリオを開始してゲームを起動し、勝利を目指しましょう！
         \n\nうまくいかない場合は、条件が正しくキャプチャされているか、タップ時間が1msに設定されているかを確認してください。</string>
 
-    <string name="message_tutorial_combine_conditions_operator_or_step_12">おめでとうございます！OR演算子の使い方と条件の優先度がなぜ重要かを学びました。赤い条件を最初に配置することで、両方が同時に表示された場合でも、Klick\'rは常に高ポイントのターゲットを優先します。</string>
+    <string name="message_tutorial_combine_conditions_operator_or_step_12">おめでとうございます！OR演算子の使い方と条件の優先度がなぜ重要かを学びました。赤い条件を最初に配置することで、両方が同時に表示された場合でも、VisionClickは常に高ポイントのターゲットを優先します。</string>
 
 </resources>

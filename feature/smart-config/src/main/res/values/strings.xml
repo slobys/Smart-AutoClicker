@@ -168,7 +168,7 @@
 
     <string name="field_scenario_fps_limit_disable_rate" translatable="false">∞</string>
     <string name="field_scenario_quality_title">Detection resolution</string>
-    <string name="field_scenario_quality_description">To achieve faster detection, Klick\'r is downscaling the images before detecting.\n\nIf you increase the resolution, the detection will be slower, but more accurate. If you decrease the resolution, the detection will be faster, but less accurate. Find the good ratio between the detection resolution and the conditions thresholds to get the best of your scenarios!</string>
+    <string name="field_scenario_quality_description">To achieve faster detection, VisionClick is downscaling the images before detecting.\n\nIf you increase the resolution, the detection will be slower, but more accurate. If you decrease the resolution, the detection will be faster, but less accurate. Find the good ratio between the detection resolution and the conditions thresholds to get the best of your scenarios!</string>
     <string name="field_scenario_quality_resolution" translatable="false">%1$d x %2$d</string>
 
     <string name="field_counters_title">Counters</string>
@@ -583,8 +583,8 @@
     <string name="warning_dialog_message_delete">You are about to delete this item, are you sure ?</string>
 
     <string name="error_dialog_message_scenario_saving">Your scenario can\'t be saved due to an internal error.\nDo you want to modify it or cancel all your modifications ?</string>
-    <string name="error_dialog_message_error_native_lib">Klick\'r is incorrectly installed and can\'t start the detection.\n\nIf you have installed it from a legitimate application store, please contact us on GitHub, as it will help us fix this issue.</string>
-    <string name="error_dialog_message_screen_capture_unsupported">Your device\'s screen can\'t be read by Klick\'r due to a driver limitation.\n\nUnfortunately this is a hardware restriction that can\'t be worked around. Please contact us on GitHub with your device model so we can track affected devices.</string>
+    <string name="error_dialog_message_error_native_lib">VisionClick is incorrectly installed and can\'t start the detection.\n\nIf you have installed it from a legitimate application store, please contact us on GitHub, as it will help us fix this issue.</string>
+    <string name="error_dialog_message_screen_capture_unsupported">Your device\'s screen can\'t be read by VisionClick due to a driver limitation.\n\nUnfortunately this is a hardware restriction that can\'t be worked around. Please contact us on GitHub with your device model so we can track affected devices.</string>
 
 
     <!-- Content description ======================================================================================= -->

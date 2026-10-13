@@ -24,10 +24,10 @@
     <string name="message_tutorial_screen_condition_moving_target_step_1">Bem-vindo ao seu segundo tutorial!\n\nEsta vez, o alvo está se movendo aleatoriamente
         pela tela.\n\nPrimeiro, inicie o jogo e veja se você consegue vencer por conta própria.</string>
 
-    <string name="message_tutorial_screen_condition_moving_target_step_3">Difícil, não é?\nVamos usar o Klick\'r para superá-lo!\n\n
+    <string name="message_tutorial_screen_condition_moving_target_step_3">Difícil, não é?\nVamos usar o VisionClick para superá-lo!\n\n
         Clique no ícone de configuração de cenário para começar a editar seu novo cenário.</string>
 
-    <string name="message_tutorial_screen_condition_moving_target_step_4">Um Cenário é a estrutura básica da automação Klick\'r.\n\n
+    <string name="message_tutorial_screen_condition_moving_target_step_4">Um Cenário é a estrutura básica da automação VisionClick.\n\n
         Ele contém as configurações gerais de detecção e uma lista de Eventos descrevendo o que será executado ao
         rodar seu Cenário.\n\nClique no botão de criar evento para criar seu primeiro Evento.</string>
 
@@ -60,7 +60,7 @@
         recortá-lo o mais próximo possível dele para facilitar a detecção da imagem.</string>
 
     <string name="message_tutorial_screen_condition_moving_target_step_11">Sua imagem de Condição já foi capturada!\n\nPor padrão, o tipo de detecção está definido
-        como "Exata", o que significa que o Klick\'r só irá procurá-la na posição de captura. Como o personagem azul pode
+        como "Exata", o que significa que o VisionClick só irá procurá-la na posição de captura. Como o personagem azul pode
         aparecer em qualquer lugar da área de jogo, selecione "Em uma área".</string>
     <string name="message_tutorial_screen_condition_moving_target_step_secondary_11">A terceira opção é "Tela inteira". Quanto maior a área de detecção, mais lenta será
         a detecção. Tenha isso em mente quando a temporização da execução do seu Cenário for importante.</string>

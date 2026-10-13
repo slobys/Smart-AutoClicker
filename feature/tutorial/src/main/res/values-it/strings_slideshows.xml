@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
 * Copyright (C) 2026 Kevin Buzeau
 *
@@ -99,7 +99,7 @@
     <string name="tutorial_slideshow_screen_condition_type_title">Tipi di condizione schermo</string>
     <string name="tutorial_slideshow_screen_condition_type_desc">Scopri quale usare in base al tuo caso d\'uso</string>
 
-    <string name="tutorial_slideshow_screen_condition_type_step_1_text">La condizione colore è il modo più veloce di rilevare con Klick\'r.
+    <string name="tutorial_slideshow_screen_condition_type_step_1_text">La condizione colore è il modo più veloce di rilevare con VisionClick.
         Verifica semplicemente il colore di un pixel sullo schermo. \n\nQuesta condizione è utile quando si tenta di rilevare elementi
         dell\'interfaccia utente semplici come il colore di un pulsante o il completamento di una barra di avanzamento,
         o piccoli cambiamenti.</string>
@@ -120,7 +120,7 @@
     <string name="tutorial_slideshow_screen_condition_threshold_title">Affidabilità del rilevamento</string>
     <string name="tutorial_slideshow_screen_condition_threshold_desc">Suggerimenti sull\'affidabilità del rilevamento</string>
 
-    <string name="tutorial_slideshow_screen_condition_threshold_step_1_text">Klick\'r esegue molte pre-elaborazioni prima di cercare
+    <string name="tutorial_slideshow_screen_condition_threshold_step_1_text">VisionClick esegue molte pre-elaborazioni prima di cercare
         la tua condizione schermo per velocizzare il processo e ridurre l\'impatto sulla batteria. Questo crea incertezze e
         approssimazioni nei risultati che vengono espresse come punteggio di affidabilità. \n\nPer assicurarti che le tue condizioni
         funzionino come previsto, puoi testarle individualmente premendo il pulsante freccia di riproduzione mentre ci si concentra
@@ -131,7 +131,7 @@
         permettendoti di eliminare i falsi positivi o essere più flessibile con i risultati consentiti.</string>
 
     <string name="tutorial_slideshow_screen_condition_threshold_step_3_text">I risultati del rilevamento sono influenzati anche dalla
-        risoluzione di rilevamento. Disponibile nella finestra di dialogo Scenario, ti permette di cambiare quanto Klick\'r ridimensiona
+        risoluzione di rilevamento. Disponibile nella finestra di dialogo Scenario, ti permette di cambiare quanto VisionClick ridimensiona
         il contenuto dello schermo prima di elaborarlo. \n\nQuesto può influire sul punteggio di affidabilità di tutte le tue condizioni
         schermo, con una risoluzione più alta che significa un rilevamento migliore, ma anche un tempo di esecuzione più lento.</string>
 
@@ -143,7 +143,7 @@
 
     <string name="tutorial_slideshow_broadcast_received_step_1_text">Su Android, quando le applicazioni vogliono condividere il loro
         stato con altre app, usano un Broadcast Intent. \n\nCon la condizione \"Alla ricezione di un Broadcast\", puoi
-        monitorare questi stati e reagire con un\'azione in Klick\'r. Vengono forniti alcuni valori predefiniti per lo stato del
+        monitorare questi stati e reagire con un\'azione in VisionClick. Vengono forniti alcuni valori predefiniti per lo stato del
         sistema Android, ma tieni presente che le condizioni di broadcast sono più orientate agli sviluppatori, poiché
         padroneggiarle richiede conoscenze di sviluppo Android.</string>
 
@@ -165,7 +165,7 @@
         durata configurata: durante quel tempo non viene eseguita nessuna azione e non avviene nessun rilevamento
         dello schermo.\n\nUn caso d\'uso molto comune è aggiungere un\'Attesa alla fine della lista delle azioni.
         Quando si tocca qualcosa, l\'app toccata ha bisogno di tempo per elaborare il tocco e mostrare il risultato
-        — e di solito si vuole aspettare quel momento prima che Klick\'r riprenda ad analizzare lo schermo.\n\nUn\'attesa
+        — e di solito si vuole aspettare quel momento prima che VisionClick riprenda ad analizzare lo schermo.\n\nUn\'attesa
         tra due azioni è ugualmente valida, ma aggiungerne una alla fine della lista è spesso la necessità più
         importante.</string>
 
@@ -202,7 +202,7 @@
         schermo.\n\nCon l\'operatore AND, tutte le condizioni devono essere soddisfatte, quindi ogni Condizione
         immagine ha una posizione disponibile. Puoi scegliere liberamente quale usare e affinarla con un offset.</string>
     <string name="tutorial_slideshow_click_action_target_step_4_text">Con l\'operatore OR, viene valutata solo la
-        prima condizione soddisfatta e le altre vengono ignorate. Pertanto Klick\'r non può sapere in anticipo quale
+        prima condizione soddisfatta e le altre vengono ignorate. Pertanto VisionClick non può sapere in anticipo quale
         condizione sarà rilevata.\n\nDi conseguenza, con l\'operatore OR non puoi scegliere una condizione specifica
         come obiettivo: il clic verrà sempre applicato sulla prima condizione rilevata, qualunque essa sia a runtime.</string>
 
@@ -240,7 +240,7 @@
         gruppi di eventi in cui solo uno è attivo alla volta.</string>
 
     <string name="tutorial_slideshow_events_state_basics_step_3_text">Quando <b>tutti gli eventi dello scenario sono
-        disabilitati</b>, lo scenario si ferma da solo. Non c\'è più nulla da fare, quindi Klick\'r si ferma
+        disabilitati</b>, lo scenario si ferma da solo. Non c\'è più nulla da fare, quindi VisionClick si ferma
         automaticamente.\n\nÈ un modo semplice per terminare uno scenario: fai in modo che l\'ultimo evento disabiliti
         tutti gli altri una volta completato il suo compito, e tutto si ferma da solo.</string>
 
@@ -253,7 +253,7 @@
         numero di indice.\n\nCerca di mantenere le liste di azioni brevi. Un autoclicker normale esegue un\'azione per
         evento — questo è il modello da seguire. Se ti trovi ad aggiungere molte azioni a un singolo evento, è
         generalmente un segnale che il lavoro dovrebbe essere suddiviso in più eventi, ciascuno che reagisce a ciò che
-        è effettivamente sullo schermo. Questa è la filosofia vedi-e-agisci di Klick\'r: rileva prima, poi agisci.</string>
+        è effettivamente sullo schermo. Questa è la filosofia vedi-e-agisci di VisionClick: rileva prima, poi agisci.</string>
 
     <!-- Write Text Action slideshow -->
     <string name="tutorial_slideshow_write_text_action_title">Azione Scrivi testo</string>
@@ -304,7 +304,7 @@
         controlla quanto intrusivamente viene presentata. I livelli più alti possono mostrare un banner e riprodurre
         un suono, mentre quelli più bassi vengono consegnati silenziosamente nel cassetto delle notifiche.\n\nIl
         comportamento esatto dipende dal dispositivo e può essere personalizzato nelle impostazioni di notifica Android
-        per Klick\'r.</string>
+        per VisionClick.</string>
 
     <!-- Toggle Event Action slideshow -->
     <string name="tutorial_slideshow_toggle_event_action_title">Azione Cambia stato evento</string>

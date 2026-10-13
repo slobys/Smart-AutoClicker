@@ -21,7 +21,7 @@
     <string name="item_desc_tutorial_text_conditions_moving_text">学习如何创建事件以点击随机移动的文字</string>
     <string name="message_game_tutorial_text_conditions_moving_text">只点击"Hello"按钮，尽可能快</string>
 
-    <string name="message_tutorial_text_conditions_moving_text_step_1">欢迎来到移动文字条件教程！\n\n在这里，你将借助Klick\'r挑战
+    <string name="message_tutorial_text_conditions_moving_text_step_1">欢迎来到移动文字条件教程！\n\n在这里，你将借助VisionClick挑战
         游戏的最高分。\n\n你可以先按下开始游戏来试玩，
         也可以直接进行场景配置。</string>
 
@@ -42,7 +42,7 @@
         "Hello"使用拉丁字母，因此这里可以保持默认值，但检测非拉丁文字时不要忘记
         更改它。</string>
 
-    <string name="message_tutorial_text_conditions_moving_text_step_7">现在我们需要告诉Klick\'r在哪里搜索
+    <string name="message_tutorial_text_conditions_moving_text_step_7">现在我们需要告诉VisionClick在哪里搜索
         文字。\n\n点击检测区域选择器来定义它。</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_8">调整检测矩形的位置和大小，使其
@@ -91,7 +91,7 @@
 
     <string name="message_tutorial_text_conditions_moving_text_step_22">正在运行但什么都没发生？\n\n这是正常的，它只会在
         按钮显示"Hello"时才点击，还记得吗？在保持场景运行的同时，按下开始游戏按钮
-        然后看Klick\'r替你赢得比赛！</string>
+        然后看VisionClick替你赢得比赛！</string>
 
     <string name="message_tutorial_text_conditions_moving_text_step_23">恭喜！\n\n你现在知道如何检测屏幕上显示的移动文字了。
         \n查看其他教程以发现更多用例。</string>

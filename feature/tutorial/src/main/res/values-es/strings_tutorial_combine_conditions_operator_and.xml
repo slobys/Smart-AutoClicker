@@ -29,7 +29,7 @@
         mismo tiempo. \n\nInicia el juego y comprueba si puedes seguir el ritmo por tu cuenta.</string>
 
     <string name="message_tutorial_combine_conditions_operator_and_step_2">El tiempo es demasiado ajustado para
-        manejarlo manualmente, así que usemos Klick\'r. \n\nAbre el menú de configuración del escenario, crea un
+        manejarlo manualmente, así que usemos VisionClick. \n\nAbre el menú de configuración del escenario, crea un
         nuevo Evento de Pantalla y empieza a añadir condiciones para los objetivos del juego.</string>
 
     <string name="message_tutorial_combine_conditions_operator_and_step_3">Necesitamos una condición por objetivo.

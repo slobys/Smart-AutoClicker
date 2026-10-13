@@ -19,8 +19,8 @@
     <string name="header_starting_detection">بدء الكشف</string>
 
     <string name="message_billing">هذا التطبيق مفتوح المصدر وتم تصميمه بكل حب من قبل أشخاص يعملون في أوقات فراغهم.\n\n
-        ادعم التطوير من خلال مشاهدة إعلان، أو شراء Klick\'r Pro لإزالة الإعلانات إلى الأبد!</string>
-    <string name="message_billing_success">شكرًا لك على شراء\nKlick\'r Pro!</string>
+        ادعم التطوير من خلال مشاهدة إعلان، أو شراء VisionClick Pro لإزالة الإعلانات إلى الأبد!</string>
+    <string name="message_billing_success">شكرًا لك على شراء\nVisionClick Pro!</string>
 
     <string name="button_text_watch_ad_loading">جارٍ تحميل الإعلان</string>
     <string name="button_text_watch_ad">مشاهدة إعلان</string>

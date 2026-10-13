@@ -176,8 +176,8 @@
     <string name="warning_dialog_message_condition_delete_associated_action">Questa condizione ha una o più azioni che fanno riferimento ad essa. L\'eliminazione di questa condizione eliminerà anche le azioni associate.\nSei sicuro?</string>
     <string name="warning_dialog_message_close_without_saving">Avete modifiche non salvate, volete scartarle?</string>
     <string name="error_dialog_message_scenario_saving">Il tuo scenario non può essere salvato a causa di un errore interno. \nVuoi modificarlo o annullare tutte le tue modifiche?</string>
-    <string name="error_dialog_message_error_native_lib">Klick\'r non è installato correttamente e non può avviare il rilevamento.\n\nSe l\'avete installata da un negozio di applicazioni legittimo, contattateci su GitHub per aiutarci a risolvere il problema.</string>
-    <string name="error_dialog_message_screen_capture_unsupported">Lo schermo del tuo dispositivo non può essere letto da Klick\'r a causa di una limitazione del driver grafico.\n\nPurtroppo si tratta di una restrizione hardware che non può essere aggirata. Contattaci su GitHub con il modello del tuo dispositivo in modo che possiamo tenere traccia dei dispositivi interessati.</string>
+    <string name="error_dialog_message_error_native_lib">VisionClick non è installato correttamente e non può avviare il rilevamento.\n\nSe l\'avete installata da un negozio di applicazioni legittimo, contattateci su GitHub per aiutarci a risolvere il problema.</string>
+    <string name="error_dialog_message_screen_capture_unsupported">Lo schermo del tuo dispositivo non può essere letto da VisionClick a causa di una limitazione del driver grafico.\n\nPurtroppo si tratta di una restrizione hardware che non può essere aggirata. Contattaci su GitHub con il modello del tuo dispositivo in modo che possiamo tenere traccia dei dispositivi interessati.</string>
 
     <!--
       - Section titles.
@@ -212,7 +212,7 @@
       - TextButton content.
       - Should be short and concise.
       -->
-    <string name="field_scenario_quality_description">Per ottenere un rilevamento più rapido, Klick\'r ridimensiona le immagini prima di rilevarle.\n\nSe si aumenta la risoluzione, il rilevamento sarà più lento, ma più accurato. Se si riduce la risoluzione, il rilevamento sarà più veloce, ma meno accurato. Trovare il giusto rapporto tra la risoluzione del rilevamento e le soglie delle condizioni per ottenere il meglio dai propri scenari!</string>
+    <string name="field_scenario_quality_description">Per ottenere un rilevamento più rapido, VisionClick ridimensiona le immagini prima di rilevarle.\n\nSe si aumenta la risoluzione, il rilevamento sarà più lento, ma più accurato. Se si riduce la risoluzione, il rilevamento sarà più veloce, ma meno accurato. Trovare il giusto rapporto tra la risoluzione del rilevamento e le soglie delle condizioni per ottenere il meglio dai propri scenari!</string>
 
     <!--
       - Text input fields labels and error messages.

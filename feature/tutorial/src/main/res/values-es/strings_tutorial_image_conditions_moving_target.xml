@@ -24,10 +24,10 @@
     <string name="message_tutorial_screen_condition_moving_target_step_1">¡Bienvenido a tu segundo tutorial!\n\nEsta vez, el objetivo se mueve aleatoriamente
         por la pantalla.\n\nPrimero, inicia el juego y verifica si puedes ganar por ti mismo.</string>
 
-    <string name="message_tutorial_screen_condition_moving_target_step_3">¿Difícil, verdad?\n¡Vamos a usar Klick\'r para superarlo!\n\n
+    <string name="message_tutorial_screen_condition_moving_target_step_3">¿Difícil, verdad?\n¡Vamos a usar VisionClick para superarlo!\n\n
         Haz clic en el icono de configuración del escenario para comenzar a editar tu nuevo escenario.</string>
 
-    <string name="message_tutorial_screen_condition_moving_target_step_4">Un escenario es la estructura principal de la automatización de Klick\'r.\n\n
+    <string name="message_tutorial_screen_condition_moving_target_step_4">Un escenario es la estructura principal de la automatización de VisionClick.\n\n
         Contiene la configuración general de detección y una lista de eventos que describen lo que se ejecutará al ejecutar
         tu escenario.\n\nHaz clic en el botón de crear evento para crear tu primer evento.</string>
 
@@ -59,7 +59,7 @@
         para facilitar la detección de la imagen.</string>
 
     <string name="message_tutorial_screen_condition_moving_target_step_11">¡Tu imagen de condición ya está capturada!\n\nPor defecto, el tipo de detección está configurado
-        en "Exacto", lo que significa que Klick\'r solo lo buscará en la posición de captura. Como el personaje azul puede aparecer
+        en "Exacto", lo que significa que VisionClick solo lo buscará en la posición de captura. Como el personaje azul puede aparecer
         en cualquier lugar del área de juego, selecciona "En un área".</string>
     <string name="message_tutorial_screen_condition_moving_target_step_secondary_11">La tercera opción es "Pantalla completa". Cuanto mayor sea la zona de detección, más lenta
         será la detección. Ten esto en cuenta cuando el tiempo de ejecución de tu escenario sea importante.</string>

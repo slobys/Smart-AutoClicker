@@ -47,7 +47,7 @@ class AppComponentsManager @Inject constructor() : AppComponentsProvider {
 
     override val tutorialActivityComponentName: ComponentName
         get() = ComponentName(
-            "com.buzbuz.smartautoclicker",
+            scenarioActivityComponentName.packageName,
             "com.buzbuz.smartautoclicker.feature.tutorial.ui.TutorialActivity",
         )
 

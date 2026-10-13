@@ -22,7 +22,7 @@
     <string name="message_game_tutorial_text_conditions_still_text">Haz clic en el botón cuando muestre \"Hello\", lo más rápido posible</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_1">¡Bienvenido al tutorial de condiciones de texto!\n\nAquí intentarás
-        batir el récord de puntuación de un juego con la ayuda de Klick\'r.\n\nPuedes probarlo primero pulsando Iniciar juego,
+        batir el récord de puntuación de un juego con la ayuda de VisionClick.\n\nPuedes probarlo primero pulsando Iniciar juego,
         o pasar directamente a la configuración del Escenario.</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_2">Al igual que con cualquier otra Condición de pantalla, primero debemos
@@ -42,7 +42,7 @@
         texto a detectar. \"Hello\" usa el alfabeto latino, por lo que puedes mantener el valor predeterminado, pero no olvides
         cambiarlo al detectar textos no latinos.</string>
 
-    <string name="message_tutorial_text_conditions_still_text_step_7">Ahora necesitamos indicarle a Klick\'r dónde buscar el
+    <string name="message_tutorial_text_conditions_still_text_step_7">Ahora necesitamos indicarle a VisionClick dónde buscar el
         texto.\n\nPulsa el selector de área de detección para definirla.</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_8">Posiciona y redimensiona el rectángulo de detección para que cubra el
@@ -97,7 +97,7 @@
 
     <string name="message_tutorial_text_conditions_still_text_step_21">¿Está funcionando pero no pasa nada?\n\nEs normal, solo hará clic cuando
         el botón muestre \"Hello\", ¿recuerdas? Mientras mantienes el escenario en ejecución, pulsa el botón Iniciar juego
-        y observa cómo Klick\'r lo vence por ti.</string>
+        y observa cómo VisionClick lo vence por ti.</string>
 
     <string name="message_tutorial_text_conditions_still_text_step_22">¡Felicidades!\n\nAhora sabes cómo detectar un texto en la pantalla.\nEcha un vistazo a los otros tutoriales para descubrir más casos de uso.</string>
 </resources>

@@ -66,6 +66,6 @@
         ゲームに挑戦しましょう。
         \n\nシナリオを保存するとチュートリアルが続きます。</string>
 
-    <string name="message_tutorial_timer_reached_conditions_step_14">ゲームを再起動し、シナリオを起動して、Klick\'rがゲームを代わりに
+    <string name="message_tutorial_timer_reached_conditions_step_14">ゲームを再起動し、シナリオを起動して、VisionClickがゲームを代わりに
         攻略するのを見てください！</string>
 </resources>

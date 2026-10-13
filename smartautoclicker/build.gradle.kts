@@ -39,7 +39,8 @@ obfuscationConfig {
     }
 
     setup(
-        applicationId = "com.buzbuz.smartautoclicker",
+        applicationId = "com.slobys.visionclick",
+        sourceNamespace = "com.buzbuz.smartautoclicker",
         appNameResId = "@string/app_name",
         shouldRandomize = buildParameters.randomizeAppId.typedValue &&
                 project.isBuildForVariant(KlickrFlavour.F_DROID),
@@ -61,8 +62,8 @@ android {
     defaultConfig {
         applicationId = getExtraActualApplicationId()
 
-        versionCode = 127
-        versionName = "4.0.5.27"
+        versionCode = 128
+        versionName = "4.0.5.28"
     }
 
     if (project.isBuildForVariant(KlickrFlavour.F_DROID, KlickrBuildType.DEBUG)) {

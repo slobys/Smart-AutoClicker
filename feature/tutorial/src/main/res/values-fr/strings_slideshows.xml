@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
 * Copyright (C) 2026 Kevin Buzeau
 *
@@ -100,7 +100,7 @@
     <string name="tutorial_slideshow_screen_condition_type_desc">Découvrez laquelle utiliser selon votre cas d\'utilisation</string>
 
     <string name="tutorial_slideshow_screen_condition_type_step_1_text">La condition de couleur est le moyen le plus rapide de détecter
-        avec Klick\'r. Elle vérifie simplement la couleur d\'un pixel sur votre écran. \n\nCette condition est pratique lorsqu\'on
+        avec VisionClick. Elle vérifie simplement la couleur d\'un pixel sur votre écran. \n\nCette condition est pratique lorsqu\'on
         essaie de détecter des éléments d\'interface simples tels qu\'une couleur de bouton ou la complétion d\'une barre de
         progression, ou de petits changements.</string>
 
@@ -120,7 +120,7 @@
     <string name="tutorial_slideshow_screen_condition_threshold_title">Fiabilité de détection</string>
     <string name="tutorial_slideshow_screen_condition_threshold_desc">Conseils sur la fiabilité de détection</string>
 
-    <string name="tutorial_slideshow_screen_condition_threshold_step_1_text">Klick\'r effectue beaucoup de pré-traitement avant de
+    <string name="tutorial_slideshow_screen_condition_threshold_step_1_text">VisionClick effectue beaucoup de pré-traitement avant de
         rechercher votre condition d\'écran afin d\'accélérer le processus et réduire l\'impact sur la batterie. Cela crée des
         incertitudes et des approximations dans les résultats qui sont exprimées sous forme de score de fiabilité. \n\nPour vous
         assurer que vos conditions fonctionnent comme prévu, vous pouvez les tester individuellement en appuyant sur le bouton
@@ -132,7 +132,7 @@
 
     <string name="tutorial_slideshow_screen_condition_threshold_step_3_text">Les résultats de détection sont également impactés par la
         résolution de détection. Disponible dans le dialogue Scénario, elle vous permet de modifier la quantité de réduction d\'échelle
-        du contenu de votre écran avant traitement par Klick\'r. \n\nCela peut impacter le score de fiabilité de toutes vos conditions
+        du contenu de votre écran avant traitement par VisionClick. \n\nCela peut impacter le score de fiabilité de toutes vos conditions
         d\'écran, une résolution plus élevée signifiant une meilleure détection, mais aussi un temps d\'exécution plus lent.</string>
 
 
@@ -143,7 +143,7 @@
 
     <string name="tutorial_slideshow_broadcast_received_step_1_text">Sur Android, lorsque des applications souhaitent partager leur
         état avec d\'autres apps, elles utilisent un Broadcast Intent. \n\nAvec la condition \"À la réception d\'un Broadcast\", vous pouvez
-        surveiller ces états et réagir avec une action dans Klick\'r. Des valeurs par défaut pour l\'état du système Android sont
+        surveiller ces états et réagir avec une action dans VisionClick. Des valeurs par défaut pour l\'état du système Android sont
         fournies, mais gardez à l\'esprit que les conditions de broadcast s\'adressent davantage aux développeurs, car les maîtriser
         requiert des connaissances en développement Android.</string>
 
@@ -165,7 +165,7 @@
         pendant une durée configurée : pendant ce temps, aucune action ne s\'exécute et aucune détection d\'écran
         n\'a lieu.\n\nUn cas d\'usage très courant est d\'ajouter une Pause à la fin de votre liste d\'actions.
         Lorsque vous cliquez quelque part, l\'application cliquée a besoin de temps pour traiter le clic et afficher
-        le résultat — et vous souhaitez généralement attendre ce moment avant que Klick\'r ne recommence à analyser
+        le résultat — et vous souhaitez généralement attendre ce moment avant que VisionClick ne recommence à analyser
         l\'écran.\n\nUne pause entre deux actions est également valide, mais en ajouter une à la fin de la liste est
         souvent le besoin le plus important.</string>
 
@@ -203,7 +203,7 @@
         remplies, donc chaque Condition d\'image possède une position disponible. Vous pouvez choisir librement
         l\'une d\'elles comme cible, et affiner éventuellement avec un décalage.</string>
     <string name="tutorial_slideshow_click_action_target_step_4_text">Lorsque l\'opérateur de l\'événement est OU,
-        seule la première condition remplie est évaluée, les autres étant ignorées. De ce fait, Klick\'r ne peut pas
+        seule la première condition remplie est évaluée, les autres étant ignorées. De ce fait, VisionClick ne peut pas
         savoir à l\'avance quelle condition sera détectée.\n\nEn conséquence, avec l\'opérateur OU, vous ne pouvez
         pas choisir une condition spécifique comme cible du clic : le clic sera toujours appliqué sur la première
         condition détectée, quelle qu\'elle soit lors de l\'exécution.</string>
@@ -244,7 +244,7 @@
         actif à la fois.</string>
 
     <string name="tutorial_slideshow_events_state_basics_step_3_text">Lorsque <b>tous les événements du scénario sont
-        désactivés</b>, le scénario s\'arrête tout seul. Il n\'y a plus rien à faire, donc Klick\'r s\'arrête
+        désactivés</b>, le scénario s\'arrête tout seul. Il n\'y a plus rien à faire, donc VisionClick s\'arrête
         automatiquement.\n\nC\'est une façon simple de terminer un scénario : il suffit que le dernier événement
         désactive tous les autres une fois son rôle accompli, et tout s\'arrête par lui-même.</string>
 
@@ -258,7 +258,7 @@
         n\'effectue qu\'une action par événement — c\'est le modèle à suivre. Si vous vous retrouvez à ajouter beaucoup
         d\'actions à un seul événement, c\'est généralement le signe que le travail devrait être réparti sur plusieurs
         événements, chacun réagissant à ce qui est réellement affiché à l\'écran. C\'est la philosophie voir-et-agir
-        de Klick\'r : détecter d\'abord, puis agir.</string>
+        de VisionClick : détecter d\'abord, puis agir.</string>
 
     <!-- Write Text Action slideshow -->
     <string name="tutorial_slideshow_write_text_action_title">Action Écrire du texte</string>
@@ -309,7 +309,7 @@
         contrôle le degré d\'intrusion avec lequel elle est présentée. Les niveaux élevés peuvent afficher une bannière
         et jouer un son, tandis que les niveaux faibles sont livrés silencieusement dans le tiroir des notifications.
         \n\nLe comportement exact dépend de l\'appareil et peut être personnalisé dans les paramètres de notifications
-        Android de Klick\'r.</string>
+        Android de VisionClick.</string>
 
     <!-- Toggle Event Action slideshow -->
     <string name="tutorial_slideshow_toggle_event_action_title">Action Changer l\'état d\'un événement</string>

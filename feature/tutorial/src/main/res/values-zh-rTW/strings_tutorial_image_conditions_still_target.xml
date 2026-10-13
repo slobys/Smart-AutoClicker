@@ -21,12 +21,12 @@
     <string name="item_desc_tutorial_screen_condition_still_target">學習如何創建你的第一個事件，以便點擊靜止目標</string>
     <string name="message_game_tutorial_screen_condition_still_target">儘可能快地點擊藍色按鈕</string>
 
-    <string name="message_tutorial_screen_condition_still_target_step_1">歡迎來到你的第一個教程！\n\n在這裡，你將嘗試在Klick\'r的幫助下打破遊戲的最高分記錄。\n\n首先，開始遊戲並嘗試自己贏得比賽。</string>
+    <string name="message_tutorial_screen_condition_still_target_step_1">歡迎來到你的第一個教程！\n\n在這裡，你將嘗試在VisionClick的幫助下打破遊戲的最高分記錄。\n\n首先，開始遊戲並嘗試自己贏得比賽。</string>
 
-    <string name="message_tutorial_screen_condition_still_target_step_3">難度很大，不是嗎？\n讓我們使用Klick\'r來戰勝它！\n\n
+    <string name="message_tutorial_screen_condition_still_target_step_3">難度很大，不是嗎？\n讓我們使用VisionClick來戰勝它！\n\n
     點擊場景配置圖標開始編輯你的新場景。</string>
 
-    <string name="message_tutorial_screen_condition_still_target_step_4">場景是Klick\'r自動化的根結構。\n\n
+    <string name="message_tutorial_screen_condition_still_target_step_4">場景是VisionClick自動化的根結構。\n\n
     它包含了通用檢測設置和描述在運行你的場景時將執行的事件列表。\n\n點擊創建事件按鈕以創建你的第一個事件。</string>
 
     <string name="message_tutorial_screen_condition_still_target_step_5">事件描述了在滿足特定條件時執行的操作（點擊、滑動等）。\n\n為了創建一個有效的事件並在場景中使用它，你必須至少創建一個條件和一個操作。\n\n單擊條件欄位，顯示條件列表。</string>
@@ -72,7 +72,7 @@
 
     <string name="message_tutorial_screen_condition_still_target_step_22">正如你所看到的，播放按鈕現在可用，這意味著你的場景有效並且可以用於檢測\n\n點擊它以開始檢測。</string>
 
-    <string name="message_tutorial_screen_condition_still_target_step_23">它正在運行，但沒有發生任何事情？\n\n那是正常的，它只會在藍色角色可見時點擊，記住嗎？在保持場景運行的同時，按下開始遊戲按鈕，只需觀看Klick\'r將為你贏得比賽！</string>
+    <string name="message_tutorial_screen_condition_still_target_step_23">它正在運行，但沒有發生任何事情？\n\n那是正常的，它只會在藍色角色可見時點擊，記住嗎？在保持場景運行的同時，按下開始遊戲按鈕，只需觀看VisionClick將為你贏得比賽！</string>
 
-    <string name="message_tutorial_screen_condition_still_target_step_24">恭喜！\n\n你現在了解了Klick\'r的基礎知識，但並非所有用例都像這個遊戲那麼簡單。\n看看下一個教程，了解如何跟蹤移動目標</string>
+    <string name="message_tutorial_screen_condition_still_target_step_24">恭喜！\n\n你現在了解了VisionClick的基礎知識，但並非所有用例都像這個遊戲那麼簡單。\n看看下一個教程，了解如何跟蹤移動目標</string>
 </resources>

@@ -17,6 +17,6 @@
 -->
 <resources>
     <string name="tile_label_start_scenario">Iniciar Click\'r</string>
-    <string name="tile_label_stop_scenario">Detener Klick\'r</string>
+    <string name="tile_label_stop_scenario">Detener VisionClick</string>
     <string name="tile_subtext_unavailable">Ningún escenario definido</string>
 </resources>

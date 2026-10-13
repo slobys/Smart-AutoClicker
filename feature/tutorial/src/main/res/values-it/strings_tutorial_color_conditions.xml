@@ -22,7 +22,7 @@
     <string name="message_game_tutorial_color_conditions">Fai clic sul pulsante blu il più velocemente possibile</string>
 
     <string name="message_tutorial_color_conditions_step_1">Benvenuto nel tutorial sulle condizioni di colore!\n\nQui proverai
-        a battere il punteggio massimo di un gioco con l\'aiuto di Klick\'r.\n\nPuoi prima provarlo premendo Avvia gioco,
+        a battere il punteggio massimo di un gioco con l\'aiuto di VisionClick.\n\nPuoi prima provarlo premendo Avvia gioco,
         o passare direttamente alla configurazione dello Scenario.</string>
 
     <string name="message_tutorial_color_conditions_step_2">Come per qualsiasi altra Condizione dello schermo, dobbiamo prima
@@ -99,8 +99,8 @@
 
     <string name="message_tutorial_color_conditions_step_21">Sta funzionando ma non succede nulla?\n\nÈ normale, farà clic solo
         quando il pulsante blu è visibile, ricordi? Mentre mantieni lo scenario in esecuzione, premi il pulsante Avvia gioco
-        e guarda Klick\'r batterlo al posto tuo!</string>
+        e guarda VisionClick batterlo al posto tuo!</string>
 
-    <string name="message_tutorial_color_conditions_step_22">Congratulazioni!\n\nOra conosci le basi di Klick\'r, ma non tutti i
+    <string name="message_tutorial_color_conditions_step_22">Congratulazioni!\n\nOra conosci le basi di VisionClick, ma non tutti i
         casi d\'uso saranno semplici come questo gioco.\nDai un\'occhiata agli altri tutorial per scoprire altri casi d\'uso.</string>
 </resources>

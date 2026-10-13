@@ -21,7 +21,7 @@
     <string name="item_desc_tutorial_number_conditions_static_value">将屏幕上显示的数字与预定义值进行比较</string>
     <string name="message_game_tutorial_number_conditions_static_value">只在数值超过9000时点击！</string>
 
-    <string name="message_tutorial_number_conditions_static_value_step_1">欢迎来到数字条件教程！\n\n在这里，你将借助Klick\'r挑战
+    <string name="message_tutorial_number_conditions_static_value_step_1">欢迎来到数字条件教程！\n\n在这里，你将借助VisionClick挑战
         游戏的最高分。\n\n你可以先按下开始游戏来试玩，
         也可以直接进行场景配置。</string>
 
@@ -49,7 +49,7 @@
     <string name="message_tutorial_number_conditions_static_value_step_9">现在，你需要输入要比较的值。
         只需在值字段中输入"9000"即可进行到下一个教程步骤。</string>
 
-    <string name="message_tutorial_number_conditions_static_value_step_10">现在我们需要告诉Klick\'r在哪里搜索
+    <string name="message_tutorial_number_conditions_static_value_step_10">现在我们需要告诉VisionClick在哪里搜索
         数字。\n\n点击检测区域选择器来定义它</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_11">调整检测矩形的位置和大小，使其覆盖
@@ -99,7 +99,7 @@
 
     <string name="message_tutorial_number_conditions_static_value_step_24">正在运行但什么都没发生？\n\n这是正常的，它只会在
         按钮显示超过9000的数字时才点击，还记得吗？在保持场景运行的同时，按下开始游戏按钮
-        然后看Klick\'r替你赢得比赛！</string>
+        然后看VisionClick替你赢得比赛！</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_25">恭喜！\n\n你现在知道如何检测屏幕上显示的数字了。
         \n查看其他教程以发现更多用例。</string>

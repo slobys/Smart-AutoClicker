@@ -29,7 +29,7 @@
         possibile. \n\nAvvia il gioco e vedi come te la cavi.</string>
 
     <string name="message_tutorial_combine_conditions_operator_or_step_2">Troppo veloce da gestire manualmente, quindi
-        usiamo Klick\'r. \n\nApri il menu di configurazione dello scenario, crea un nuovo Evento Schermo e inizia ad
+        usiamo VisionClick. \n\nApri il menu di configurazione dello scenario, crea un nuovo Evento Schermo e inizia ad
         aggiungere condizioni per gli obiettivi del gioco.</string>
 
     <string name="message_tutorial_combine_conditions_operator_or_step_3">Abbiamo bisogno di una condizione per ogni
@@ -59,7 +59,7 @@
 
     <string name="message_tutorial_combine_conditions_operator_or_step_10">Vogliamo toccare l\'obiettivo che ha
         attivato l\'evento. Seleziona il tipo di posizione «Su condizione». Con O, solo una condizione può essere
-        rilevata positivamente alla volta, quindi non è necessario selezionare una condizione specifica. Klick\'r
+        rilevata positivamente alla volta, quindi non è necessario selezionare una condizione specifica. VisionClick
         toccherà automaticamente la posizione della condizione che ha corrisposto. \n\nQuando hai finito, salva il
         tocco, poi il tuo evento e scenario, e torna al gioco.</string>
 
@@ -69,7 +69,7 @@
 
     <string name="message_tutorial_combine_conditions_operator_or_step_12">Congratulazioni! Hai imparato a usare
         l\'operatore O e perché la priorità delle condizioni è importante. Mettendo la condizione rossa per prima,
-        Klick\'r favorisce sempre l\'obiettivo di valore più alto quando entrambi sono visibili allo stesso
+        VisionClick favorisce sempre l\'obiettivo di valore più alto quando entrambi sono visibili allo stesso
         tempo.</string>
 
 </resources>

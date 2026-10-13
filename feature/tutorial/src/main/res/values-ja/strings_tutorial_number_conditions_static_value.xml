@@ -21,7 +21,7 @@
     <string name="item_desc_tutorial_number_conditions_static_value">画面に表示された数字を事前定義された値と比較する</string>
     <string name="message_game_tutorial_number_conditions_static_value">値が9000を超えたときだけクリックしてください！</string>
 
-    <string name="message_tutorial_number_conditions_static_value_step_1">数字条件チュートリアルへようこそ！\n\nここでは、Klick\'rの助けを借りて
+    <string name="message_tutorial_number_conditions_static_value_step_1">数字条件チュートリアルへようこそ！\n\nここでは、VisionClickの助けを借りて
         ゲームのハイスコアを更新してみます。\n\nまずスタートゲームを押して試してみるか、
         直接シナリオの設定に進むこともできます。</string>
 
@@ -49,7 +49,7 @@
     <string name="message_tutorial_number_conditions_static_value_step_9">次に、比較する値を入力する必要があります。
         次のチュートリアルステップに進むために、値フィールドに「9000」と入力してください。</string>
 
-    <string name="message_tutorial_number_conditions_static_value_step_10">次に、Klick\'rに数字をどこで検索するかを指定する必要があります。
+    <string name="message_tutorial_number_conditions_static_value_step_10">次に、VisionClickに数字をどこで検索するかを指定する必要があります。
         \n\n検出エリアセレクターをクリックして設定してください</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_11">表示された数字をカバーするように検出矩形を配置してサイズを調整してください。
@@ -97,7 +97,7 @@
         \n\nそれをクリックして検出を開始してください。</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_24">動いているのに何も起きない？\n\nそれは正常です。ボタンが9000を超える数字を表示したときだけクリックします。
-        シナリオを実行したまま、スタートゲームボタンを押して、Klick\'rがあなたの代わりに勝つのを見守ってください！</string>
+        シナリオを実行したまま、スタートゲームボタンを押して、VisionClickがあなたの代わりに勝つのを見守ってください！</string>
 
     <string name="message_tutorial_number_conditions_static_value_step_25">おめでとうございます！\n\n画面に表示された数字を検出する方法を学びました。
         \n他のチュートリアルをご覧いただき、さらに多くの使用例をご確認ください。</string>

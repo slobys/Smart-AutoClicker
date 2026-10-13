@@ -18,8 +18,8 @@
 <resources>
 
     <string name="header_starting_detection">Đang bắt đầu phát hiện</string>
-    <string name="message_billing">Ứng dụng này là mã nguồn mở và được tạo ra bằng tình yêu bởi những người làm việc trong thời gian rảnh của họ.\n\nHãy hỗ trợ quá trình phát triển bằng cách xem một quảng cáo, hoặc mua Klick\'r Pro để xóa quảng cáo vĩnh viễn!</string>
-    <string name="message_billing_success">Cảm ơn bạn đã mua\nKlick\'r Pro !</string>
+    <string name="message_billing">Ứng dụng này là mã nguồn mở và được tạo ra bằng tình yêu bởi những người làm việc trong thời gian rảnh của họ.\n\nHãy hỗ trợ quá trình phát triển bằng cách xem một quảng cáo, hoặc mua VisionClick Pro để xóa quảng cáo vĩnh viễn!</string>
+    <string name="message_billing_success">Cảm ơn bạn đã mua\nVisionClick Pro !</string>
     <string name="button_text_watch_ad_loading">Đang tải quảng cáo</string>
     <string name="button_text_watch_ad">Xem một quảng cáo</string>
     <string name="button_text_watch_ad_error">Lỗi quảng cáo</string>

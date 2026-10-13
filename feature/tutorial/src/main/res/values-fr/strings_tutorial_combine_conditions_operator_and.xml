@@ -29,7 +29,7 @@
         temps. \n\nLancez le jeu et voyez si vous arrivez à suivre le rythme par vous-même.</string>
 
     <string name="message_tutorial_combine_conditions_operator_and_step_2">Le timing est trop serré pour le gérer
-        manuellement, alors utilisons Klick\'r. \n\nOuvrez le menu de configuration du scénario, créez un nouvel
+        manuellement, alors utilisons VisionClick. \n\nOuvrez le menu de configuration du scénario, créez un nouvel
         Événement Écran et commencez à ajouter des conditions pour les cibles du jeu.</string>
 
     <string name="message_tutorial_combine_conditions_operator_and_step_3">Nous avons besoin d\'une condition par

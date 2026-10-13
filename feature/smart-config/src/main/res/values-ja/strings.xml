@@ -85,7 +85,7 @@
     <string name="field_scenario_keep_screen_on_enabled">検出中はデバイスの画面をオンにしてください。</string>
     <string name="field_scenario_keep_screen_on_disabled">通常のデバイス画面の動作を使用します。</string>
     <string name="field_scenario_quality_title">検出分解能</string>
-    <string name="field_scenario_quality_description">より高速な検出を実現するために、Klick\'r は検出前に画像をダウンスケールします。\n\n解像度を上げると、検出は遅くなりますが、より正確になります。解像度を下げると、検出は速くなりますが、精度は低くなります。シナリオを最大限に活用するには、検出解像度と条件のしきい値の間の適切な比率を見つけてください。</string>
+    <string name="field_scenario_quality_description">より高速な検出を実現するために、VisionClick は検出前に画像をダウンスケールします。\n\n解像度を上げると、検出は遅くなりますが、より正確になります。解像度を下げると、検出は速くなりますが、精度は低くなります。シナリオを最大限に活用するには、検出解像度と条件のしきい値の間の適切な比率を見つけてください。</string>
     <string name="field_show_debug_view_title">デバッグビューを表示</string>
     <string name="item_title_debug_generate_report">レポートを生成する</string>
     <string name="field_show_debug_report_title">レポートを表示する</string>
@@ -212,8 +212,8 @@
     <string name="warning_dialog_message_condition_delete_associated_action">この条件を参照する操作があります。削除すると関連する操作も削除されます。\n削除してもよろしいですか。</string>
     <string name="warning_dialog_message_close_without_saving">未保存の変更があります。破棄してもよろしいですか。</string>
     <string name="error_dialog_message_scenario_saving">内部エラーのためシナリオを保存できません。編集を続行しますか。それともすべての変更を破棄しますか。</string>
-    <string name="error_dialog_message_error_native_lib">Klick\'r が正しくインストールされていないため、検出を開始できません。\n\n正規のアプリケーション ストアからインストールした場合は、この問題の解決に役立つため、GitHub でご連絡ください。</string>
-    <string name="error_dialog_message_screen_capture_unsupported">グラフィックドライバーの制限により、Klick\'r はこのデバイスの画面を読み取ることができません。\n\n残念ながら、これはハードウェアの制限であり回避できません。影響を受けるデバイスを追跡できるよう、デバイスのモデル名を添えて GitHub からご連絡ください。</string>
+    <string name="error_dialog_message_error_native_lib">VisionClick が正しくインストールされていないため、検出を開始できません。\n\n正規のアプリケーション ストアからインストールした場合は、この問題の解決に役立つため、GitHub でご連絡ください。</string>
+    <string name="error_dialog_message_screen_capture_unsupported">グラフィックドライバーの制限により、VisionClick はこのデバイスの画面を読み取ることができません。\n\n残念ながら、これはハードウェアの制限であり回避できません。影響を受けるデバイスを追跡できるよう、デバイスのモデル名を添えて GitHub からご連絡ください。</string>
     <string name="content_desc_event_state">イベントの状態</string>
     <string name="content_desc_conditions_count">このイベントの条件の数</string>
     <string name="content_desc_actions_count">このイベントのアクションの数</string>

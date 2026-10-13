@@ -21,7 +21,7 @@
     <string name="item_desc_tutorial_color_conditions">學習如何偵測螢幕上的特定顏色並在其出現時點擊</string>
     <string name="message_game_tutorial_color_conditions">盡快點擊藍色按鈕</string>
 
-    <string name="message_tutorial_color_conditions_step_1">歡迎來到顏色條件教學！\n\n在這裡，您將借助 Klick\'r 嘗試打破一個
+    <string name="message_tutorial_color_conditions_step_1">歡迎來到顏色條件教學！\n\n在這裡，您將借助 VisionClick 嘗試打破一個
         遊戲的最高分。\n\n您可以先按下「開始遊戲」體驗看看，或直接進入情境配置。</string>
 
     <string name="message_tutorial_color_conditions_step_2">與任何其他螢幕條件一樣，我們首先需要建立一個螢幕事件。</string>
@@ -82,8 +82,8 @@
         點擊它開始偵測。</string>
 
     <string name="message_tutorial_color_conditions_step_21">它在執行但什麼都沒發生？\n\n這是正常的，它只會在藍色按鈕可見時點擊，
-        還記得嗎？在保持情境執行的同時，按下「開始遊戲」按鈕，看 Klick\'r 替您贏得遊戲！</string>
+        還記得嗎？在保持情境執行的同時，按下「開始遊戲」按鈕，看 VisionClick 替您贏得遊戲！</string>
 
-    <string name="message_tutorial_color_conditions_step_22">恭喜！\n\n您現在已經了解了 Klick\'r 的基礎知識，但並非所有用例都
+    <string name="message_tutorial_color_conditions_step_22">恭喜！\n\n您現在已經了解了 VisionClick 的基礎知識，但並非所有用例都
         像這個遊戲這麼簡單。\n查看其他教學以發現更多用例。</string>
 </resources>

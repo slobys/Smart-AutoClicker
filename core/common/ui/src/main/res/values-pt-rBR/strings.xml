@@ -49,11 +49,11 @@
       - Views handles any length here, so no limitations.
       -->
     <string name="message_tutorial_volume_down_stop">Se o seu cenário estiver clicando muito rapidamente, pode
-        bloquear você de usar o menu do Klick\'r para pará-lo.\n\nNesse caso, você pode pressionar o
+        bloquear você de usar o menu do VisionClick para pará-lo.\n\nNesse caso, você pode pressionar o
         botão físico "Volume Baixo" do seu dispositivo para parar o cenário em execução.</string>
     <string name="message_dont_show_again">Não mostre essa mensagem novamente</string>
     <string name="message_error_screen_capture_permission_dialog_not_found">Seu dispositivo não fornece o padrão
-        diálogo de permissão de captura de tela do Android. O Klick\'r não conseguirá rodar nele.</string>
+        diálogo de permissão de captura de tela do Android. O VisionClick não conseguirá rodar nele.</string>
 
 
     <string name="button_understood">Entendido</string>
@@ -111,7 +111,7 @@
     <string name="content_desc_drag_and_drop">Arraste e solte para reordenar os elementos</string>
     <string name="content_desc_move_menu">Mover o menu flutuante</string>
     <string name="content_desc_play_pause_scenario">Reproduzir ou pausar o cenário</string>
-    <string name="content_desc_stop_clicker">Parar Klick\'r</string>
+    <string name="content_desc_stop_clicker">Parar VisionClick</string>
     <string name="content_desc_confirm">Confirmar</string>
     <string name="content_desc_go_back">Voltar para o diálogo</string>
 </resources>
