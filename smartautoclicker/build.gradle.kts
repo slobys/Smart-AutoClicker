@@ -61,8 +61,8 @@ android {
     defaultConfig {
         applicationId = getExtraActualApplicationId()
 
-        versionCode = 126
-        versionName = "4.0.5.26"
+        versionCode = 127
+        versionName = "4.0.5.27"
     }
 
     if (project.isBuildForVariant(KlickrFlavour.F_DROID, KlickrBuildType.DEBUG)) {

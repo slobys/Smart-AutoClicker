@@ -44,4 +44,7 @@ dependencies {
     implementation(project(":core:smart:detection"))
     implementation(project(":core:smart:domain"))
     implementation(project(":core:smart:processing"))
+
+    // Construct real text conditions in rendering tests; no new application dependency.
+    testImplementation(project(":core:smart:detection-models"))
 }

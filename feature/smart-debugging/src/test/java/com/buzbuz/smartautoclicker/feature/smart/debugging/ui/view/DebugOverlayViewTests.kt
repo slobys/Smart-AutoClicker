@@ -11,6 +11,9 @@ import com.buzbuz.smartautoclicker.core.domain.model.EXACT
 import com.buzbuz.smartautoclicker.core.domain.model.IN_AREA
 import com.buzbuz.smartautoclicker.core.domain.model.WHOLE_SCREEN
 import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
+import com.buzbuz.smartautoclicker.core.domain.model.counter.ComparisonOperation
+import com.buzbuz.smartautoclicker.core.domain.model.counter.CounterOperationValue
+import com.buzbuz.smartautoclicker.code.smart.detectionmodels.text.domain.OCRAlphabet
 import com.buzbuz.smartautoclicker.feature.smart.debugging.ui.dialog.live.uistate.ScreenConditionResultUiState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -28,9 +31,9 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class DebugOverlayViewTests {
 
-    @Test fun fixedRangeRemainsVisibleBeforeFirstResultAndAfterMissAndClear() {
+    @Test fun fixedColorRangeRemainsVisibleBeforeFirstResultAndAfterMissAndClear() {
         val area = Rect(30, 40, 130, 120)
-        val view = view().apply { setConditions(listOf(image(area))) }
+        val view = view().apply { setConditions(listOf(color(area))) }
         val initial = draw(view)
         assertTrue(initial.sameAs(draw(view)))
         assertTrue(hasColor(initial, Color.WHITE))
@@ -46,14 +49,13 @@ class DebugOverlayViewTests {
 
     @Test fun movingHitDoesNotMoveTheConfiguredSearchRange() {
         val area = Rect(20, 20, 150, 150)
-        val view = view().apply { setConditions(listOf(image(area))) }
-        val baseline = draw(view)
+        val condition = image(Rect(40, 40, 50, 50)).copy(detectionType = IN_AREA, detectionArea = Rect(area))
+        val view = view().apply { setConditions(listOf(condition)) }
+        assertTrue(paintedBounds(draw(view)).isEmpty)
         listOf(Rect(40, 40, 50, 50), Rect(90, 95, 100, 105)).forEach { hit ->
             view.setResults(listOf(result(hit)))
-            val rendered = draw(view)
-            assertEquals(baseline.getPixel(19, 40), rendered.getPixel(19, 40))
-            assertEquals(Color.GREEN, rendered.getPixel(hit.left - 1, hit.top))
-            assertInteriorTransparent(rendered, hit)
+            assertBorder(draw(view), hit, Color.GREEN)
+            assertEquals(area, condition.detectionArea)
         }
     }
 
@@ -117,18 +119,80 @@ class DebugOverlayViewTests {
         assertEquals(original, template)
     }
 
-    @Test fun wholeScreenSearchBoundarySurvivesRotationAndHasNoInteriorFill() {
+    @Test fun wholeScreenSearchShowsOnlyResultBordersAcrossRotation() {
         val view = view().apply { setConditions(listOf(image(Rect(20, 20, 40, 40)).copy(detectionType = WHOLE_SCREEN))) }
+        val hit = Rect(60, 60, 100, 100)
         listOf(180 to 320, 320 to 180).forEach { (w, h) ->
             view.layout(0, 0, w, h)
-            val bitmap = draw(view, w, h)
-            assertFalse(paintedBounds(bitmap).isEmpty)
-            assertInteriorTransparent(bitmap, Rect(4, 4, w - 4, h - 4))
+            assertTrue(paintedBounds(draw(view, w, h)).isEmpty)
+            view.setResults(listOf(result(hit)))
+            assertBorder(draw(view, w, h), hit, Color.GREEN)
+            view.clear()
+            assertTrue(paintedBounds(draw(view, w, h)).isEmpty)
         }
+    }
+
+    @Test fun imageTextAndNumberHaveNoInnerRangeWhileWaitingAfterMissOrAfterClear() {
+        val area = Rect(60, 60, 120, 95)
+        nonColorConditions(area).forEach { condition ->
+            val view = view().apply { setConditions(listOf(condition)) }
+            assertTrue(paintedBounds(draw(view)).isEmpty)
+            view.setResults(listOf(result(Rect(), positive = false)))
+            assertTrue(paintedBounds(draw(view)).isEmpty)
+            view.setResults(listOf(result(Rect(area))))
+            assertBorder(draw(view), area, Color.GREEN)
+            view.clear()
+            assertTrue(paintedBounds(draw(view)).isEmpty)
+            assertEquals(area, condition.toDetectionRange().area)
+        }
+    }
+
+    @Test fun allImageSearchModesShowOnlyTheExpandedResultBorder() {
+        val template = Rect(60, 60, 120, 95)
+        val search = Rect(30, 30, 150, 150)
+        listOf(EXACT, IN_AREA, WHOLE_SCREEN).forEach { mode ->
+            val condition = image(Rect(template)).copy(detectionType = mode, detectionArea = Rect(search))
+            val view = view().apply { setConditions(listOf(condition)) }
+            assertTrue(paintedBounds(draw(view)).isEmpty)
+            listOf(true, false).forEach { detected ->
+                view.setResults(listOf(result(Rect(template), positive = detected)))
+                assertBorder(draw(view), template, if (detected) Color.GREEN else Color.RED)
+            }
+            assertEquals(template, condition.area)
+            assertEquals(search, condition.detectionArea)
+        }
+    }
+
+    @Test fun mixedEventKeepsColorOutlineWithoutNonColorInnerOutlines() {
+        val colorArea = Rect(30, 30, 50, 50)
+        val target = Rect(100, 100, 130, 130)
+        val colorOnly = draw(view().apply { setConditions(listOf(color(colorArea))) })
+        val view = view().apply { setConditions(listOf(color(colorArea)) + nonColorConditions(target)) }
+        assertTrue(colorOnly.sameAs(draw(view)))
+        view.setResults(listOf(result(target)))
+        val rendered = draw(view)
+        // Outside the expanded hit, the color-only overlay must remain exactly unchanged.
+        for (y in 0 until 70) for (x in 0 until 70) {
+            assertEquals(colorOnly.getPixel(x, y), rendered.getPixel(x, y))
+        }
+        assertInteriorTransparent(rendered, colorArea)
+        assertInteriorTransparent(rendered, target)
+        assertEquals(Color.TRANSPARENT, rendered.getPixel(target.left - 1, target.top))
+        assertEquals(Color.GREEN, rendered.getPixel(target.left - 20, target.top))
     }
 
     private fun image(area: Rect) = ScreenCondition.Image(Identifier(databaseId = 1), Identifier(databaseId = 1),
         "Image", 20, true, 0, "template", area, EXACT)
+
+    private fun nonColorConditions(area: Rect): List<ScreenCondition> {
+        val id = Identifier(databaseId = 1)
+        return listOf(
+            image(Rect(area)),
+            ScreenCondition.Text(id, id, "Text", 20, true, 0, "Telegram", Rect(area), OCRAlphabet.CHINESE_SIMPLIFIED),
+            ScreenCondition.Number(id, id, "Number", 20, priority = 0, detectionArea = Rect(area),
+                comparisonOperation = ComparisonOperation.EQUALS, counterValue = CounterOperationValue.Number(123.0)),
+        )
+    }
 
     private fun color(area: Rect) = ScreenCondition.Color(Identifier(databaseId = 1), Identifier(databaseId = 1),
         "Color", 20, true, 0, Color.BLUE, area)
@@ -142,15 +206,60 @@ class DebugOverlayViewTests {
         }
     }
 
-    @Test fun positiveResultHasTwoPixelOutsideBorderWithoutTwentyPixelMargin() {
+    @Test fun positiveResultRestoresTenPixelBorderWithTwentyPixelMargin() {
         val area = Rect(50, 60, 90, 80)
         val bitmap = render(listOf(result(area)))
 
         assertBorder(bitmap, area, Color.GREEN)
-        assertEquals(Rect(48, 58, 92, 82), paintedBounds(bitmap))
+        assertEquals(Rect(25, 35, 115, 105), paintedBounds(bitmap))
     }
 
-    @Test fun negativeResultUsesSameThinGeometryInRed() {
+    @Test fun imageTextAndNumberUseLegacyResultGeometryWithoutChangingTheirSearchAreas() {
+        val area = Rect(60, 60, 120, 95)
+        nonColorConditions(area).forEach { condition ->
+            val view = view().apply { setConditions(listOf(condition)) }
+            listOf(true, false).forEach { detected ->
+                view.setResults(listOf(result(Rect(area), positive = detected)))
+                assertBorder(draw(view), area, if (detected) Color.GREEN else Color.RED)
+                assertEquals(area, condition.toDetectionRange().area)
+            }
+        }
+    }
+
+    @Test fun configuredRangeIsNotExpandedWhenResultsAreSetOrCleared() {
+        val area = Rect(60, 60, 120, 95)
+        val condition = image(Rect(area))
+        val view = view().apply { setConditions(listOf(condition)) }
+        val initial = draw(view)
+        assertTrue(paintedBounds(initial).isEmpty)
+        view.setResults(listOf(result(Rect(area))))
+        assertEquals(Color.GREEN, draw(view).getPixel(40, 70))
+        view.clear()
+        assertTrue(initial.sameAs(draw(view)))
+        assertEquals(area, condition.area)
+    }
+
+    @Test fun expandedEventBorderCannotPaintInsideANearbyNonOverlappingTarget() {
+        val first = Rect(50, 50, 70, 70)
+        val second = Rect(88, 50, 105, 70)
+        val bitmap = render(listOf(result(first), result(second, positive = false)))
+        assertInteriorTransparent(bitmap, first)
+        assertInteriorTransparent(bitmap, second)
+        assertTrue(hasColor(bitmap, Color.GREEN))
+        assertTrue(hasColor(bitmap, Color.RED))
+    }
+
+    @Test fun expandedResultCannotPaintInsideANearbyConfiguredColorArea() {
+        val colorArea = Rect(88, 50, 105, 70)
+        val view = view().apply {
+            setConditions(listOf(color(colorArea)))
+            setResults(listOf(result(Rect(50, 50, 70, 70))))
+        }
+        assertInteriorTransparent(draw(view), colorArea)
+        assertTrue(hasColor(draw(view), Color.GREEN))
+    }
+
+    @Test fun negativeResultUsesSameExpandedGeometryInRed() {
         val area = Rect(30, 40, 70, 65)
         assertBorder(render(listOf(result(area, positive = false))), area, Color.RED)
     }
@@ -212,7 +321,13 @@ class DebugOverlayViewTests {
     @Config(qualifiers = "xxxhdpi")
     fun higherDisplayDensityDoesNotMakeTheBorderThicker() {
         val area = Rect(50, 60, 90, 80)
-        assertBorder(render(listOf(result(area))), area, Color.GREEN)
+        nonColorConditions(area).forEach { condition ->
+            val view = view().apply {
+                setConditions(listOf(condition))
+                setResults(listOf(result(Rect(area))))
+            }
+            assertBorder(draw(view), area, Color.GREEN)
+        }
     }
 
     @Test fun eventResultsDoNotPaintInsideOtherOverlappingTargets() {
@@ -225,8 +340,8 @@ class DebugOverlayViewTests {
                 assertEquals("Target content at $x,$y", Color.TRANSPARENT, bitmap.getPixel(x, y))
             }
         }
-        assertEquals(Color.GREEN, bitmap.getPixel(38, 45))
-        assertEquals(Color.RED, bitmap.getPixel(90, 75))
+        assertEquals(Color.GREEN, bitmap.getPixel(15, 45))
+        assertEquals(Color.RED, bitmap.getPixel(110, 75))
     }
 
     @Test fun clippingDoesNotLeakIntoSubsequentCanvasDrawing() {
@@ -257,9 +372,11 @@ class DebugOverlayViewTests {
         Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply { view.draw(Canvas(this)) }
 
     private fun assertBorder(bitmap: Bitmap, area: Rect, color: Int) {
-        val outside = Rect(area).apply { inset(-2, -2) }
+        // Legacy geometry: a 10 px stroke centred 20 px outside each target edge.
+        val outside = Rect(area).apply { inset(-25, -25) }
+        val inside = Rect(area).apply { inset(-15, -15) }
         for (y in 0 until bitmap.height) for (x in 0 until bitmap.width) {
-            val expected = if (outside.contains(x, y) && !area.contains(x, y)) color else Color.TRANSPARENT
+            val expected = if (outside.contains(x, y) && !inside.contains(x, y)) color else Color.TRANSPARENT
             assertEquals("Unexpected pixel at $x,$y around $area", expected, bitmap.getPixel(x, y))
         }
     }

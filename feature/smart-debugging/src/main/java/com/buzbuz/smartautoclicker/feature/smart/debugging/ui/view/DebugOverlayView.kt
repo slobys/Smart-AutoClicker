@@ -17,7 +17,7 @@ import com.buzbuz.smartautoclicker.core.domain.model.IN_AREA
 import com.buzbuz.smartautoclicker.core.domain.model.condition.ScreenCondition
 
 /**
- * Displays thin borders immediately outside the actual detection results, without painting over target pixels.
+ * Displays the legacy expanded result borders without changing detection coordinates or painting over target pixels.
  * @param context the Android context.
  */
 internal class DebugOverlayView(context: Context) : View(context) {
@@ -77,6 +77,9 @@ internal class DebugOverlayView(context: Context) : View(context) {
                 clipRect(coordinates, Region.Op.DIFFERENCE)
             }
             ranges.forEach { range ->
+                // Image/text/number tests show only the expanded result border, not a second inner search box.
+                // Keep their range metadata for clipping; color sampling still needs its outline/ring.
+                if (!range.showOutline) return@forEach
                 withSave {
                     // Event tests can have overlapping search regions; do not paint one over another.
                     ranges.forEach { other ->
@@ -89,12 +92,13 @@ internal class DebugOverlayView(context: Context) : View(context) {
                 if (range.protectInterior) range.area?.let { clipRect(it, Region.Op.DIFFERENCE) }
             }
             displayedResults.forEach { (paint, coordinates) ->
-                val halfStroke = paint.strokeWidth / 2f
+                // Restore the legacy visual margin only. Keep displayedResults at the actual result coordinates
+                // so the clipping above still protects every target, including overlapping event results.
                 drawRect(
-                    coordinates.left - halfStroke,
-                    coordinates.top - halfStroke,
-                    coordinates.right + halfStroke,
-                    coordinates.bottom + halfStroke,
+                    coordinates.left - RESULT_BORDER_MARGIN_PX,
+                    coordinates.top - RESULT_BORDER_MARGIN_PX,
+                    coordinates.right + RESULT_BORDER_MARGIN_PX,
+                    coordinates.bottom + RESULT_BORDER_MARGIN_PX,
                     paint,
                 )
             }
@@ -192,7 +196,12 @@ internal class DebugOverlayView(context: Context) : View(context) {
 
 }
 
-internal data class DetectionRange(val area: Rect?, val point: Point? = null, val protectInterior: Boolean = false)
+internal data class DetectionRange(
+    val area: Rect?,
+    val point: Point? = null,
+    val protectInterior: Boolean = false,
+    val showOutline: Boolean = false,
+)
 
 internal fun ScreenCondition.toDetectionRange(): DetectionRange = when (this) {
     is ScreenCondition.Image -> DetectionRange(when (detectionType) {
@@ -202,10 +211,12 @@ internal fun ScreenCondition.toDetectionRange(): DetectionRange = when (this) {
     })
     is ScreenCondition.Color -> DetectionRange(Rect(detectionArea),
         if (detectionArea.width() <= 1 && detectionArea.height() <= 1)
-            Point(detectionArea.centerX(), detectionArea.centerY()) else null, protectInterior = true)
+            Point(detectionArea.centerX(), detectionArea.centerY()) else null,
+        protectInterior = true, showOutline = true)
     is ScreenCondition.Text -> DetectionRange(Rect(detectionArea))
     is ScreenCondition.Number -> DetectionRange(Rect(detectionArea))
 }
 
-/** Physical pixels, deliberately independent of density so small labels keep the same fine border. */
-private const val RESULT_BORDER_WIDTH_PX = 2f
+/** Legacy physical-pixel display geometry; never applied to the saved condition or recognition input. */
+private const val RESULT_BORDER_WIDTH_PX = 10f
+private const val RESULT_BORDER_MARGIN_PX = 20f
